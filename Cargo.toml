@@ -10,7 +10,7 @@ license-file = "../LICENSE"
 keywords = ["parser"]
 categories = ["parser-implementations"]
 readme = "README.md"
-description = "Implementation in Rust of a parser and generator for documents of any type"
+description = "Shiva library: Implementation in Rust of a parser and generator for documents of any type"
 
 
 
