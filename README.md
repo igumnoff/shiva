@@ -2,7 +2,7 @@
 
 ![shiva](logo.png)
 
-Implementation in Rust of a parser and generator for documents of any type
+Shiva library: Implementation in Rust of a parser and generator for documents of any type
 
 Current status of Shiva library:
 
