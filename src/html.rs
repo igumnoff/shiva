@@ -1,14 +1,13 @@
 use std::collections::HashMap;
 use bytes::Bytes;
 use ego_tree::iter::Children;
-use regex::Regex;
 use crate::core::*;
 
-use scraper::{Html, Node, Selector};
+use scraper::{Html, Node};
 
 struct Transformer;
 impl TransformerTrait for Transformer {
-    fn parse(document: &Bytes, images: &HashMap<String, Bytes>) -> anyhow::Result<Document> {
+    fn parse(document: &Bytes, _images: &HashMap<String, Bytes>) -> anyhow::Result<Document> {
         let html = String::from_utf8(document.to_vec())?;
         let document = Html::parse_document(&html);
         let mut elements: Vec<Box<dyn Element>> = Vec::new();
@@ -165,7 +164,7 @@ fn parse_html(children: Children<Node>, elements: &mut Vec<Box<dyn Element>>) ->
                         }
                     },
                     "img" => {
-                        let src = element.attr("src").unwrap_or_default();
+                        let _src = element.attr("src").unwrap_or_default();
                         let title = element.attr("title").unwrap_or_default();
                         let alt = element.attr("alt").unwrap_or_default();
                         // TODO fix debug for image bytes
@@ -200,7 +199,7 @@ fn parse_html(children: Children<Node>, elements: &mut Vec<Box<dyn Element>>) ->
 
                     "a" => {
                         let href = element.attr("href").unwrap_or_default().to_string();
-                        let title = element.attr("title").unwrap_or_default().to_string();
+                        let _title = element.attr("title").unwrap_or_default().to_string();
                         let alt = element.attr("alt").unwrap_or_default().to_string(); // 'alt' is not standard for 'a' tags but included for consistency
                         let text = child.children().filter_map(|n| {
                             if let Node::Text(ref text) = n.value() {
