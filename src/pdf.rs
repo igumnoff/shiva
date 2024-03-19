@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, HashMap};
 use bytes::Bytes;
-use crate::core::{Document, Element, ParserError, TextElement, TransformerTrait};
+use crate::core::{Document, Element, ListElement, ParagraphElement, ParserError, TextElement, TransformerTrait};
 use lopdf::{Document as PdfDocument, Object, ObjectId};
 use lopdf::content::Content;
 
@@ -27,15 +27,23 @@ impl TransformerTrait for Transformer {
 
 fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object, elements: &mut Vec<Box<dyn Element>>) -> anyhow::Result<()> {
 
-    fn collect_text(text: &mut String, encoding: Option<&str>, operands: &[Object]) {
+    fn collect_text(text: &mut String, encoding: Option<&str>, operands: &[Object], elements: &mut Vec<Box<dyn Element>>) {
         for operand in operands.iter() {
+            // println!("2 {:?}", operand);
             match *operand {
                 Object::String(ref bytes, _) => {
+                    if bytes.len() == 1 && bytes[0] == 1 {
+                        let list_element = ListElement{
+                            elements: vec![],
+                            numbered: false,
+                        };
+                        elements.push(Box::new(list_element));
+                    }
                     let decoded_text = PdfDocument::decode_text(encoding, bytes);
                     text.push_str(&decoded_text);
                 }
                 Object::Array(ref arr) => {
-                    collect_text(text, encoding, arr);
+                    collect_text(text, encoding, arr, elements);
                     text.push(' ');
                 }
                 Object::Integer(i) => {
@@ -59,7 +67,14 @@ fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object,
     let content = Content::decode(&vec)?;
     let mut current_encoding = None;
     for operation in &content.operations {
+        // println!("1 {:?}", operation.operator);
         match operation.operator.as_ref() {
+            "Tm" => {
+                let paragraph_element = ParagraphElement{
+                    elements: vec![],
+                };
+                elements.push(Box::new(paragraph_element));
+            }
             "Tf" => {
                 let current_font = operation
                     .operands
@@ -69,7 +84,7 @@ fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object,
                 current_encoding = encodings.get(current_font).cloned();
             }
             "Tj" | "TJ" => {
-                collect_text(&mut text, current_encoding, &operation.operands);
+                collect_text(&mut text, current_encoding, &operation.operands, elements);
             }
             "ET" => {
                 if !text.ends_with('\n') {
