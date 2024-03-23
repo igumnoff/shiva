@@ -11,7 +11,7 @@ Current status of Shiva library:
 | Plain text    | +     | +        |
 | Markdown      | +     | +        |
 | HTML          | +     | +        |
-| PDF           | -     | -        |
+| PDF           | +     | -        |
 | JSON          | -     | -        |
 | XML           | -     | -        |
 | DOC           | -     | -        |

@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, HashMap};
 use bytes::Bytes;
-use crate::core::{Document, Element, ListElement, ParagraphElement, ParserError, TextElement, TransformerTrait};
+use crate::core::{Document, Element, ElementType, ListElement, ListItemElement, ParagraphElement, ParserError, TextElement, TransformerTrait};
 use lopdf::{Document as PdfDocument, Object, ObjectId};
 use lopdf::content::Content;
 
@@ -27,23 +27,68 @@ impl TransformerTrait for Transformer {
 
 fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object, elements: &mut Vec<Box<dyn Element>>) -> anyhow::Result<()> {
 
-    fn collect_text(text: &mut String, encoding: Option<&str>, operands: &[Object], elements: &mut Vec<Box<dyn Element>>) {
+    fn collect_text(text: &mut String, encoding: Option<&str>, operands: &[Object], elements: &mut Vec<Box<dyn Element>>) -> anyhow::Result<()>{
         for operand in operands.iter() {
             // println!("2 {:?}", operand);
             match *operand {
                 Object::String(ref bytes, _) => {
-                    if bytes.len() == 1 && bytes[0] == 1 {
-                        let list_element = ListElement{
-                            elements: vec![],
-                            numbered: false,
-                        };
-                        elements.push(Box::new(list_element));
-                    }
                     let decoded_text = PdfDocument::decode_text(encoding, bytes);
                     text.push_str(&decoded_text);
+                    if bytes.len() == 1 && bytes[0] == 1 {
+                        match elements.last() {
+                            None => {
+                                let list_element = ListElement{
+                                    elements: vec![],
+                                    numbered: false,
+                                };
+                                elements.push(Box::new(list_element));
+                            }
+                            Some(el) => {
+                                if el.element_type() == ElementType::List {
+                                    let old_list = elements.pop().unwrap();
+                                    let list = ListElement::from(&old_list)?;
+                                    let mut list_item_elements = list.elements.clone();
+                                    let text_element = TextElement{
+                                        text: text.clone(),
+                                    };
+                                    let new_list_item_element = ListItemElement{
+                                        element: Box::new(text_element),
+                                    };
+                                    list_item_elements.push(new_list_item_element);
+                                    let new_list = ListElement{
+                                        elements: list_item_elements,
+                                        numbered: list.numbered,
+                                    };
+                                    elements.push(Box::new(new_list));
+                                    text.clear();
+                                } else {
+                                    if el.element_type() == ElementType::Paragraph {
+                                        let old_paragraph = elements.pop().unwrap();
+                                        let paragraph = ParagraphElement::from(&old_paragraph)?;
+                                        let mut paragraph_elements = paragraph.elements.clone();
+                                        let text_element = TextElement{
+                                            text: text.clone(),
+                                        };
+                                        paragraph_elements.push(Box::new(text_element));
+                                        let new_paragraph = ParagraphElement{
+                                            elements: paragraph_elements,
+                                        };
+                                        elements.push(Box::new(new_paragraph));
+                                        text.clear();
+                                    }
+                                    let list_element = ListElement{
+                                        elements: vec![],
+                                        numbered: false,
+                                    };
+                                    elements.push(Box::new(list_element));
+                                }
+                            }
+                        }
+                    }
+
                 }
                 Object::Array(ref arr) => {
-                    collect_text(text, encoding, arr, elements);
+                    let _ = collect_text(text, encoding, arr, elements);
                     text.push(' ');
                 }
                 Object::Integer(i) => {
@@ -54,6 +99,7 @@ fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object,
                 _ => {}
             }
         }
+        Ok(())
     }
     let mut text = String::new();
 
@@ -70,10 +116,34 @@ fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object,
         // println!("1 {:?}", operation.operator);
         match operation.operator.as_ref() {
             "Tm" => {
-                let paragraph_element = ParagraphElement{
-                    elements: vec![],
+                let text_element = TextElement {
+                    text: text.clone(),
                 };
-                elements.push(Box::new(paragraph_element));
+                match elements.last() {
+                    None => {
+                        let paragraph_element = ParagraphElement{
+                            elements: vec![Box::new(text_element)],
+                        };
+                        elements.push(Box::new(paragraph_element));
+                    }
+                    Some(el) => {
+                        if el.element_type() == ElementType::Paragraph {
+                            let old_paragraph = elements.pop().unwrap();
+                            let paragraph = ParagraphElement::from(&old_paragraph)?;
+                            let mut paragraph_elements = paragraph.elements.clone();
+                            paragraph_elements.push(Box::new(text_element));
+                            let new_paragraph = ParagraphElement{
+                                elements: paragraph_elements,
+                            };
+                            elements.push(Box::new(new_paragraph));
+                        } else {
+                            elements.push(Box::new(text_element));
+                        }
+
+                    }
+                }
+                text.clear();
+
             }
             "Tf" => {
                 let current_font = operation
@@ -84,7 +154,7 @@ fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object,
                 current_encoding = encodings.get(current_font).cloned();
             }
             "Tj" | "TJ" => {
-                collect_text(&mut text, current_encoding, &operation.operands, elements);
+                _ = collect_text(&mut text, current_encoding, &operation.operands, elements);
             }
             "ET" => {
                 if !text.ends_with('\n') {
@@ -94,12 +164,54 @@ fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object,
             _ => {}
         }
     }
+
+    if text.len() > 0 {
+        let text_element = TextElement {
+            text: text.clone(),
+        };
+        match elements.last() {
+            None => {
+                let paragraph_element = ParagraphElement {
+                    elements: vec![Box::new(text_element)],
+                };
+                elements.push(Box::new(paragraph_element));
+            }
+            Some(el) => {
+                if el.element_type() == ElementType::Paragraph {
+                    let old_paragraph = elements.pop().unwrap();
+                    let paragraph = ParagraphElement::from(&old_paragraph)?;
+                    let mut paragraph_elements = paragraph.elements.clone();
+                    paragraph_elements.push(Box::new(text_element));
+                    let new_paragraph = ParagraphElement {
+                        elements: paragraph_elements,
+                    };
+                    elements.push(Box::new(new_paragraph));
+                } else if el.element_type() == ElementType::List {
+                    let old_list = elements.pop().unwrap();
+                    let list = ListElement::from(&old_list)?;
+                    let mut list_item_elements = list.elements.clone();
+                    let new_list_item_element = ListItemElement{
+                        element: Box::new(text_element),
+                    };
+                    list_item_elements.push(new_list_item_element);
+                    let new_list = ListElement{
+                        elements: list_item_elements,
+                        numbered: list.numbered,
+                    };
+                    elements.push(Box::new(new_list));
+                } else {
+
+                }
+            }
+        }
+
+    }
+
     println!("{}", text);
 
-    let text_element = TextElement {
-        text,
-    };
-    elements.push(Box::new(text_element));
+
+
+
     Ok(())
 
 
