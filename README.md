@@ -2,9 +2,9 @@
 
 ![shiva](logo.png)
 
-Shiva library: Implementation in Rust of a parser and generator for documents of any type
+**Shiva library: Implementation in Rust of a parser and generator for documents of any type**
 
-Current status of Shiva library:
+## Supported document types
 
 | Document type | Parse | Generate |
 |---------------|-------|----------|
@@ -17,3 +17,29 @@ Current status of Shiva library:
 | DOC           | -     | -        |
 | XLS           | -     | -        |
 
+
+## Parse document features
+
+| Document type | Header | Paragraph | List | Table | Image | Hyperlink |
+|---------------|--------|-----------|------|-------|-------|-----------|
+| Plain text    | -      | +         | -    | -     | -     | -         |
+| Markdown      | +      | +         | +    | +     | +     | +         |
+| HTML          | +      | +         | +    | +     | +     | +         |
+| PDF           | -      | +         | +    | -     | -     | -         |
+
+## Generate document features
+
+| Document type | Header | Paragraph  | List | Table | Image | Hyperlink |
+|---------------|--------|------------|------|-------|-------|-----------|
+| Plain text    | +      | +          | +    | +     | -     | +         |
+| Markdown      | +      | +          | +    | +     | +     | +         |
+| HTML          | +      | +          | +    | +     | +     | +         |
+| PDF           | -      | -          | -    | -     | -     | -         |
+
+## Usage Shiva library
+
+TODO
+
+## Shiva CLI
+
+TODO
