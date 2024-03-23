@@ -414,8 +414,8 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
 </ul>
 </li>
 </ul>
-<p><img src="image0.png" alt="Picture alt1" title="Picture title1" /></p>
-<p>Bla bla bla <img src="image1.png" alt="Picture alt2" title="Picture title2" /> bla. <a href="http://example.com" title="http://example.com">http://example.com</a>  <a href="http://example.com" title="Example">Example</a> <a href="http://example.com" title="Example tooltip">Example</a></p>
+<p><img src="test/data/image0.png" alt="Picture alt1" title="Picture title1" /></p>
+<p>Bla bla bla <img src="test/data/image1.png" alt="Picture alt2" title="Picture title2" /> bla. <a href="http://example.com" title="http://example.com">http://example.com</a>  <a href="http://example.com" title="Example">Example</a> <a href="http://example.com" title="Example tooltip">Example</a></p>
 <h2>Second header</h2>
 <table  border="1">
 <tr>
@@ -438,9 +438,9 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
 
         println!("==========================");
         let mut images = HashMap::new();
-        let image_bytes = std::fs::read("image0.png")?;
+        let image_bytes = std::fs::read("test/data/image0.png")?;
         images.insert("image0.png".to_string(), image_bytes);
-        let image_bytes = std::fs::read("image1.png")?;
+        let image_bytes = std::fs::read("test/data/image1.png")?;
         images.insert("image1.png".to_string(), image_bytes);
         let parsed =  Transformer::parse(&html_document.as_bytes().into(), &HashMap::new());
         println!("{:?}", &parsed);

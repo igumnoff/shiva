@@ -38,8 +38,35 @@
 
 ## Usage Shiva library
 
+Cargo.toml
+```toml
+[dependencies]
+shiva = "0.1.0"
+```
+
+main.rs
+```rust
+use shiva::*;
+```
 TODO
 
 ## Shiva CLI
-
+### Install Rust for Linux/MacOS
+```bash 
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+### Install Rust for Windows
+https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe
+gti clone https://github.com/igumnoff/shiva.git
+### Build executable Shiva
+```bash
+gti clone https://github.com/igumnoff/shiva.git
+cd shiva/cli
+cargo build --release
+```
+### Run executable shiva
+```bash
+cd ../target/release/
+./shiva --help
+```
 TODO

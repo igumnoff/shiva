@@ -1,0 +1,22 @@
+[package]
+name = "cli"
+version = "0.0.1"
+edition = "2021"
+
+authors = ["Evgeny Igumnov <igumnovnsk@gmail.com>"]
+repository = "https://github.com/igumnoff/shiva"
+documentation = "https://docs.rs/shiva"
+license-file = "../LICENSE"
+keywords = ["parser"]
+categories = ["parser-implementations"]
+readme = "../README.md"
+description = "CLI Shiva: Сonverting documents from any format to any"
+
+[[bin]]
+name = "shiva"
+path = "src/main.rs"
+
+[dependencies]
+
+shiva = { path = "../lib" }
+
