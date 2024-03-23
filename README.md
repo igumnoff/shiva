@@ -56,8 +56,10 @@ TODO
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 ### Install Rust for Windows
+```bash
 https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe
 gti clone https://github.com/igumnoff/shiva.git
+```
 ### Build executable Shiva
 ```bash
 gti clone https://github.com/igumnoff/shiva.git
