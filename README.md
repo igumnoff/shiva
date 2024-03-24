@@ -4,6 +4,11 @@
 
 **Shiva library: Implementation in Rust of a parser and generator for documents of any type**
 
+## Features
+- [x] Common Document Model (CDM) for all document types
+- [x] Parsers produce CDM
+- [x] Generators consume CDM
+
 ## Supported document types
 
 | Document type | Parse | Generate |
