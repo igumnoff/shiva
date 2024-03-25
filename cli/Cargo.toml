@@ -17,6 +17,7 @@ name = "shiva"
 path = "src/main.rs"
 
 [dependencies]
+clap = { version = "4.5.3", features = ["derive"] }
 
 shiva = { path = "../lib" }
 
