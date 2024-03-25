@@ -83,12 +83,6 @@ pub enum ElementType {
     TableOfContents,
 }
 
-#[derive(Debug, PartialEq)]
-pub enum DocumentType {
-    Text,
-    Markdown,
-}
-
 
 #[derive(Clone, Debug)]
 pub struct TextElement {
