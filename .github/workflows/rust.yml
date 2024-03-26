@@ -40,7 +40,7 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --verbose --release
     - name: Upload windows release binary
       uses: actions/upload-release-asset@v1
       env:
