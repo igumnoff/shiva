@@ -5,7 +5,7 @@ use crate::core::*;
 
 use scraper::{Html, Node};
 
-struct Transformer;
+pub struct Transformer;
 impl TransformerTrait for Transformer {
     fn parse(document: &Bytes, _images: &HashMap<String, Bytes>) -> anyhow::Result<Document> {
         let html = String::from_utf8(document.to_vec())?;

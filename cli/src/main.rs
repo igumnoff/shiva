@@ -42,37 +42,38 @@ fn main() -> anyhow::Result<()> {
 
     let document = match args.input_format {
         InputFormat::Markdown => {
-            use shiva::markdown::Transformer;
-            Transformer::parse(&input_bytes, &HashMap::new())?
+            shiva::markdown::Transformer::parse(&input_bytes, &HashMap::new())?
                     }
         InputFormat::Html => {
-            todo!()
+            shiva::html::Transformer::parse(&input_bytes, &HashMap::new())?
         }
         InputFormat::Text => {
-            todo!()
+            shiva::text::Transformer::parse(&input_bytes, &HashMap::new())?
         }
         InputFormat::Pdf => {
-            todo!()
+            shiva::pdf::Transformer::parse(&input_bytes, &HashMap::new())?
         }
     };
 
 
     let output = match args.output_format {
         InputFormat::Text => {
-            use shiva::text::Transformer;
-            Transformer::generate(&document)?
+            shiva::text::Transformer::generate(&document)?
         }
         InputFormat::Html => {
-            todo!()
+            shiva::html::Transformer::generate(&document)?
         }
         InputFormat::Markdown => {
-            todo!()
+            shiva::markdown::Transformer::generate(&document)?
         }
         InputFormat::Pdf => {
-            todo!()
+            shiva::pdf::Transformer::generate(&document)?
         }
 
     };
+
+    let file_name =  args.output_file.ok_or(anyhow::anyhow!("No output file provided"))?;
+    std::fs::write(file_name, output.0)?;
 
     Ok(())
 
