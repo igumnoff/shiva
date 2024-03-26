@@ -46,14 +46,20 @@
 Cargo.toml
 ```toml
 [dependencies]
-shiva = "0.1.0"
+shiva = "0.1.1"
 ```
 
 main.rs
 ```rust
-use shiva::*;
+fn main() {
+    let input_vec = std::fs::read("input.html").unwrap();
+    let input_bytes = bytes::Bytes::from(input_vec);
+    let document = shiva::html::Transformer::parse(&input_bytes, &HashMap::new()).unwrap();
+    let output_bytes = shiva::markdown::Transformer::generate(&document, &HashMap::new()).unwrap();
+    std::fs::write("out.md", output_bytes).unwrap();
+}
 ```
-TODO
+
 
 ## Shiva CLI
 ### Install Rust for Linux/MacOS
@@ -72,7 +78,6 @@ cargo build --release
 ```
 ### Run executable shiva
 ```bash
-cd ../target/release/
-./shiva --help
+cd ./target/release/
+./shiva --input-format=markdown --output-format=html --input-file=README.md --output-file=README.html
 ```
-TODO
