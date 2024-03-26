@@ -25,13 +25,13 @@ jobs:
     - name: Upload ununtu release binary
       uses: actions/upload-release-asset@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.BOTTY_GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ GITHUB_TOKEN  }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
         asset_path: ./target/release/shiva
         asset_name: shiva
         asset_content_type: application/octet-stream
-        
+
   build-windows:
 
     runs-on: windows-latest
@@ -45,7 +45,7 @@ jobs:
     - name: Upload windows release binary
       uses: actions/upload-release-asset@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.BOTTY_GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ GITHUB_TOKEN  }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
         asset_path: ./target/release/shiva.exe
