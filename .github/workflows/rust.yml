@@ -3,16 +3,14 @@ name: Rust
 on:
   release:
     types: [created]
-#  push:
-#    branches: [ "main" ]
-#  pull_request:
-#    branches: [ "main" ]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   build-ubuntu:
+    permissions:
+      contents: write  
 
     runs-on: ubuntu-latest
 
@@ -33,7 +31,8 @@ jobs:
         asset_content_type: application/octet-stream
 
   build-windows:
-
+    permissions:
+      contents: write  
     runs-on: windows-latest
 
     steps:
