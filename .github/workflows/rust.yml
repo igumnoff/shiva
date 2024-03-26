@@ -30,7 +30,8 @@ jobs:
         upload_url: ${{ github.event.release.upload_url }}
         asset_path: ./target/release/shiva
         asset_name: shiva
-
+        asset_content_type: application/octet-stream
+        
   build-windows:
 
     runs-on: windows-latest
@@ -49,3 +50,4 @@ jobs:
         upload_url: ${{ github.event.release.upload_url }}
         asset_path: ./target/release/shiva.exe
         asset_name: shiva.exe
+        asset_content_type: application/octet-stream
