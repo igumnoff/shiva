@@ -20,14 +20,55 @@ impl TransformerTrait for Transformer {
         Ok(Document { elements })
     }
 
-    fn generate(_document: &crate::core::Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)> {
+    fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)> {
 
         use printpdf::*;
 
-        let (doc, page1, layer1) = PdfDocument::new("PDF_Document_title", Mm(247.0), Mm(210.0), "Layer 1");
-        let (page2, layer1) = doc.add_page(Mm(10.0), Mm(250.0),"Page 2, Layer 1");
+        const PAGE_WIDTH: f32 = 210.0;
+        const PAGE_HEIGHT: f32 = 297.0;
 
-        let result = doc.save_to_bytes()?;
+
+        let (mut pdf, page1, layer1) = PdfDocument::new("PDF Document", Mm(PAGE_WIDTH), Mm(PAGE_HEIGHT), "Layer 1");
+
+        fn generate_pdf(elements:&Vec<Box<dyn Element>>, pdf:&mut PdfDocumentReference, page: PdfPageIndex, layer: PdfLayerIndex, mut vertical_position: f32) -> anyhow::Result<()> {
+
+            let current_layer = pdf.get_page(page).get_layer(layer);
+
+            for element in elements {
+                match element.as_ref() {
+                    e if e.element_type() == ElementType::Header => {
+
+                    },
+                    e if e.element_type() == ElementType::Paragraph => {
+                        let paragraph = ParagraphElement::from(element)?;
+                        for paragraph_element in &paragraph.elements {
+                            match paragraph_element.as_ref() {
+                                e if e.element_type() == ElementType::Text => {
+                                    let text = if let Ok(text_element) = TextElement::from(paragraph_element) {
+                                        &text_element.text
+                                    } else {
+                                        continue;
+                                    };
+                                    vertical_position = vertical_position + 12.0;
+                                    let font = pdf.add_builtin_font(BuiltinFont::Courier)?;
+                                    current_layer.use_text(text, 12.0, Mm(10.0), Mm(PAGE_HEIGHT - vertical_position), &font);
+                                },
+                                _ => {}
+                            }
+                        }
+
+                    },
+                    _ => {}
+                }
+            }
+
+            Ok(())
+        }
+
+        _ = generate_pdf(&document.elements, &mut pdf, page1, layer1, 0.0)?;
+
+
+        let result = pdf.save_to_bytes()?;
         let bytes = Bytes::from(result);
         Ok((bytes, HashMap::new()))
     }
