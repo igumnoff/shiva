@@ -222,7 +222,7 @@ fn parse_html(children: Children<Node>, elements: &mut Vec<Box<dyn Element>>) ->
                 }
             },
             Node::Text(ref text) => {
-                if let Ok(text_element) = TextElement::new(text) {
+                if let Ok(text_element) = TextElement::new(text, 8) {
                     if TextElement::from(&text_element).unwrap().text != "\n"{
                         elements.push(text_element);
                     }

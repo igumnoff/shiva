@@ -87,6 +87,7 @@ pub enum ElementType {
 #[derive(Clone, Debug)]
 pub struct TextElement {
     pub text: String,
+    pub size: u8,
 }
 
 impl TextElement {
@@ -94,9 +95,10 @@ impl TextElement {
         Ok(element.as_any().downcast_ref::<TextElement>().ok_or(CastingError::Common)?)
     }
 
-    pub fn new(text: &str) -> anyhow::Result<Box<dyn Element>> {
+    pub fn new(text: &str, size: u8) -> anyhow::Result<Box<dyn Element>> {
         Ok(Box::new(TextElement {
             text: text.to_string(),
+            size,
         }))
     }
 }

@@ -13,8 +13,8 @@ impl TransformerTrait for Transformer {
         let mut i = 0;
         while i < lines_vec.len() {
             let line = lines_vec[i];
-            elements.push(TextElement::new(line)?);
-            elements.push(TextElement::new("\n")?);
+            elements.push(TextElement::new(line,8)?);
+            elements.push(TextElement::new("\n",8)?);
             i += 1;
         }
         let new_paragraph = ParagraphElement::new(&elements)?;

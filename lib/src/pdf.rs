@@ -99,6 +99,7 @@ fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object,
                                     let mut list_item_elements = list.elements.clone();
                                     let text_element = TextElement{
                                         text: text.clone(),
+                                        size: 8,
                                     };
                                     let new_list_item_element = ListItemElement{
                                         element: Box::new(text_element),
@@ -117,6 +118,7 @@ fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object,
                                         let mut paragraph_elements = paragraph.elements.clone();
                                         let text_element = TextElement{
                                             text: text.clone(),
+                                            size: 8,
                                         };
                                         paragraph_elements.push(Box::new(text_element));
                                         let new_paragraph = ParagraphElement{
@@ -167,6 +169,7 @@ fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object,
             "Tm" => {
                 let text_element = TextElement {
                     text: text.clone(),
+                    size: 8,
                 };
                 match elements.last() {
                     None => {
@@ -217,6 +220,7 @@ fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object,
     if text.len() > 0 {
         let text_element = TextElement {
             text: text.clone(),
+            size: 8,
         };
         match elements.last() {
             None => {

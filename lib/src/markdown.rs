@@ -23,7 +23,7 @@ impl TransformerTrait for Transformer {
             let trimmed_line = line.trim_start();
             if trimmed_line.starts_with('-') || trimmed_line.starts_with('+') || trimmed_line.starts_with('*') {
                 let list_item_text = trimmed_line[1..].trim();
-                let list_item = ListItemElement::new(&TextElement::new(list_item_text)?).unwrap();
+                let list_item = ListItemElement::new(&TextElement::new(list_item_text,8)?).unwrap();
                 if current_list_stack.len() <= indent_level {
                     while current_list_stack.len() <= indent_level {
                         current_list_stack.push(vec![]);
@@ -48,7 +48,7 @@ impl TransformerTrait for Transformer {
                 }
             } else if trimmed_line.chars().next().unwrap_or(' ').is_digit(10) && trimmed_line.chars().nth(1).unwrap_or(' ') == '.' {
                 let list_item_text = trimmed_line.splitn(2, '.').nth(1).unwrap_or("").trim();
-                let list_item = ListItemElement::new(&TextElement::new(list_item_text)?).unwrap();
+                let list_item = ListItemElement::new(&TextElement::new(list_item_text, 8)?).unwrap();
                 if current_list_stack.len() <= indent_level {
                     while current_list_stack.len() <= indent_level {
                         current_list_stack.push(vec![]);
@@ -79,14 +79,14 @@ impl TransformerTrait for Transformer {
                             in_table = true;
                             table_headers = line.split('|')
                                 .filter(|x| !x.trim().is_empty() && !x.contains('-'))
-                                .map(|header| TableHeaderElement::new(&TextElement::new(header.trim()).unwrap()).unwrap())
+                                .map(|header| TableHeaderElement::new(&TextElement::new(header.trim(),8).unwrap()).unwrap())
                                 .collect();
                         } else if line.contains("---") {
                             continue;
                         } else if line.starts_with('|') && in_table {
                             let cells = line.split('|')
                                 .filter(|x| !x.trim().is_empty())
-                                .map(|cell| TableCellElement::new(&TextElement::new(cell.trim()).unwrap()).unwrap())
+                                .map(|cell| TableCellElement::new(&TextElement::new(cell.trim(),8).unwrap()).unwrap())
                                 .collect();
                             table_rows.push(TableRowElement::new(&cells).unwrap());
                         }
@@ -144,7 +144,7 @@ impl TransformerTrait for Transformer {
                                     start = end;
                                 }
                                 if captures == 0 {
-                                    current_paragraph_elements.push(TextElement::new(text)?);
+                                    current_paragraph_elements.push(TextElement::new(text,8)?);
                                 } else {
                                     if start < text.len() {
                                         parser_text(&text[start..], current_paragraph_elements)?;
