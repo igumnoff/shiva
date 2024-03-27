@@ -21,7 +21,15 @@ impl TransformerTrait for Transformer {
     }
 
     fn generate(_document: &crate::core::Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)> {
-        todo!()
+
+        use printpdf::*;
+
+        let (doc, page1, layer1) = PdfDocument::new("PDF_Document_title", Mm(247.0), Mm(210.0), "Layer 1");
+        let (page2, layer1) = doc.add_page(Mm(10.0), Mm(250.0),"Page 2, Layer 1");
+
+        let result = doc.save_to_bytes()?;
+        let bytes = Bytes::from(result);
+        Ok((bytes, HashMap::new()))
     }
 }
 
