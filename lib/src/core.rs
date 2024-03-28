@@ -57,10 +57,7 @@ pub enum CastingError {
 pub trait Element: CloneableElement + Debug {
     fn as_any(&self) -> &dyn Any;
 
-    // fn yyy(a: &mut Box<A>) -> anyhow::Result<&mut Box<A>> {
-
     fn as_any_mut(&mut self) -> &mut dyn Any;
-
 
     fn element_type(&self) -> ElementType;
 
@@ -233,7 +230,7 @@ pub struct HeaderElement {
 
 impl HeaderElement {
 
-    pub fn new(text: &str, level: u8) -> anyhow::Result<Box<dyn Element>> where Self: Sized {
+    pub fn new(text: &str, level: u8) -> anyhow::Result<Box<dyn Element>> {
         Ok(Box::new(HeaderElement {
             level,
             text: text.to_string(),
@@ -265,7 +262,7 @@ pub struct ParagraphElement {
 
 impl ParagraphElement {
 
-    pub fn new(elements: &Vec<Box<dyn Element>>) -> anyhow::Result<Box<dyn Element>> where Self: Sized {
+    pub fn new(elements: &Vec<Box<dyn Element>>) -> anyhow::Result<Box<dyn Element>> {
         Ok(Box::new(ParagraphElement {
             elements: (&elements).to_vec(),
         }))
@@ -294,7 +291,7 @@ pub struct TableElement {
 }
 
 impl TableElement {
-    pub fn new(headers: &Vec<TableHeaderElement>, rows: &Vec<TableRowElement>) -> anyhow::Result<Box<dyn Element>> where Self: Sized {
+    pub fn new(headers: &Vec<TableHeaderElement>, rows: &Vec<TableRowElement>) -> anyhow::Result<Box<dyn Element>> {
         Ok(Box::new(TableElement {
             rows: rows.to_vec(),
             headers: headers.to_vec(),
@@ -404,7 +401,7 @@ pub struct ListElement {
 
 impl ListElement {
 
-    pub fn new(elements: &Vec<ListItemElement>, numbered: bool) -> anyhow::Result<Box<dyn Element>> where Self: Sized {
+    pub fn new(elements: &Vec<ListItemElement>, numbered: bool) -> anyhow::Result<Box<dyn Element>> {
         Ok(Box::new(ListElement {
             elements: elements.to_vec(),
             numbered,
@@ -465,7 +462,7 @@ pub struct ImageElement {
 }
 
 impl ImageElement {
-    pub fn new(bytes: &Bytes, title: &str, alt: &str, image_type: ImageType) -> anyhow::Result<Box<dyn Element>> where Self: Sized {
+    pub fn new(bytes: &Bytes, title: &str, alt: &str, image_type: ImageType) -> anyhow::Result<Box<dyn Element>> {
         Ok(Box::new(ImageElement {
             bytes: bytes.clone(),
             title: title.to_string(),
@@ -496,7 +493,7 @@ pub struct HyperlinkElement {
 
 impl HyperlinkElement {
 
-    pub fn new(title: &str, url: &str, alt: &str) -> anyhow::Result<Box<dyn Element>> where Self: Sized {
+    pub fn new(title: &str, url: &str, alt: &str) -> anyhow::Result<Box<dyn Element>> {
         Ok(Box::new(HyperlinkElement {
             title: title.to_string(),
             url: url.to_string(),
