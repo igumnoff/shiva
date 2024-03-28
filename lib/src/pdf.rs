@@ -17,7 +17,7 @@ impl TransformerTrait for Transformer {
             }
 
         }
-        Ok(Document { elements })
+        Ok(Document::new(&elements)?)
     }
 
     fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)> {

@@ -13,7 +13,7 @@ impl TransformerTrait for Transformer {
         let mut elements: Vec<Box<dyn Element>> = Vec::new();
 
         parse_html(document.root_element().children(), &mut elements)?;
-        Ok(Document { elements })
+        Ok(Document::new(&elements)?)
    }
 
 

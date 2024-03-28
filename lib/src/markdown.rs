@@ -223,7 +223,7 @@ impl TransformerTrait for Transformer {
             elements.push(TableElement::new(&table_headers, &table_rows)?);
         }
 
-        Ok(Document { elements })
+        Ok(Document::new(&elements)?)
     }
 
     fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)> where Self: Sized {

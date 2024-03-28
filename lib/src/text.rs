@@ -18,9 +18,7 @@ impl TransformerTrait for Transformer {
             i += 1;
         }
         let new_paragraph = ParagraphElement::new(&elements)?;
-        Ok(Document {
-            elements: vec![new_paragraph],
-        })
+        Ok(Document::new(&vec![new_paragraph])?)
     }
 
 

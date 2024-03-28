@@ -7,6 +7,12 @@ use std::collections::HashMap;
 #[derive(Debug)]
 pub struct Document {
     pub elements: Vec<Box<dyn Element>>,
+    pub page_width: f32,
+    pub page_height: f32,
+    pub left_page_indent: f32,
+    pub right_page_indent: f32,
+    pub top_page_indent: f32,
+    pub bottom_page_indent: f32,
 }
 
 impl Document {
@@ -14,8 +20,15 @@ impl Document {
     pub fn new(elements: &Vec<Box<dyn Element>>) -> anyhow::Result<Document> {
         Ok(Document {
             elements: (&elements).to_vec(),
+            page_width: 210.0,
+            page_height: 297.0,
+            left_page_indent: 10.0,
+            right_page_indent: 10.0,
+            top_page_indent: 10.0,
+            bottom_page_indent: 10.0,
         })
     }
+
 }
 
 pub trait TransformerTrait {
