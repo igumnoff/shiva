@@ -56,6 +56,12 @@ pub enum CastingError {
 
 pub trait Element: CloneableElement + Debug {
     fn as_any(&self) -> &dyn Any;
+
+    // fn yyy(a: &mut Box<A>) -> anyhow::Result<&mut Box<A>> {
+
+    fn as_any_mut(&mut self) -> &mut dyn Any;
+
+
     fn element_type(&self) -> ElementType;
 
 }
@@ -121,6 +127,8 @@ impl Element for TextElement {
         self
     }
 
+    fn as_any_mut(&mut self) -> &mut dyn Any { self }
+
     fn element_type(&self) -> ElementType {
         ElementType::Text
     }
@@ -154,6 +162,8 @@ impl Element for HeaderElement {
         self
     }
 
+    fn as_any_mut(&mut self) -> &mut dyn Any { self }
+
 
     fn element_type(&self) -> ElementType {
         ElementType::Header
@@ -185,6 +195,9 @@ impl Element for ParagraphElement {
     fn as_any(&self) -> &dyn Any {
         self
     }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any { self }
+
     fn element_type(&self) -> ElementType {
         ElementType::Paragraph
     }
@@ -217,6 +230,8 @@ impl Element for TableElement {
         self
     }
 
+    fn as_any_mut(&mut self) -> &mut dyn Any { self }
+
     fn element_type(&self) -> ElementType {
         ElementType::Table
     }
@@ -247,6 +262,8 @@ impl Element for TableHeaderElement {
         self
     }
 
+    fn as_any_mut(&mut self) -> &mut dyn Any { self }
+
     fn element_type(&self) -> ElementType {
         ElementType::TableHeader
     }
@@ -275,6 +292,8 @@ impl Element for TableRowElement {
         self
     }
 
+    fn as_any_mut(&mut self) -> &mut dyn Any { self }
+
     fn element_type(&self) -> ElementType {
         ElementType::TableRow
     }
@@ -302,6 +321,8 @@ impl Element for TableCellElement {
     fn as_any(&self) -> &dyn Any {
         self
     }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any { self }
 
     fn element_type(&self) -> ElementType {
         ElementType::TableCell
@@ -332,6 +353,8 @@ impl Element for ListElement {
         self
     }
 
+    fn as_any_mut(&mut self) -> &mut dyn Any { self }
+
     fn element_type(&self) -> ElementType {
         ElementType::List
     }
@@ -359,6 +382,8 @@ impl Element for ListItemElement {
     fn as_any(&self) -> &dyn Any {
         self
     }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any { self }
 
     fn element_type(&self) -> ElementType {
         ElementType::ListItem
@@ -399,6 +424,8 @@ impl Element for ImageElement {
         self
     }
 
+    fn as_any_mut(&mut self) -> &mut dyn Any { self }
+
     fn element_type(&self) -> ElementType {
         ElementType::Image
     }
@@ -429,6 +456,8 @@ impl Element for HyperlinkElement {
     fn as_any(&self) -> &dyn Any {
         self
     }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any { self }
 
     fn element_type(&self) -> ElementType {
         ElementType::Hyperlink
