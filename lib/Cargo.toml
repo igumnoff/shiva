@@ -7,9 +7,7 @@ authors = ["Evgeny Igumnov <igumnovnsk@gmail.com>"]
 repository = "https://github.com/igumnoff/shiva"
 documentation = "https://docs.rs/shiva"
 license-file = "../LICENSE"
-keywords = ["parser","document", "conversion", "markup", 
-"format", "transformer", "cli", "text-processing",
-"data-conversion", "markdown", "html", "pdf", "text"]
+keywords = ["parser", "conversion", "transformer", "text-processing", "data-conversion"]
 categories = [
 "parser-implementations",
 "command-line-utilities",

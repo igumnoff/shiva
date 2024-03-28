@@ -46,7 +46,7 @@
 Cargo.toml
 ```toml
 [dependencies]
-shiva = "0.1.1"
+shiva = "0.1.9"
 ```
 
 main.rs
