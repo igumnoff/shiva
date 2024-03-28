@@ -1,8 +1,11 @@
-use std::collections::{BTreeMap, HashMap};
+use crate::core::{
+    Document, Element, ElementType, ListElement, ListItemElement, ParagraphElement, ParserError,
+    TextElement, TransformerTrait,
+};
 use bytes::Bytes;
-use crate::core::{Document, Element, ElementType, ListElement, ListItemElement, ParagraphElement, ParserError, TextElement, TransformerTrait};
-use lopdf::{Document as PdfDocument, Object, ObjectId};
 use lopdf::content::Content;
+use lopdf::{Document as PdfDocument, Object, ObjectId};
+use std::collections::{BTreeMap, HashMap};
 
 pub struct Transformer;
 impl TransformerTrait for Transformer {
@@ -15,29 +18,29 @@ impl TransformerTrait for Transformer {
                 let object = pdf_document.get_object(object_id)?;
                 parse_object(page_id, &pdf_document, &object, &mut elements)?;
             }
-
         }
         Ok(Document::new(&elements)?)
     }
 
     fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)> {
-
         use printpdf::*;
 
         const PAGE_WIDTH: f32 = 210.0;
         const PAGE_HEIGHT: f32 = 297.0;
 
+        let (mut pdf, page1, layer1) =
+            PdfDocument::new("PDF Document", Mm(PAGE_WIDTH), Mm(PAGE_HEIGHT), "Layer 1");
 
-        let (mut pdf, page1, layer1) = PdfDocument::new("PDF Document", Mm(PAGE_WIDTH), Mm(PAGE_HEIGHT), "Layer 1");
-
-        fn generate_pdf(elements:&Vec<Box<dyn Element>>, pdf:&mut PdfDocumentReference, mut page: PdfPageIndex, mut layer: PdfLayerIndex, mut vertical_position: f32) -> anyhow::Result<()> {
-
-
+        fn generate_pdf(
+            elements: &Vec<Box<dyn Element>>,
+            pdf: &mut PdfDocumentReference,
+            mut page: PdfPageIndex,
+            mut layer: PdfLayerIndex,
+            mut vertical_position: f32,
+        ) -> anyhow::Result<()> {
             for element in elements {
                 match element.as_ref() {
-                    e if e.element_type() == ElementType::Header => {
-
-                    },
+                    e if e.element_type() == ElementType::Header => {}
                     e if e.element_type() == ElementType::Paragraph => {
                         let paragraph = element.paragraph_as_ref()?;
                         for paragraph_element in &paragraph.elements {
@@ -46,7 +49,11 @@ impl TransformerTrait for Transformer {
                                     let text_element = paragraph_element.text_as_ref()?;
                                     let step: f32 = 0.3528 * text_element.size as f32;
                                     if (vertical_position + step) > PAGE_HEIGHT {
-                                        let (new_page, new_layer) = pdf.add_page(Mm(PAGE_WIDTH), Mm(PAGE_HEIGHT), "Layer 1");
+                                        let (new_page, new_layer) = pdf.add_page(
+                                            Mm(PAGE_WIDTH),
+                                            Mm(PAGE_HEIGHT),
+                                            "Layer 1",
+                                        );
                                         vertical_position = 0.0;
                                         layer = new_layer;
                                         page = new_page;
@@ -54,13 +61,18 @@ impl TransformerTrait for Transformer {
                                     vertical_position = vertical_position + step;
                                     let font = pdf.add_builtin_font(BuiltinFont::Courier)?;
                                     let current_layer = pdf.get_page(page).get_layer(layer);
-                                    current_layer.use_text(&text_element.text, text_element.size as f32, Mm(0.0), Mm(PAGE_HEIGHT - vertical_position), &font);
-                                },
+                                    current_layer.use_text(
+                                        &text_element.text,
+                                        text_element.size as f32,
+                                        Mm(0.0),
+                                        Mm(PAGE_HEIGHT - vertical_position),
+                                        &font,
+                                    );
+                                }
                                 _ => {}
                             }
                         }
-
-                    },
+                    }
                     _ => {}
                 }
             }
@@ -70,16 +82,24 @@ impl TransformerTrait for Transformer {
 
         _ = generate_pdf(&document.elements, &mut pdf, page1, layer1, 0.0)?;
 
-
         let result = pdf.save_to_bytes()?;
         let bytes = Bytes::from(result);
         Ok((bytes, HashMap::new()))
     }
 }
 
-fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object, elements: &mut Vec<Box<dyn Element>>) -> anyhow::Result<()> {
-
-    fn collect_text(text: &mut String, encoding: Option<&str>, operands: &[Object], elements: &mut Vec<Box<dyn Element>>) -> anyhow::Result<()>{
+fn parse_object(
+    page_id: ObjectId,
+    pdf_document: &PdfDocument,
+    _object: &Object,
+    elements: &mut Vec<Box<dyn Element>>,
+) -> anyhow::Result<()> {
+    fn collect_text(
+        text: &mut String,
+        encoding: Option<&str>,
+        operands: &[Object],
+        elements: &mut Vec<Box<dyn Element>>,
+    ) -> anyhow::Result<()> {
         for operand in operands.iter() {
             // println!("2 {:?}", operand);
             match *operand {
@@ -89,7 +109,7 @@ fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object,
                     if bytes.len() == 1 && bytes[0] == 1 {
                         match elements.last() {
                             None => {
-                                let list_element = ListElement{
+                                let list_element = ListElement {
                                     elements: vec![],
                                     numbered: false,
                                 };
@@ -100,15 +120,15 @@ fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object,
                                     let old_list = elements.pop().unwrap();
                                     let list = old_list.list_as_ref()?;
                                     let mut list_item_elements = list.elements.clone();
-                                    let text_element = TextElement{
+                                    let text_element = TextElement {
                                         text: text.clone(),
                                         size: 8,
                                     };
-                                    let new_list_item_element = ListItemElement{
+                                    let new_list_item_element = ListItemElement {
                                         element: Box::new(text_element),
                                     };
                                     list_item_elements.push(new_list_item_element);
-                                    let new_list = ListElement{
+                                    let new_list = ListElement {
                                         elements: list_item_elements,
                                         numbered: list.numbered,
                                     };
@@ -119,18 +139,18 @@ fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object,
                                         let old_paragraph = elements.pop().unwrap();
                                         let paragraph = old_paragraph.paragraph_as_ref()?;
                                         let mut paragraph_elements = paragraph.elements.clone();
-                                        let text_element = TextElement{
+                                        let text_element = TextElement {
                                             text: text.clone(),
                                             size: 8,
                                         };
                                         paragraph_elements.push(Box::new(text_element));
-                                        let new_paragraph = ParagraphElement{
+                                        let new_paragraph = ParagraphElement {
                                             elements: paragraph_elements,
                                         };
                                         elements.push(Box::new(new_paragraph));
                                         text.clear();
                                     }
-                                    let list_element = ListElement{
+                                    let list_element = ListElement {
                                         elements: vec![],
                                         numbered: false,
                                     };
@@ -139,7 +159,6 @@ fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object,
                             }
                         }
                     }
-
                 }
                 Object::Array(ref arr) => {
                     let _ = collect_text(text, encoding, arr, elements);
@@ -176,7 +195,7 @@ fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object,
                 };
                 match elements.last() {
                     None => {
-                        let paragraph_element = ParagraphElement{
+                        let paragraph_element = ParagraphElement {
                             elements: vec![Box::new(text_element)],
                         };
                         elements.push(Box::new(paragraph_element));
@@ -187,18 +206,16 @@ fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object,
                             let paragraph = old_paragraph.paragraph_as_ref()?;
                             let mut paragraph_elements = paragraph.elements.clone();
                             paragraph_elements.push(Box::new(text_element));
-                            let new_paragraph = ParagraphElement{
+                            let new_paragraph = ParagraphElement {
                                 elements: paragraph_elements,
                             };
                             elements.push(Box::new(new_paragraph));
                         } else {
                             elements.push(Box::new(text_element));
                         }
-
                     }
                 }
                 text.clear();
-
             }
             "Tf" => {
                 let current_font = operation
@@ -246,46 +263,38 @@ fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object,
                     let old_list = elements.pop().unwrap();
                     let list = old_list.list_as_ref()?;
                     let mut list_item_elements = list.elements.clone();
-                    let new_list_item_element = ListItemElement{
+                    let new_list_item_element = ListItemElement {
                         element: Box::new(text_element),
                     };
                     list_item_elements.push(new_list_item_element);
-                    let new_list = ListElement{
+                    let new_list = ListElement {
                         elements: list_item_elements,
                         numbered: list.numbered,
                     };
                     elements.push(Box::new(new_list));
                 } else {
-
                 }
             }
         }
-
     }
 
     println!("{}", text);
 
-
-
-
     Ok(())
-
-
 }
-
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-    use bytes::Bytes;
     use crate::core::*;
     use crate::pdf::Transformer;
+    use bytes::Bytes;
+    use std::collections::HashMap;
 
     #[test]
     fn test() -> anyhow::Result<()> {
         let pdf = std::fs::read("test/data/document.pdf")?;
         let pdf_bytes = Bytes::from(pdf);
-        let parsed =  Transformer::parse(&pdf_bytes, &HashMap::new());
+        let parsed = Transformer::parse(&pdf_bytes, &HashMap::new());
         assert!(parsed.is_ok());
         let parsed_document = parsed.unwrap();
         println!("==========================");
@@ -297,6 +306,5 @@ mod tests {
         // let generated_text = std::str::from_utf8(&generated_bytes.0)?;
         // println!("{}", generated_text);
         Ok(())
-
     }
 }

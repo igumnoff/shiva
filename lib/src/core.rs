@@ -1,8 +1,8 @@
-use std::fmt::Debug;
 use bytes::Bytes;
-use thiserror::Error;
 use std::any::Any;
 use std::collections::HashMap;
+use std::fmt::Debug;
+use thiserror::Error;
 
 #[derive(Debug)]
 pub struct Document {
@@ -16,7 +16,6 @@ pub struct Document {
 }
 
 impl Document {
-
     pub fn new(elements: &Vec<Box<dyn Element>>) -> anyhow::Result<Document> {
         Ok(Document {
             elements: (&elements).to_vec(),
@@ -28,14 +27,12 @@ impl Document {
             bottom_page_indent: 10.0,
         })
     }
-
 }
 
 pub trait TransformerTrait {
     fn parse(document: &Bytes, images: &HashMap<String, Bytes>) -> anyhow::Result<Document>;
     fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)>;
 }
-
 
 #[derive(Error, Debug)]
 pub enum ParserError {
@@ -61,96 +58,159 @@ pub trait Element: CloneableElement + Debug {
 
     fn element_type(&self) -> ElementType;
 
-
-
     fn paragraph_as_ref(&self) -> anyhow::Result<&ParagraphElement> {
-        Ok(self.as_any().downcast_ref::<ParagraphElement>().ok_or(CastingError::Common)?)
+        Ok(self
+            .as_any()
+            .downcast_ref::<ParagraphElement>()
+            .ok_or(CastingError::Common)?)
     }
 
     fn paragraph_as_mut(&mut self) -> anyhow::Result<&mut ParagraphElement> {
-        Ok(self.as_any_mut().downcast_mut::<ParagraphElement>().ok_or(CastingError::Common)?)
+        Ok(self
+            .as_any_mut()
+            .downcast_mut::<ParagraphElement>()
+            .ok_or(CastingError::Common)?)
     }
 
     fn header_as_ref(&self) -> anyhow::Result<&HeaderElement> {
-        Ok(self.as_any().downcast_ref::<HeaderElement>().ok_or(CastingError::Common)?)
+        Ok(self
+            .as_any()
+            .downcast_ref::<HeaderElement>()
+            .ok_or(CastingError::Common)?)
     }
 
     fn header_as_mut(&mut self) -> anyhow::Result<&mut HeaderElement> {
-        Ok(self.as_any_mut().downcast_mut::<HeaderElement>().ok_or(CastingError::Common)?)
+        Ok(self
+            .as_any_mut()
+            .downcast_mut::<HeaderElement>()
+            .ok_or(CastingError::Common)?)
     }
 
     fn text_as_ref(&self) -> anyhow::Result<&TextElement> {
-        Ok(self.as_any().downcast_ref::<TextElement>().ok_or(CastingError::Common)?)
+        Ok(self
+            .as_any()
+            .downcast_ref::<TextElement>()
+            .ok_or(CastingError::Common)?)
     }
 
     fn text_as_mut(&mut self) -> anyhow::Result<&mut TextElement> {
-        Ok(self.as_any_mut().downcast_mut::<TextElement>().ok_or(CastingError::Common)?)
+        Ok(self
+            .as_any_mut()
+            .downcast_mut::<TextElement>()
+            .ok_or(CastingError::Common)?)
     }
 
     fn table_as_ref(&self) -> anyhow::Result<&TableElement> {
-        Ok(self.as_any().downcast_ref::<TableElement>().ok_or(CastingError::Common)?)
+        Ok(self
+            .as_any()
+            .downcast_ref::<TableElement>()
+            .ok_or(CastingError::Common)?)
     }
 
     fn table_as_mut(&mut self) -> anyhow::Result<&mut TableElement> {
-        Ok(self.as_any_mut().downcast_mut::<TableElement>().ok_or(CastingError::Common)?)
+        Ok(self
+            .as_any_mut()
+            .downcast_mut::<TableElement>()
+            .ok_or(CastingError::Common)?)
     }
 
     fn table_header_as_ref(&self) -> anyhow::Result<&TableHeaderElement> {
-        Ok(self.as_any().downcast_ref::<TableHeaderElement>().ok_or(CastingError::Common)?)
+        Ok(self
+            .as_any()
+            .downcast_ref::<TableHeaderElement>()
+            .ok_or(CastingError::Common)?)
     }
 
     fn table_header_as_mut(&mut self) -> anyhow::Result<&mut TableHeaderElement> {
-        Ok(self.as_any_mut().downcast_mut::<TableHeaderElement>().ok_or(CastingError::Common)?)
+        Ok(self
+            .as_any_mut()
+            .downcast_mut::<TableHeaderElement>()
+            .ok_or(CastingError::Common)?)
     }
 
     fn table_row_as_ref(&self) -> anyhow::Result<&TableRowElement> {
-        Ok(self.as_any().downcast_ref::<TableRowElement>().ok_or(CastingError::Common)?)
+        Ok(self
+            .as_any()
+            .downcast_ref::<TableRowElement>()
+            .ok_or(CastingError::Common)?)
     }
 
     fn table_row_as_mut(&mut self) -> anyhow::Result<&mut TableRowElement> {
-        Ok(self.as_any_mut().downcast_mut::<TableRowElement>().ok_or(CastingError::Common)?)
+        Ok(self
+            .as_any_mut()
+            .downcast_mut::<TableRowElement>()
+            .ok_or(CastingError::Common)?)
     }
 
     fn table_cell_as_ref(&self) -> anyhow::Result<&TableCellElement> {
-        Ok(self.as_any().downcast_ref::<TableCellElement>().ok_or(CastingError::Common)?)
+        Ok(self
+            .as_any()
+            .downcast_ref::<TableCellElement>()
+            .ok_or(CastingError::Common)?)
     }
 
     fn table_cell_as_mut(&mut self) -> anyhow::Result<&mut TableCellElement> {
-        Ok(self.as_any_mut().downcast_mut::<TableCellElement>().ok_or(CastingError::Common)?)
+        Ok(self
+            .as_any_mut()
+            .downcast_mut::<TableCellElement>()
+            .ok_or(CastingError::Common)?)
     }
 
     fn list_as_ref(&self) -> anyhow::Result<&ListElement> {
-        Ok(self.as_any().downcast_ref::<ListElement>().ok_or(CastingError::Common)?)
+        Ok(self
+            .as_any()
+            .downcast_ref::<ListElement>()
+            .ok_or(CastingError::Common)?)
     }
 
     fn list_as_mut(&mut self) -> anyhow::Result<&mut ListElement> {
-        Ok(self.as_any_mut().downcast_mut::<ListElement>().ok_or(CastingError::Common)?)
+        Ok(self
+            .as_any_mut()
+            .downcast_mut::<ListElement>()
+            .ok_or(CastingError::Common)?)
     }
 
     fn list_item_as_ref(&self) -> anyhow::Result<&ListItemElement> {
-        Ok(self.as_any().downcast_ref::<ListItemElement>().ok_or(CastingError::Common)?)
+        Ok(self
+            .as_any()
+            .downcast_ref::<ListItemElement>()
+            .ok_or(CastingError::Common)?)
     }
 
     fn list_item_as_mut(&mut self) -> anyhow::Result<&mut ListItemElement> {
-        Ok(self.as_any_mut().downcast_mut::<ListItemElement>().ok_or(CastingError::Common)?)
+        Ok(self
+            .as_any_mut()
+            .downcast_mut::<ListItemElement>()
+            .ok_or(CastingError::Common)?)
     }
 
     fn image_as_ref(&self) -> anyhow::Result<&ImageElement> {
-        Ok(self.as_any().downcast_ref::<ImageElement>().ok_or(CastingError::Common)?)
+        Ok(self
+            .as_any()
+            .downcast_ref::<ImageElement>()
+            .ok_or(CastingError::Common)?)
     }
 
     fn image_as_mut(&mut self) -> anyhow::Result<&mut ImageElement> {
-        Ok(self.as_any_mut().downcast_mut::<ImageElement>().ok_or(CastingError::Common)?)
+        Ok(self
+            .as_any_mut()
+            .downcast_mut::<ImageElement>()
+            .ok_or(CastingError::Common)?)
     }
 
     fn hyperlink_as_ref(&self) -> anyhow::Result<&HyperlinkElement> {
-        Ok(self.as_any().downcast_ref::<HyperlinkElement>().ok_or(CastingError::Common)?)
+        Ok(self
+            .as_any()
+            .downcast_ref::<HyperlinkElement>()
+            .ok_or(CastingError::Common)?)
     }
 
     fn hyperlink_as_mut(&mut self) -> anyhow::Result<&mut HyperlinkElement> {
-        Ok(self.as_any_mut().downcast_mut::<HyperlinkElement>().ok_or(CastingError::Common)?)
+        Ok(self
+            .as_any_mut()
+            .downcast_mut::<HyperlinkElement>()
+            .ok_or(CastingError::Common)?)
     }
-
 }
 
 pub trait CloneableElement {
@@ -158,8 +218,8 @@ pub trait CloneableElement {
 }
 
 impl<T> CloneableElement for T
-    where
-        T: 'static + Element + Clone,
+where
+    T: 'static + Element + Clone,
 {
     fn clone_box(&self) -> Box<dyn Element> {
         Box::new(self.clone())
@@ -189,7 +249,6 @@ pub enum ElementType {
     TableOfContents,
 }
 
-
 #[derive(Clone, Debug)]
 pub struct TextElement {
     pub text: String,
@@ -197,7 +256,6 @@ pub struct TextElement {
 }
 
 impl TextElement {
-
     pub fn new(text: &str, size: u8) -> anyhow::Result<Box<dyn Element>> {
         Ok(Box::new(TextElement {
             text: text.to_string(),
@@ -211,15 +269,14 @@ impl Element for TextElement {
         self
     }
 
-    fn as_any_mut(&mut self) -> &mut dyn Any { self }
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
 
     fn element_type(&self) -> ElementType {
         ElementType::Text
     }
-
-
 }
-
 
 #[derive(Clone, Debug)]
 pub struct HeaderElement {
@@ -229,7 +286,6 @@ pub struct HeaderElement {
 }
 
 impl HeaderElement {
-
     pub fn new(text: &str, level: u8) -> anyhow::Result<Box<dyn Element>> {
         Ok(Box::new(HeaderElement {
             level,
@@ -244,16 +300,14 @@ impl Element for HeaderElement {
         self
     }
 
-    fn as_any_mut(&mut self) -> &mut dyn Any { self }
-
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
 
     fn element_type(&self) -> ElementType {
         ElementType::Header
     }
-
-
 }
-
 
 #[derive(Clone, Debug)]
 pub struct ParagraphElement {
@@ -261,13 +315,11 @@ pub struct ParagraphElement {
 }
 
 impl ParagraphElement {
-
     pub fn new(elements: &Vec<Box<dyn Element>>) -> anyhow::Result<Box<dyn Element>> {
         Ok(Box::new(ParagraphElement {
             elements: (&elements).to_vec(),
         }))
     }
-
 }
 
 impl Element for ParagraphElement {
@@ -275,14 +327,14 @@ impl Element for ParagraphElement {
         self
     }
 
-    fn as_any_mut(&mut self) -> &mut dyn Any { self }
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
 
     fn element_type(&self) -> ElementType {
         ElementType::Paragraph
     }
-
 }
-
 
 #[derive(Clone, Debug)]
 pub struct TableElement {
@@ -291,13 +343,15 @@ pub struct TableElement {
 }
 
 impl TableElement {
-    pub fn new(headers: &Vec<TableHeaderElement>, rows: &Vec<TableRowElement>) -> anyhow::Result<Box<dyn Element>> {
+    pub fn new(
+        headers: &Vec<TableHeaderElement>,
+        rows: &Vec<TableRowElement>,
+    ) -> anyhow::Result<Box<dyn Element>> {
         Ok(Box::new(TableElement {
             rows: rows.to_vec(),
             headers: headers.to_vec(),
         }))
     }
-
 }
 
 impl Element for TableElement {
@@ -305,7 +359,9 @@ impl Element for TableElement {
         self
     }
 
-    fn as_any_mut(&mut self) -> &mut dyn Any { self }
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
 
     fn element_type(&self) -> ElementType {
         ElementType::Table
@@ -323,17 +379,16 @@ impl TableHeaderElement {
             element: element.clone(),
         })
     }
-
-
 }
-
 
 impl Element for TableHeaderElement {
     fn as_any(&self) -> &dyn Any {
         self
     }
 
-    fn as_any_mut(&mut self) -> &mut dyn Any { self }
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
 
     fn element_type(&self) -> ElementType {
         ElementType::TableHeader
@@ -351,7 +406,6 @@ impl TableRowElement {
             cells: cells.to_vec(),
         })
     }
-
 }
 
 impl Element for TableRowElement {
@@ -359,7 +413,9 @@ impl Element for TableRowElement {
         self
     }
 
-    fn as_any_mut(&mut self) -> &mut dyn Any { self }
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
 
     fn element_type(&self) -> ElementType {
         ElementType::TableRow
@@ -372,13 +428,11 @@ pub struct TableCellElement {
 }
 
 impl TableCellElement {
-
     pub fn new(element: &Box<dyn Element>) -> anyhow::Result<TableCellElement> {
         Ok(TableCellElement {
             element: element.clone(),
         })
     }
-
 }
 
 impl Element for TableCellElement {
@@ -386,7 +440,9 @@ impl Element for TableCellElement {
         self
     }
 
-    fn as_any_mut(&mut self) -> &mut dyn Any { self }
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
 
     fn element_type(&self) -> ElementType {
         ElementType::TableCell
@@ -400,8 +456,10 @@ pub struct ListElement {
 }
 
 impl ListElement {
-
-    pub fn new(elements: &Vec<ListItemElement>, numbered: bool) -> anyhow::Result<Box<dyn Element>> {
+    pub fn new(
+        elements: &Vec<ListItemElement>,
+        numbered: bool,
+    ) -> anyhow::Result<Box<dyn Element>> {
         Ok(Box::new(ListElement {
             elements: elements.to_vec(),
             numbered,
@@ -414,7 +472,9 @@ impl Element for ListElement {
         self
     }
 
-    fn as_any_mut(&mut self) -> &mut dyn Any { self }
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
 
     fn element_type(&self) -> ElementType {
         ElementType::List
@@ -432,7 +492,6 @@ impl ListItemElement {
             element: element.clone(),
         })
     }
-
 }
 
 impl Element for ListItemElement {
@@ -440,7 +499,9 @@ impl Element for ListItemElement {
         self
     }
 
-    fn as_any_mut(&mut self) -> &mut dyn Any { self }
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
 
     fn element_type(&self) -> ElementType {
         ElementType::ListItem
@@ -462,7 +523,12 @@ pub struct ImageElement {
 }
 
 impl ImageElement {
-    pub fn new(bytes: &Bytes, title: &str, alt: &str, image_type: ImageType) -> anyhow::Result<Box<dyn Element>> {
+    pub fn new(
+        bytes: &Bytes,
+        title: &str,
+        alt: &str,
+        image_type: ImageType,
+    ) -> anyhow::Result<Box<dyn Element>> {
         Ok(Box::new(ImageElement {
             bytes: bytes.clone(),
             title: title.to_string(),
@@ -477,7 +543,9 @@ impl Element for ImageElement {
         self
     }
 
-    fn as_any_mut(&mut self) -> &mut dyn Any { self }
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
 
     fn element_type(&self) -> ElementType {
         ElementType::Image
@@ -492,7 +560,6 @@ pub struct HyperlinkElement {
 }
 
 impl HyperlinkElement {
-
     pub fn new(title: &str, url: &str, alt: &str) -> anyhow::Result<Box<dyn Element>> {
         Ok(Box::new(HyperlinkElement {
             title: title.to_string(),
@@ -507,7 +574,9 @@ impl Element for HyperlinkElement {
         self
     }
 
-    fn as_any_mut(&mut self) -> &mut dyn Any { self }
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
 
     fn element_type(&self) -> ElementType {
         ElementType::Hyperlink

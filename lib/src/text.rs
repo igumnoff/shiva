@@ -1,11 +1,13 @@
-use std::collections::HashMap;
-use bytes::Bytes;
 use crate::core::*;
+use bytes::Bytes;
+use std::collections::HashMap;
 
 pub struct Transformer;
 impl TransformerTrait for Transformer {
-    fn parse(document: &Bytes, _images: &HashMap<String, Bytes>) -> anyhow::Result<Document> where Self: Sized {
-
+    fn parse(document: &Bytes, _images: &HashMap<String, Bytes>) -> anyhow::Result<Document>
+    where
+        Self: Sized,
+    {
         let mut elements: Vec<Box<dyn Element>> = vec![];
         let document: &str = std::str::from_utf8(document.as_ref())?;
         let lines = document.lines();
@@ -13,23 +15,40 @@ impl TransformerTrait for Transformer {
         let mut i = 0;
         while i < lines_vec.len() {
             let line = lines_vec[i];
-            elements.push(TextElement::new(line,8)?);
-            elements.push(TextElement::new("\n",8)?);
+            elements.push(TextElement::new(line, 8)?);
+            elements.push(TextElement::new("\n", 8)?);
             i += 1;
         }
         let new_paragraph = ParagraphElement::new(&elements)?;
         Ok(Document::new(&vec![new_paragraph])?)
     }
 
-
-    fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)> where Self: Sized {
-
-        let mut images:HashMap<String, Bytes> = HashMap::new();
-        let mut image_num:i32 = 0;
+    fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)>
+    where
+        Self: Sized,
+    {
+        let mut images: HashMap<String, Bytes> = HashMap::new();
+        let mut image_num: i32 = 0;
 
         let mut markdown = String::new();
-        fn generate_element(element: &Box<dyn Element>, markdown: &mut String, list_depth: usize, list_counters: &mut Vec<usize>, list_types: &mut Vec<bool>, images: &mut HashMap<String, Bytes>, image_num: &mut i32) -> anyhow::Result<()> {
-            fn generate_list_item(element:&ListItemElement, markdown: &mut String, list_depth: usize, list_counters: &mut Vec<usize>, list_types: &mut Vec<bool>,  images: &mut HashMap<String, Bytes>, image_num: &mut i32) -> anyhow::Result<()> {
+        fn generate_element(
+            element: &Box<dyn Element>,
+            markdown: &mut String,
+            list_depth: usize,
+            list_counters: &mut Vec<usize>,
+            list_types: &mut Vec<bool>,
+            images: &mut HashMap<String, Bytes>,
+            image_num: &mut i32,
+        ) -> anyhow::Result<()> {
+            fn generate_list_item(
+                element: &ListItemElement,
+                markdown: &mut String,
+                list_depth: usize,
+                list_counters: &mut Vec<usize>,
+                list_types: &mut Vec<bool>,
+                images: &mut HashMap<String, Bytes>,
+                image_num: &mut i32,
+            ) -> anyhow::Result<()> {
                 let prefix = if *list_types.last().unwrap() {
                     let counter = list_counters.last_mut().unwrap();
                     if &element.element.element_type() == &ElementType::Text {
@@ -40,12 +59,20 @@ impl TransformerTrait for Transformer {
                     "- ".to_string()
                 };
                 // println!("list depth: {}", list_depth);
-                markdown.push_str(&"  ".repeat(list_depth-1));
+                markdown.push_str(&"  ".repeat(list_depth - 1));
                 if &element.element.element_type() == &ElementType::Text {
                     markdown.push_str(&prefix);
                 }
-                generate_element(&element.element, markdown, list_depth, list_counters, list_types, images, image_num)?;
-                if &element.element.element_type() == &ElementType::Text{
+                generate_element(
+                    &element.element,
+                    markdown,
+                    list_depth,
+                    list_counters,
+                    list_types,
+                    images,
+                    image_num,
+                )?;
+                if &element.element.element_type() == &ElementType::Text {
                     markdown.push('\n');
                 }
                 Ok(())
@@ -57,15 +84,23 @@ impl TransformerTrait for Transformer {
                     markdown.push_str(&header.text);
                     markdown.push('\n');
                     markdown.push('\n');
-                },
+                }
                 ElementType::Paragraph => {
                     let paragraph = element.paragraph_as_ref()?;
                     for child in &paragraph.elements {
-                        generate_element(child, markdown, list_depth, list_counters, list_types, images, image_num)?;
+                        generate_element(
+                            child,
+                            markdown,
+                            list_depth,
+                            list_counters,
+                            list_types,
+                            images,
+                            image_num,
+                        )?;
                     }
                     markdown.push('\n');
                     markdown.push('\n');
-                },
+                }
                 ElementType::List => {
                     let list = element.list_as_ref()?;
                     // println!("{:?}", list);
@@ -73,7 +108,15 @@ impl TransformerTrait for Transformer {
                     list_counters.push(0);
                     list_types.push(list.numbered);
                     for item in &list.elements {
-                        generate_list_item(&item, markdown, list_depth + 1, list_counters, list_types, images, image_num)?;
+                        generate_list_item(
+                            &item,
+                            markdown,
+                            list_depth + 1,
+                            list_counters,
+                            list_types,
+                            images,
+                            image_num,
+                        )?;
                     }
                     list_counters.pop();
                     list_types.pop();
@@ -81,24 +124,25 @@ impl TransformerTrait for Transformer {
                     if list_counters.len() == 0 {
                         markdown.push('\n');
                     }
-
-                },
+                }
                 ElementType::Text => {
                     let text = element.text_as_ref()?;
                     markdown.push_str(&text.text);
                     if !text.text.ends_with(" ") {
                         markdown.push_str(" ");
                     }
-                },
+                }
                 ElementType::Hyperlink => {
                     let hyperlink = element.hyperlink_as_ref()?;
-                    if hyperlink.url ==hyperlink.alt && hyperlink.alt == hyperlink.url {
+                    if hyperlink.url == hyperlink.alt && hyperlink.alt == hyperlink.url {
                         markdown.push_str(&format!("{}", hyperlink.url));
                     } else {
-                        markdown.push_str(&format!("[{}]({} \"{}\")", hyperlink.title, hyperlink.url, hyperlink.alt));
+                        markdown.push_str(&format!(
+                            "[{}]({} \"{}\")",
+                            hyperlink.title, hyperlink.url, hyperlink.alt
+                        ));
                     }
-
-                },
+                }
                 ElementType::Image => {
                     let image = element.image_as_ref()?;
                     let image_path = format!("image{}.png", image_num);
@@ -122,7 +166,8 @@ impl TransformerTrait for Transformer {
                         for (cell_index, cell) in row.cells.iter().enumerate() {
                             let cell_text = cell.element.text_as_ref()?;
                             if cell_index < max_lengths.len() {
-                                max_lengths[cell_index] = max_lengths[cell_index].max(cell_text.text.len());
+                                max_lengths[cell_index] =
+                                    max_lengths[cell_index].max(cell_text.text.len());
                             }
                         }
                     }
@@ -155,10 +200,8 @@ impl TransformerTrait for Transformer {
                         markdown.push_str("|\n");
                     }
                     markdown.push('\n');
-                },
-                _ =>  {
-
-                },
+                }
+                _ => {}
             }
             Ok(())
         }
@@ -166,20 +209,20 @@ impl TransformerTrait for Transformer {
         let mut list_counters: Vec<usize> = Vec::new();
         let mut list_types: Vec<bool> = Vec::new();
         for element in &document.elements {
-            generate_element(element, &mut markdown, 0, &mut list_counters,&mut list_types, &mut images, &mut image_num)?;
+            generate_element(
+                element,
+                &mut markdown,
+                0,
+                &mut list_counters,
+                &mut list_types,
+                &mut images,
+                &mut image_num,
+            )?;
         }
-
 
         Ok((Bytes::from(markdown), HashMap::new()))
     }
-
-
-
 }
-
-
-
-
 
 #[cfg(test)]
 mod tests {
@@ -206,7 +249,7 @@ Second header
 | Row 2, Column 1 | Row 2, Column 2 |
 +-----------------+-----------------+"#;
         // println!("{:?}", document);
-        let parsed =  Transformer::parse(&document.as_bytes().into(), &HashMap::new());
+        let parsed = Transformer::parse(&document.as_bytes().into(), &HashMap::new());
         let document_string = std::str::from_utf8(document.as_bytes())?;
         println!("{}", document_string);
         assert!(parsed.is_ok());
@@ -221,6 +264,5 @@ Second header
         let generated_text = std::str::from_utf8(&generated_bytes.0)?;
         println!("{}", generated_text);
         Ok(())
-
     }
 }
