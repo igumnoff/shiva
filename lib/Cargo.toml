@@ -10,13 +10,10 @@ license-file = "../LICENSE"
 keywords = ["parser", "conversion", "transformer", "text-processing", "data-conversion"]
 categories = [
 "parser-implementations",
-"command-line-utilities",
-"encoding",
 "text-processing",
-"parser-implementations",
+"command-line-utilities",
 "data-structures",
-"file-systems",
-"web-programming"]
+"data-structures"]
 readme = "../README.md"
 description = "Shiva library: Implementation in Rust of a parser and generator for documents of any type"
 
