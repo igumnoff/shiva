@@ -257,7 +257,7 @@ impl TransformerTrait for Transformer {
 
             match element.element_type() {
                 ElementType::Header => {
-                    let header = HeaderElement::from(element)?;
+                    let header = HeaderElement::as_ref(element)?;
                     markdown.push_str(&"#".repeat(header.level as usize));
                     markdown.push(' ');
                     markdown.push_str(&header.text);
@@ -265,7 +265,7 @@ impl TransformerTrait for Transformer {
                     markdown.push('\n');
                 },
                 ElementType::Paragraph => {
-                    let paragraph = ParagraphElement::from(element)?;
+                    let paragraph = ParagraphElement::as_ref(element)?;
                     for child in &paragraph.elements {
                         generate_element(child, markdown, list_depth, list_counters, list_types, images, image_num)?;
                     }

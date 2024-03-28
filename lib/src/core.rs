@@ -64,6 +64,16 @@ pub trait Element: CloneableElement + Debug {
 
     fn element_type(&self) -> ElementType;
 
+
+
+    fn paragraph_as_ref(&self) -> anyhow::Result<&ParagraphElement> {
+        Ok(self.as_any().downcast_ref::<ParagraphElement>().ok_or(CastingError::Common)?)
+    }
+
+    fn paragraph_as_mut1(&mut self) -> anyhow::Result<&mut ParagraphElement> {
+        Ok(self.as_any_mut().downcast_mut::<ParagraphElement>().ok_or(CastingError::Common)?)
+    }
+
 }
 
 pub trait CloneableElement {
@@ -145,9 +155,13 @@ pub struct HeaderElement {
 }
 
 impl HeaderElement {
-    pub fn from(element: &Box<dyn Element>) -> anyhow::Result<&HeaderElement> {
+    pub fn as_ref(element: &Box<dyn Element>) -> anyhow::Result<&HeaderElement> {
         Ok(element.as_any().downcast_ref::<HeaderElement>().ok_or(CastingError::Common)?)
     }
+    pub fn as_mut(element: &mut Box<dyn Element>) -> anyhow::Result<&mut HeaderElement> {
+        Ok(element.as_any_mut().downcast_mut::<HeaderElement>().ok_or(CastingError::Common)?)
+    }
+
     pub fn new(text: &str, level: u8) -> anyhow::Result<Box<dyn Element>> where Self: Sized {
         Ok(Box::new(HeaderElement {
             level,
@@ -179,8 +193,12 @@ pub struct ParagraphElement {
 }
 
 impl ParagraphElement {
-    pub fn from(element: &Box<dyn Element>) -> anyhow::Result<&ParagraphElement> {
+    pub fn as_ref(element: &Box<dyn Element>) -> anyhow::Result<&ParagraphElement> {
         Ok(element.as_any().downcast_ref::<ParagraphElement>().ok_or(CastingError::Common)?)
+    }
+
+    pub fn as_mut(element: &mut Box<dyn Element>) -> anyhow::Result<&mut ParagraphElement> {
+        Ok(element.as_any_mut().downcast_mut::<ParagraphElement>().ok_or(CastingError::Common)?)
     }
 
     pub fn new(elements: &Vec<Box<dyn Element>>) -> anyhow::Result<Box<dyn Element>> where Self: Sized {

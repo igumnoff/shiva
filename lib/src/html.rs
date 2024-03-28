@@ -25,11 +25,11 @@ impl TransformerTrait for Transformer {
         for element in &document.elements {
             match element.as_ref() {
                 el if el.element_type() == ElementType::Header => {
-                    let header = HeaderElement::from(element)?;
+                    let header = HeaderElement::as_ref(element)?;
                     html.push_str(&format!("<h{}>{}</h{}>\n", header.level, header.text, header.level));
                 },
                 el if el.element_type() == ElementType::Paragraph => {
-                    let paragraph = ParagraphElement::from(element)?;
+                    let paragraph = ParagraphElement::as_ref(element)?;
                     html.push_str("<p>");
                     for child in &paragraph.elements {
                         html.push_str(&generate_html_for_element(child, &mut images, &mut image_num)?);
@@ -241,7 +241,7 @@ fn generate_html_for_element(element: &Box<dyn Element>, images: &mut HashMap<St
             Ok(format!("{}", text_element.text))
         },
         ElementType::Paragraph => {
-            let paragraph = ParagraphElement::from(element)?;
+            let paragraph = ParagraphElement::as_ref(element)?;
             let mut paragraph_html = String::from("<p>");
             for child in &paragraph.elements {
                 paragraph_html.push_str(&generate_html_for_element(child, images, image_num)?.as_str());
@@ -250,7 +250,7 @@ fn generate_html_for_element(element: &Box<dyn Element>, images: &mut HashMap<St
             Ok(paragraph_html)
         },
         ElementType::Header => {
-            let header = HeaderElement::from(element)?;
+            let header = HeaderElement::as_ref(element)?;
             Ok(format!("<h{level}>{text}</h{level}>", level = header.level, text = header.text))
         },
         ElementType::List => {
