@@ -44,14 +44,11 @@ impl TransformerTrait for Transformer {
                         for paragraph_element in &paragraph.elements {
                             match paragraph_element.as_ref() {
                                 e if e.element_type() == ElementType::Text => {
-                                    let text = if let Ok(text_element) = TextElement::from(paragraph_element) {
-                                        &text_element.text
-                                    } else {
-                                        continue;
-                                    };
-                                    vertical_position = vertical_position + 12.0;
+                                    let text_element = TextElement::from(paragraph_element)?;
+                                    let step: f32 = 0.3528 * text_element.size as f32;
+                                    vertical_position = vertical_position + step;
                                     let font = pdf.add_builtin_font(BuiltinFont::Courier)?;
-                                    current_layer.use_text(text, 12.0, Mm(10.0), Mm(PAGE_HEIGHT - vertical_position), &font);
+                                    current_layer.use_text(&text_element.text, text_element.size as f32, Mm(10.0), Mm(PAGE_HEIGHT - vertical_position), &font);
                                 },
                                 _ => {}
                             }
