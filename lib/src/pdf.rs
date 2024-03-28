@@ -30,9 +30,8 @@ impl TransformerTrait for Transformer {
 
         let (mut pdf, page1, layer1) = PdfDocument::new("PDF Document", Mm(PAGE_WIDTH), Mm(PAGE_HEIGHT), "Layer 1");
 
-        fn generate_pdf(elements:&Vec<Box<dyn Element>>, pdf:&mut PdfDocumentReference, page: PdfPageIndex, layer: PdfLayerIndex, mut vertical_position: f32) -> anyhow::Result<()> {
+        fn generate_pdf(elements:&Vec<Box<dyn Element>>, pdf:&mut PdfDocumentReference, mut page: PdfPageIndex, mut layer: PdfLayerIndex, mut vertical_position: f32) -> anyhow::Result<()> {
 
-            let current_layer = pdf.get_page(page).get_layer(layer);
 
             for element in elements {
                 match element.as_ref() {
@@ -46,9 +45,16 @@ impl TransformerTrait for Transformer {
                                 e if e.element_type() == ElementType::Text => {
                                     let text_element = TextElement::from(paragraph_element)?;
                                     let step: f32 = 0.3528 * text_element.size as f32;
+                                    if (vertical_position + step) > PAGE_HEIGHT {
+                                        let (new_page, new_layer) = pdf.add_page(Mm(PAGE_WIDTH), Mm(PAGE_HEIGHT), "Layer 1");
+                                        vertical_position = 0.0;
+                                        layer = new_layer;
+                                        page = new_page;
+                                    }
                                     vertical_position = vertical_position + step;
                                     let font = pdf.add_builtin_font(BuiltinFont::Courier)?;
-                                    current_layer.use_text(&text_element.text, text_element.size as f32, Mm(10.0), Mm(PAGE_HEIGHT - vertical_position), &font);
+                                    let current_layer = pdf.get_page(page).get_layer(layer);
+                                    current_layer.use_text(&text_element.text, text_element.size as f32, Mm(0.0), Mm(PAGE_HEIGHT - vertical_position), &font);
                                 },
                                 _ => {}
                             }
