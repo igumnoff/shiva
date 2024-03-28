@@ -1,14 +1,24 @@
 [package]
 name = "shiva"
-version = "0.1.1"
+version = "0.1.9"
 edition = "2021"
 
 authors = ["Evgeny Igumnov <igumnovnsk@gmail.com>"]
 repository = "https://github.com/igumnoff/shiva"
 documentation = "https://docs.rs/shiva"
 license-file = "../LICENSE"
-keywords = ["parser"]
-categories = ["parser-implementations"]
+keywords = ["parser","document", "conversion", "markup", 
+"format", "transformer", "cli", "text-processing",
+"data-conversion", "markdown", "html", "pdf", "text"]
+categories = [
+"parser-implementations",
+"command-line-utilities",
+"encoding",
+"text-processing",
+"parser-implementations",
+"data-structures",
+"file-systems",
+"web-programming"]
 readme = "../README.md"
 description = "Shiva library: Implementation in Rust of a parser and generator for documents of any type"
 
