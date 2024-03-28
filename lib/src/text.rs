@@ -59,7 +59,7 @@ impl TransformerTrait for Transformer {
                     markdown.push('\n');
                 },
                 ElementType::Paragraph => {
-                    let paragraph = ParagraphElement::as_ref(element)?;
+                    let paragraph = element.paragraph_as_ref()?;
                     for child in &paragraph.elements {
                         generate_element(child, markdown, list_depth, list_counters, list_types, images, image_num)?;
                     }

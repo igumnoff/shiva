@@ -39,7 +39,7 @@ impl TransformerTrait for Transformer {
 
                     },
                     e if e.element_type() == ElementType::Paragraph => {
-                        let paragraph = ParagraphElement::as_ref(element)?;
+                        let paragraph = element.paragraph_as_ref()?;
                         for paragraph_element in &paragraph.elements {
                             match paragraph_element.as_ref() {
                                 e if e.element_type() == ElementType::Text => {
@@ -117,7 +117,7 @@ fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object,
                                 } else {
                                     if el.element_type() == ElementType::Paragraph {
                                         let old_paragraph = elements.pop().unwrap();
-                                        let paragraph = ParagraphElement::as_ref(&old_paragraph)?;
+                                        let paragraph = old_paragraph.paragraph_as_ref()?;
                                         let mut paragraph_elements = paragraph.elements.clone();
                                         let text_element = TextElement{
                                             text: text.clone(),
@@ -184,7 +184,7 @@ fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object,
                     Some(el) => {
                         if el.element_type() == ElementType::Paragraph {
                             let old_paragraph = elements.pop().unwrap();
-                            let paragraph = ParagraphElement::as_ref(&old_paragraph)?;
+                            let paragraph = old_paragraph.paragraph_as_ref()?;
                             let mut paragraph_elements = paragraph.elements.clone();
                             paragraph_elements.push(Box::new(text_element));
                             let new_paragraph = ParagraphElement{
@@ -235,7 +235,7 @@ fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object,
             Some(el) => {
                 if el.element_type() == ElementType::Paragraph {
                     let old_paragraph = elements.pop().unwrap();
-                    let paragraph = ParagraphElement::as_ref(&old_paragraph)?;
+                    let paragraph = old_paragraph.paragraph_as_ref()?;
                     let mut paragraph_elements = paragraph.elements.clone();
                     paragraph_elements.push(Box::new(text_element));
                     let new_paragraph = ParagraphElement {
