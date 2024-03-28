@@ -257,7 +257,7 @@ impl TransformerTrait for Transformer {
 
             match element.element_type() {
                 ElementType::Header => {
-                    let header = HeaderElement::as_ref(element)?;
+                    let header = element.header_as_ref()?;
                     markdown.push_str(&"#".repeat(header.level as usize));
                     markdown.push(' ');
                     markdown.push_str(&header.text);
@@ -273,7 +273,7 @@ impl TransformerTrait for Transformer {
                     markdown.push('\n');
                 },
                 ElementType::List => {
-                    let list = ListElement::from(element)?;
+                    let list = element.list_as_ref()?;
                     // println!("{:?}", list);
 
                     list_counters.push(0);
@@ -290,14 +290,14 @@ impl TransformerTrait for Transformer {
 
                 },
                 ElementType::Text => {
-                    let text = TextElement::from(element)?;
+                    let text = element.text_as_ref()?;
                     markdown.push_str(&text.text);
                     if !text.text.ends_with(" ") {
                         markdown.push_str(" ");
                     }
                 },
                 ElementType::Hyperlink => {
-                    let hyperlink = HyperlinkElement::from(element)?;
+                    let hyperlink = element.hyperlink_as_ref()?;
                     if hyperlink.url ==hyperlink.alt && hyperlink.alt == hyperlink.url {
                         markdown.push_str(&format!("{}", hyperlink.url));
                     } else {
@@ -306,7 +306,7 @@ impl TransformerTrait for Transformer {
 
                 },
                 ElementType::Image => {
-                    let image = ImageElement::from(element)?;
+                    let image = element.image_as_ref()?;
                     let image_path = format!("image{}.png", image_num);
                     markdown.push_str(&format!(
                         "![{}]({} \"{}\")",
@@ -316,17 +316,17 @@ impl TransformerTrait for Transformer {
                     *image_num += 1;
                 }
                 ElementType::Table => {
-                    let table = TableElement::from(element)?;
+                    let table = element.table_as_ref()?;
 
                     let mut max_lengths: Vec<usize> = Vec::new();
 
                     for header in &table.headers {
-                        let header_text = TextElement::from(&header.element)?;
+                        let header_text = header.element.text_as_ref()?;
                         max_lengths.push(header_text.text.len());
                     }
                     for row in &table.rows {
                         for (cell_index, cell) in row.cells.iter().enumerate() {
-                            let cell_text = TextElement::from(&cell.element)?;
+                            let cell_text = cell.element.text_as_ref()?;
                             if cell_index < max_lengths.len() {
                                 max_lengths[cell_index] = max_lengths[cell_index].max(cell_text.text.len());
                             }
@@ -334,7 +334,7 @@ impl TransformerTrait for Transformer {
                     }
 
                     for (index, header) in table.headers.iter().enumerate() {
-                        let header_text = TextElement::from(&header.element)?;
+                        let header_text = header.element.text_as_ref()?;
                         let padding = max_lengths[index] - header_text.text.len();
                         markdown.push_str("| ");
                         markdown.push_str(&header_text.text);
@@ -351,7 +351,7 @@ impl TransformerTrait for Transformer {
 
                     for row in &table.rows {
                         for (cell_index, cell) in row.cells.iter().enumerate() {
-                            let cell_text = TextElement::from(&cell.element)?;
+                            let cell_text = cell.element.text_as_ref()?;
                             let padding = max_lengths[cell_index] - cell_text.text.len();
                             markdown.push_str("| ");
                             markdown.push_str(&cell_text.text);

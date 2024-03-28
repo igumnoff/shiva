@@ -25,7 +25,7 @@ impl TransformerTrait for Transformer {
         for element in &document.elements {
             match element.as_ref() {
                 el if el.element_type() == ElementType::Header => {
-                    let header = HeaderElement::as_ref(element)?;
+                    let header = element.header_as_ref()?;
                     html.push_str(&format!("<h{}>{}</h{}>\n", header.level, header.text, header.level));
                 },
                 el if el.element_type() == ElementType::Paragraph => {
@@ -41,7 +41,7 @@ impl TransformerTrait for Transformer {
                     html.push_str(&list);
                 },
                 el if el.element_type() == ElementType::Table => {
-                    let table = TableElement::from(element)?;
+                    let table = element.table_as_ref()?;
                     let mut table_html = String::from("<table  border=\"1\">");
                     table_html.push_str("\n");
                     if !table.headers.is_empty() {
@@ -222,10 +222,9 @@ fn parse_html(children: Children<Node>, elements: &mut Vec<Box<dyn Element>>) ->
                 }
             },
             Node::Text(ref text) => {
-                if let Ok(text_element) = TextElement::new(text, 8) {
-                    if TextElement::from(&text_element).unwrap().text != "\n"{
-                        elements.push(text_element);
-                    }
+                let text_element = TextElement::new(text, 8)?;
+                if text_element.text_as_ref()?.text != "\n"{
+                    elements.push(text_element);
                 }
             },
             _ => {} // Ignore other node types
@@ -237,7 +236,7 @@ fn parse_html(children: Children<Node>, elements: &mut Vec<Box<dyn Element>>) ->
 fn generate_html_for_element(element: &Box<dyn Element>, images: &mut HashMap<String, Bytes>, image_num: &mut i32) -> anyhow::Result<String> {
     match element.element_type() {
         ElementType::Text => {
-            let text_element = TextElement::from(element)?;
+            let text_element = element.text_as_ref()?;
             Ok(format!("{}", text_element.text))
         },
         ElementType::Paragraph => {
@@ -250,11 +249,11 @@ fn generate_html_for_element(element: &Box<dyn Element>, images: &mut HashMap<St
             Ok(paragraph_html)
         },
         ElementType::Header => {
-            let header = HeaderElement::as_ref(element)?;
+            let header = element.header_as_ref()?;
             Ok(format!("<h{level}>{text}</h{level}>", level = header.level, text = header.text))
         },
         ElementType::List => {
-            let list = ListElement::from(element)?;
+            let list = element.list_as_ref()?;
             let tag = if list.numbered { "ol" } else { "ul" };
             let mut list_html = format!("<{}>", tag);
             list_html.push_str("\n");
@@ -273,7 +272,7 @@ fn generate_html_for_element(element: &Box<dyn Element>, images: &mut HashMap<St
         },
         ElementType::Image => {
 
-            let image = ImageElement::from(element)?;
+            let image = element.image_as_ref()?;
             let image_path = format!("image{}.png", image_num);
             images.insert(image_path.to_string(), image.bytes.clone());
             *image_num += 1;
@@ -283,7 +282,7 @@ fn generate_html_for_element(element: &Box<dyn Element>, images: &mut HashMap<St
             ))
         },
         ElementType::Hyperlink => {
-            let hyperlink = HyperlinkElement::from(element)?;
+            let hyperlink = element.hyperlink_as_ref()?;
             Ok(format!(
                 "<a href=\"{}\" title=\"{}\">{}</a>",
                 hyperlink.url, hyperlink.alt, hyperlink.title

@@ -43,7 +43,7 @@ impl TransformerTrait for Transformer {
                         for paragraph_element in &paragraph.elements {
                             match paragraph_element.as_ref() {
                                 e if e.element_type() == ElementType::Text => {
-                                    let text_element = TextElement::from(paragraph_element)?;
+                                    let text_element = paragraph_element.text_as_ref()?;
                                     let step: f32 = 0.3528 * text_element.size as f32;
                                     if (vertical_position + step) > PAGE_HEIGHT {
                                         let (new_page, new_layer) = pdf.add_page(Mm(PAGE_WIDTH), Mm(PAGE_HEIGHT), "Layer 1");
@@ -98,7 +98,7 @@ fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object,
                             Some(el) => {
                                 if el.element_type() == ElementType::List {
                                     let old_list = elements.pop().unwrap();
-                                    let list = ListElement::from(&old_list)?;
+                                    let list = old_list.list_as_ref()?;
                                     let mut list_item_elements = list.elements.clone();
                                     let text_element = TextElement{
                                         text: text.clone(),
@@ -244,7 +244,7 @@ fn parse_object(page_id: ObjectId, pdf_document: &PdfDocument, _object: &Object,
                     elements.push(Box::new(new_paragraph));
                 } else if el.element_type() == ElementType::List {
                     let old_list = elements.pop().unwrap();
-                    let list = ListElement::from(&old_list)?;
+                    let list = old_list.list_as_ref()?;
                     let mut list_item_elements = list.elements.clone();
                     let new_list_item_element = ListItemElement{
                         element: Box::new(text_element),
