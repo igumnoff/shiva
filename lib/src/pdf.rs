@@ -31,14 +31,13 @@ impl TransformerTrait for Transformer {
         let (mut pdf, page1, layer1) =
             PdfDocument::new("PDF Document", Mm(PAGE_WIDTH), Mm(PAGE_HEIGHT), "Layer 1");
 
-        fn generate_pdf(
-            elements: &Vec<Box<dyn Element>>,
+        fn generate_pdf(document: &Document,
             pdf: &mut PdfDocumentReference,
             mut page: PdfPageIndex,
             mut layer: PdfLayerIndex,
             mut vertical_position: f32,
         ) -> anyhow::Result<()> {
-            for element in elements {
+            for element in &document.elements {
                 match element.as_ref() {
                     e if e.element_type() == ElementType::Header => {}
                     e if e.element_type() == ElementType::Paragraph => {
@@ -48,10 +47,10 @@ impl TransformerTrait for Transformer {
                                 e if e.element_type() == ElementType::Text => {
                                     let text_element = paragraph_element.text_as_ref()?;
                                     let step: f32 = 0.3528 * text_element.size as f32;
-                                    if (vertical_position + step) > PAGE_HEIGHT {
+                                    if (vertical_position + step) > document.page_height {
                                         let (new_page, new_layer) = pdf.add_page(
-                                            Mm(PAGE_WIDTH),
-                                            Mm(PAGE_HEIGHT),
+                                            Mm(document.page_width),
+                                            Mm(document.page_height),
                                             "Layer 1",
                                         );
                                         vertical_position = 0.0;
@@ -65,7 +64,7 @@ impl TransformerTrait for Transformer {
                                         &text_element.text,
                                         text_element.size as f32,
                                         Mm(0.0),
-                                        Mm(PAGE_HEIGHT - vertical_position),
+                                        Mm(document.page_height - vertical_position),
                                         &font,
                                     );
                                 }
@@ -80,7 +79,7 @@ impl TransformerTrait for Transformer {
             Ok(())
         }
 
-        _ = generate_pdf(&document.elements, &mut pdf, page1, layer1, 0.0)?;
+        _ = generate_pdf(document, &mut pdf, page1, layer1, 0.0)?;
 
         let result = pdf.save_to_bytes()?;
         let bytes = Bytes::from(result);
