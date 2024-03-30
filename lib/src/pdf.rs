@@ -47,13 +47,13 @@ impl TransformerTrait for Transformer {
                                 e if e.element_type() == ElementType::Text => {
                                     let text_element = paragraph_element.text_as_ref()?;
                                     let step: f32 = 0.3528 * text_element.size as f32;
-                                    if (vertical_position + step) > document.page_height {
+                                    if (vertical_position + step) > (document.page_height - document.bottom_page_indent) {
                                         let (new_page, new_layer) = pdf.add_page(
                                             Mm(document.page_width),
                                             Mm(document.page_height),
                                             "Layer 1",
                                         );
-                                        vertical_position = 0.0;
+                                        vertical_position = 0.0 + document.top_page_indent;
                                         layer = new_layer;
                                         page = new_page;
                                     }
@@ -63,7 +63,7 @@ impl TransformerTrait for Transformer {
                                     current_layer.use_text(
                                         &text_element.text,
                                         text_element.size as f32,
-                                        Mm(0.0),
+                                        Mm(document.left_page_indent + 0.0),
                                         Mm(document.page_height - vertical_position),
                                         &font,
                                     );
@@ -79,7 +79,7 @@ impl TransformerTrait for Transformer {
             Ok(())
         }
 
-        _ = generate_pdf(document, &mut pdf, page1, layer1, 0.0)?;
+        _ = generate_pdf(document, &mut pdf, page1, layer1, 0.0  + document.top_page_indent)?;
 
         let result = pdf.save_to_bytes()?;
         let bytes = Bytes::from(result);
