@@ -31,12 +31,33 @@ impl TransformerTrait for Transformer {
         let (mut pdf, page1, layer1) =
             PdfDocument::new("PDF Document", Mm(PAGE_WIDTH), Mm(PAGE_HEIGHT), "Layer 1");
 
+
         fn generate_pdf(document: &Document,
             pdf: &mut PdfDocumentReference,
             mut page: PdfPageIndex,
             mut layer: PdfLayerIndex,
             mut vertical_position: f32,
         ) -> anyhow::Result<()> {
+
+            fn split_string(input: &str, max_length: usize) -> Vec<String> {
+                let mut result = Vec::new();
+                let mut current_string = String::new();
+
+                for char in input.chars() {
+                    if current_string.chars().count() < max_length {
+                        current_string.push(char);
+                    } else {
+                        result.push(current_string);
+                        current_string = char.to_string();
+                    }
+                }
+
+                if !current_string.is_empty() {
+                    result.push(current_string);
+                }
+
+                result
+            }
             for element in &document.elements {
                 match element.as_ref() {
                     e if e.element_type() == ElementType::Header => {}
@@ -46,27 +67,39 @@ impl TransformerTrait for Transformer {
                             match paragraph_element.as_ref() {
                                 e if e.element_type() == ElementType::Text => {
                                     let text_element = paragraph_element.text_as_ref()?;
-                                    let step: f32 = 0.3528 * text_element.size as f32;
-                                    if (vertical_position + step) > (document.page_height - document.bottom_page_indent) {
-                                        let (new_page, new_layer) = pdf.add_page(
-                                            Mm(document.page_width),
-                                            Mm(document.page_height),
-                                            "Layer 1",
+
+                                    let font_width = (0.3528 * (text_element.size as f32) * 0.87) as f32;
+                                    let max_text_width = document.page_height - document.left_page_indent - document.right_page_indent;
+                                    let max_chars = (max_text_width  / font_width) as usize ;
+                                    let mut text_elements = split_string(&text_element.text, max_chars);
+                                    for text in text_elements {
+                                        let step: f32 = 0.3528 * text_element.size as f32;
+                                        if (vertical_position + step) > (document.page_height - document.bottom_page_indent) {
+                                            let (new_page, new_layer) = pdf.add_page(
+                                                Mm(document.page_width),
+                                                Mm(document.page_height),
+                                                "Layer 1",
+                                            );
+                                            vertical_position = 0.0 + document.top_page_indent;
+                                            layer = new_layer;
+                                            page = new_page;
+                                        }
+                                        vertical_position = vertical_position + step;
+                                        let font = pdf.add_builtin_font(BuiltinFont::Courier)?;
+                                        let current_layer = pdf.get_page(page).get_layer(layer);
+                                        current_layer.use_text(
+                                            text,
+                                            text_element.size as f32,
+                                            Mm(document.left_page_indent + 0.0),
+                                            Mm(document.page_height - vertical_position),
+                                            &font,
                                         );
-                                        vertical_position = 0.0 + document.top_page_indent;
-                                        layer = new_layer;
-                                        page = new_page;
+
                                     }
-                                    vertical_position = vertical_position + step;
-                                    let font = pdf.add_builtin_font(BuiltinFont::Courier)?;
-                                    let current_layer = pdf.get_page(page).get_layer(layer);
-                                    current_layer.use_text(
-                                        &text_element.text,
-                                        text_element.size as f32,
-                                        Mm(document.left_page_indent + 0.0),
-                                        Mm(document.page_height - vertical_position),
-                                        &font,
-                                    );
+
+
+
+
                                 }
                                 _ => {}
                             }
