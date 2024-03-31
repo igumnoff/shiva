@@ -78,12 +78,7 @@ impl TransformerTrait for Transformer {
                                 &font,
                             );
                             vertical_position = vertical_position + 2.5;
-
-
                         }
-
-
-
                     }
                     e if e.element_type() == ElementType::Paragraph => {
                         let paragraph = element.paragraph_as_ref()?;
