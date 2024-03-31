@@ -16,7 +16,7 @@
 | Plain text    | +     | +        |
 | Markdown      | +     | +        |
 | HTML          | +     | +        |
-| PDF           | +     | -        |
+| PDF           | +     | +        |
 | JSON          | -     | -        |
 | XML           | -     | -        |
 | DOC           | -     | -        |
@@ -34,19 +34,19 @@
 
 ## Generate document features
 
-| Document type | Header | Paragraph  | List | Table | Image | Hyperlink |
-|---------------|--------|------------|------|-------|-------|-----------|
-| Plain text    | +      | +          | +    | +     | -     | +         |
-| Markdown      | +      | +          | +    | +     | +     | +         |
-| HTML          | +      | +          | +    | +     | +     | +         |
-| PDF           | -      | -          | -    | -     | -     | -         |
+| Document type | Header | Paragraph | List | Table | Image | Hyperlink |
+|---------------|--------|-----------|------|-------|-------|-----------|
+| Plain text    | +      | +         | +    | +     | -     | +         |
+| Markdown      | +      | +         | +    | +     | +     | +         |
+| HTML          | +      | +         | +    | +     | +     | +         |
+| PDF           | +      | +         | -    | -     | -     | -         |
 
 ## Usage Shiva library
 
 Cargo.toml
 ```toml
 [dependencies]
-shiva = "0.1.9"
+shiva = "0.1.10"
 ```
 
 main.rs
