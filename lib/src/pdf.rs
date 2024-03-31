@@ -28,18 +28,19 @@ impl TransformerTrait for Transformer {
         const PAGE_WIDTH: f32 = 210.0;
         const PAGE_HEIGHT: f32 = 297.0;
 
-        let (mut pdf, page1, layer1) =
+        let (mut pdf, mut page1, mut layer1) =
             PdfDocument::new("PDF Document", Mm(PAGE_WIDTH), Mm(PAGE_HEIGHT), "Layer 1");
 
 
         fn generate_pdf(document: &Document,
+            element: &Box<dyn Element>,
             pdf: &mut PdfDocumentReference,
-            mut page: PdfPageIndex,
-            mut layer: PdfLayerIndex,
-            mut vertical_position: f32,
+            page: &mut PdfPageIndex,
+            layer: &mut PdfLayerIndex,
+            vertical_position: &mut f32,
         ) -> anyhow::Result<()> {
 
-            for element in &document.elements {
+
                 match element.as_ref() {
                     e if e.element_type() == ElementType::Header => {
                         let header = element.header_as_ref()?;
@@ -57,27 +58,27 @@ impl TransformerTrait for Transformer {
                         let text_elements = split_string(&header.text, max_chars);
                         for text in text_elements {
                             let step: f32 = 0.3528 * font_size as f32;
-                            if (vertical_position + step) > (document.page_height - document.bottom_page_indent) {
+                            if (*vertical_position + step) > (document.page_height - document.bottom_page_indent) {
                                 let (new_page, new_layer) = pdf.add_page(
                                     Mm(document.page_width),
                                     Mm(document.page_height),
                                     "Layer 1",
                                 );
-                                vertical_position = 0.0 + document.top_page_indent;
-                                layer = new_layer;
-                                page = new_page;
+                                *vertical_position = 0.0 + document.top_page_indent;
+                                *layer = new_layer;
+                                *page = new_page;
                             }
-                            vertical_position = vertical_position + step;
+                            *vertical_position = *vertical_position + step;
                             let font = pdf.add_builtin_font(BuiltinFont::Courier)?;
-                            let current_layer = pdf.get_page(page).get_layer(layer);
+                            let current_layer = pdf.get_page(*page).get_layer(*layer);
                             current_layer.use_text(
                                 text,
                                 font_size as f32,
                                 Mm(document.left_page_indent + 0.0),
-                                Mm(document.page_height - vertical_position),
+                                Mm(document.page_height - *vertical_position),
                                 &font,
                             );
-                            vertical_position = vertical_position + 2.5;
+                            *vertical_position = *vertical_position + 2.5;
                         }
                     }
                     e if e.element_type() == ElementType::Paragraph => {
@@ -93,24 +94,24 @@ impl TransformerTrait for Transformer {
                                     let text_elements = split_string(&text_element.text, max_chars);
                                     for text in text_elements {
                                         let step: f32 = 0.3528 * text_element.size as f32;
-                                        if (vertical_position + step) > (document.page_height - document.bottom_page_indent) {
+                                        if (*vertical_position + step) > (document.page_height - document.bottom_page_indent) {
                                             let (new_page, new_layer) = pdf.add_page(
                                                 Mm(document.page_width),
                                                 Mm(document.page_height),
                                                 "Layer 1",
                                             );
-                                            vertical_position = 0.0 + document.top_page_indent;
-                                            layer = new_layer;
-                                            page = new_page;
+                                            *vertical_position = 0.0 + document.top_page_indent;
+                                            *layer = new_layer;
+                                            *page = new_page;
                                         }
-                                        vertical_position = vertical_position + step;
+                                        *vertical_position = *vertical_position + step;
                                         let font = pdf.add_builtin_font(BuiltinFont::Courier)?;
-                                        let current_layer = pdf.get_page(page).get_layer(layer);
+                                        let current_layer = pdf.get_page(*page).get_layer(*layer);
                                         current_layer.use_text(
                                             text,
                                             text_element.size as f32,
                                             Mm(document.left_page_indent + 0.0),
-                                            Mm(document.page_height - vertical_position),
+                                            Mm(document.page_height - *vertical_position),
                                             &font,
                                         );
 
@@ -122,12 +123,15 @@ impl TransformerTrait for Transformer {
                     }
                     _ => {}
                 }
-            }
+
 
             Ok(())
         }
+        let mut vertical_position = 0.0  + document.top_page_indent;
+        for element in &document.elements {
+            _ = generate_pdf(document, element, &mut pdf, &mut page1, &mut layer1, &mut vertical_position)?;
+        }
 
-        _ = generate_pdf(document, &mut pdf, page1, layer1, 0.0  + document.top_page_indent)?;
 
         let result = pdf.save_to_bytes()?;
         let bytes = Bytes::from(result);
