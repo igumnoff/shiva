@@ -39,25 +39,6 @@ impl TransformerTrait for Transformer {
             mut vertical_position: f32,
         ) -> anyhow::Result<()> {
 
-            fn split_string(input: &str, max_length: usize) -> Vec<String> {
-                let mut result = Vec::new();
-                let mut current_string = String::new();
-
-                for char in input.chars() {
-                    if current_string.chars().count() < max_length {
-                        current_string.push(char);
-                    } else {
-                        result.push(current_string);
-                        current_string = char.to_string();
-                    }
-                }
-
-                if !current_string.is_empty() {
-                    result.push(current_string);
-                }
-
-                result
-            }
             for element in &document.elements {
                 match element.as_ref() {
                     e if e.element_type() == ElementType::Header => {}
@@ -71,7 +52,7 @@ impl TransformerTrait for Transformer {
                                     let font_width = (0.3528 * (text_element.size as f32) * 0.87) as f32;
                                     let max_text_width = document.page_height - document.left_page_indent - document.right_page_indent;
                                     let max_chars = (max_text_width  / font_width) as usize ;
-                                    let mut text_elements = split_string(&text_element.text, max_chars);
+                                    let text_elements = split_string(&text_element.text, max_chars);
                                     for text in text_elements {
                                         let step: f32 = 0.3528 * text_element.size as f32;
                                         if (vertical_position + step) > (document.page_height - document.bottom_page_indent) {
@@ -96,10 +77,6 @@ impl TransformerTrait for Transformer {
                                         );
 
                                     }
-
-
-
-
                                 }
                                 _ => {}
                             }
@@ -315,6 +292,26 @@ fn parse_object(
     Ok(())
 }
 
+
+fn split_string(input: &str, max_length: usize) -> Vec<String> {
+    let mut result = Vec::new();
+    let mut current_string = String::new();
+
+    for char in input.chars() {
+        if current_string.chars().count() < max_length {
+            current_string.push(char);
+        } else {
+            result.push(current_string);
+            current_string = char.to_string();
+        }
+    }
+
+    if !current_string.is_empty() {
+        result.push(current_string);
+    }
+
+    result
+}
 #[cfg(test)]
 mod tests {
     use crate::core::*;
