@@ -41,7 +41,50 @@ impl TransformerTrait for Transformer {
 
             for element in &document.elements {
                 match element.as_ref() {
-                    e if e.element_type() == ElementType::Header => {}
+                    e if e.element_type() == ElementType::Header => {
+                        let header = element.header_as_ref()?;
+                        let font_size = match header.level {
+                            1 => 18.0, // Example font size for level 1 header
+                            2 => 16.0, // Example font size for level 2 header
+                            3 => 14.0, // Example font size for level 3 header
+                            // Additional levels as needed...
+                            _ => 12.0, // Default font size for other header levels
+                        };
+
+                        let font_width = (0.3528 * (font_size as f32) * 0.87) as f32;
+                        let max_text_width = document.page_height - document.left_page_indent - document.right_page_indent;
+                        let max_chars = (max_text_width  / font_width) as usize ;
+                        let text_elements = split_string(&header.text, max_chars);
+                        for text in text_elements {
+                            let step: f32 = 0.3528 * font_size as f32;
+                            if (vertical_position + step) > (document.page_height - document.bottom_page_indent) {
+                                let (new_page, new_layer) = pdf.add_page(
+                                    Mm(document.page_width),
+                                    Mm(document.page_height),
+                                    "Layer 1",
+                                );
+                                vertical_position = 0.0 + document.top_page_indent;
+                                layer = new_layer;
+                                page = new_page;
+                            }
+                            vertical_position = vertical_position + step;
+                            let font = pdf.add_builtin_font(BuiltinFont::Courier)?;
+                            let current_layer = pdf.get_page(page).get_layer(layer);
+                            current_layer.use_text(
+                                text,
+                                font_size as f32,
+                                Mm(document.left_page_indent + 0.0),
+                                Mm(document.page_height - vertical_position),
+                                &font,
+                            );
+                            vertical_position = vertical_position + 2.5;
+
+
+                        }
+
+
+
+                    }
                     e if e.element_type() == ElementType::Paragraph => {
                         let paragraph = element.paragraph_as_ref()?;
                         for paragraph_element in &paragraph.elements {
