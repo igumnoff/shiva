@@ -371,12 +371,14 @@ impl Element for TableElement {
 #[derive(Clone, Debug)]
 pub struct TableHeaderElement {
     pub element: Box<dyn Element>,
+    pub width: f32,
 }
 
 impl TableHeaderElement {
     pub fn new(element: &Box<dyn Element>) -> anyhow::Result<TableHeaderElement> {
         Ok(TableHeaderElement {
             element: element.clone(),
+            width: 20.0,
         })
     }
 }
