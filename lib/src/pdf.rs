@@ -371,11 +371,8 @@ mod tests {
         println!("==========================");
         println!("{:?}", parsed_document);
         println!("==========================");
-        // let generated_result = Transformer::generate(&parsed_document);
-        // assert!(generated_result.is_ok());
-        // let generated_bytes = generated_result?;
-        // let generated_text = std::str::from_utf8(&generated_bytes.0)?;
-        // println!("{}", generated_text);
+        let generated_result = Transformer::generate(&parsed_document);
+        assert!(generated_result.is_ok());
         Ok(())
     }
 }
