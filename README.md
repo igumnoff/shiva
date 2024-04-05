@@ -46,7 +46,7 @@
 Cargo.toml
 ```toml
 [dependencies]
-shiva = "0.1.10"
+shiva = "0.1.11"
 ```
 
 main.rs
@@ -81,3 +81,7 @@ cargo build --release
 cd ./target/release/
 ./shiva --input-format=markdown --output-format=html --input-file=README.md --output-file=README.html
 ```
+
+
+## Who uses Shiva
+- [Metatron library: Implementation in Rust of a report generation](https://github.com/igumnoff/metatron)

@@ -121,6 +121,19 @@ impl TransformerTrait for Transformer {
                             }
                         }
                     }
+                    e if e.element_type() == ElementType::Table => {
+
+                        let table = element.table_as_ref()?;
+                        if !table.headers.is_empty() {
+                            for header in &table.headers {
+                            }
+                        }
+                        for row in &table.rows {
+                            for cell in &row.cells {
+                            }
+                        }
+
+                    }
                     _ => {}
                 }
 
