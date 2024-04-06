@@ -28,18 +28,18 @@
 | Document type | Header | Paragraph | List | Table | Image | Hyperlink | PageHeader | PageFooter |
 |---------------|--------|-----------|------|-------|-------|-----------|------------|------------|
 | Plain text    | -      | +         | -    | -     | -     | -         | -          | -          |
-| Markdown      | +      | +         | +    | +     | +     | +         | +          | +          |
+| Markdown      | +      | +         | +    | +     | +     | +         | -          | -          |
 | HTML          | +      | +         | +    | +     | +     | +         | -          | -          |
 | PDF           | -      | +         | +    | -     | -     | -         | -          | -          |
 
 ## Generate document features
 
-| Document type | Header | Paragraph | List | Table | Image | Hyperlink |
-|---------------|--------|-----------|------|-------|-------|-----------|
-| Plain text    | +      | +         | +    | +     | -     | +         |
-| Markdown      | +      | +         | +    | +     | +     | +         |
-| HTML          | +      | +         | +    | +     | +     | +         |
-| PDF           | +      | +         | -    | -     | -     | -         |
+| Document type | Header | Paragraph | List | Table | Image | Hyperlink | PageHeader | PageFooter |
+|---------------|--------|-----------|------|-------|-------|-----------|------------|------------|
+| Plain text    | +      | +         | +    | +     | -     | +         | -          | -          |
+| Markdown      | +      | +         | +    | +     | +     | +         | +          | +          |
+| HTML          | +      | +         | +    | +     | +     | +         | -          | -          |
+| PDF           | +      | +         | -    | -     | -     | -         | -          | -          |
 
 ## Usage Shiva library
 
