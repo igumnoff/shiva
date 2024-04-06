@@ -454,7 +454,8 @@ impl TransformerTrait for Transformer {
 
         let mut list_counters: Vec<usize> = Vec::new();
         let mut list_types: Vec<bool> = Vec::new();
-        for element in &document.elements {
+        let all_elements: Vec<Box<dyn Element>> = document.page_header.iter().cloned().chain(document.elements.iter().cloned()).chain(document.page_footer.iter().cloned()).collect();
+        for element in &all_elements {
             generate_element(
                 element,
                 &mut markdown,

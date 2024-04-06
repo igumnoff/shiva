@@ -13,6 +13,8 @@ pub struct Document {
     pub right_page_indent: f32,
     pub top_page_indent: f32,
     pub bottom_page_indent: f32,
+    pub page_header: Vec<Box<dyn Element>>,
+    pub page_footer: Vec<Box<dyn Element>>,
 }
 
 impl Document {
@@ -25,6 +27,8 @@ impl Document {
             right_page_indent: 10.0,
             top_page_indent: 10.0,
             bottom_page_indent: 10.0,
+            page_header: vec![],
+            page_footer: vec![],
         })
     }
 }

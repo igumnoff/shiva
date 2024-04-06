@@ -25,12 +25,12 @@
 
 ## Parse document features
 
-| Document type | Header | Paragraph | List | Table | Image | Hyperlink |
-|---------------|--------|-----------|------|-------|-------|-----------|
-| Plain text    | -      | +         | -    | -     | -     | -         |
-| Markdown      | +      | +         | +    | +     | +     | +         |
-| HTML          | +      | +         | +    | +     | +     | +         |
-| PDF           | -      | +         | +    | -     | -     | -         |
+| Document type | Header | Paragraph | List | Table | Image | Hyperlink | PageHeader | PageFooter |
+|---------------|--------|-----------|------|-------|-------|-----------|------------|------------|
+| Plain text    | -      | +         | -    | -     | -     | -         | -          | -          |
+| Markdown      | +      | +         | +    | +     | +     | +         | +          | +          |
+| HTML          | +      | +         | +    | +     | +     | +         | -          | -          |
+| PDF           | -      | +         | +    | -     | -     | -         | -          | -          |
 
 ## Generate document features
 
@@ -46,7 +46,7 @@
 Cargo.toml
 ```toml
 [dependencies]
-shiva = "0.1.11"
+shiva = "0.1.14"
 ```
 
 main.rs
