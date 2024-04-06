@@ -1,6 +1,6 @@
 # Shiva
 
-![shiva](logo.png)
+![shiva](https://github.com/igumnoff/shiva/raw/HEAD/logo.png)
 
 **Shiva library: Implementation in Rust of a parser and generator for documents of any type**
 
