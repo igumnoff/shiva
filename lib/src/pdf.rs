@@ -1,7 +1,5 @@
-use crate::core::{
-    Document, Element, ElementType, ListElement, ListItemElement, ParagraphElement, ParserError,
-    TextElement, TransformerTrait,
-};
+use crate::core::Element::{Header, List, Paragraph, Table, Text};
+use crate::core::{Document, Element, ListItem, ParserError, TransformerTrait};
 use bytes::Bytes;
 use lopdf::content::Content;
 use lopdf::{Document as PdfDocument, Object, ObjectId};
@@ -10,7 +8,7 @@ use std::collections::{BTreeMap, HashMap};
 pub struct Transformer;
 impl TransformerTrait for Transformer {
     fn parse(document: &Bytes, _images: &HashMap<String, Bytes>) -> anyhow::Result<Document> {
-        let mut elements: Vec<Box<dyn Element>> = Vec::new();
+        let mut elements: Vec<Element> = Vec::new();
         let pdf_document = PdfDocument::load_mem(&document)?;
         for (_id, page_id) in pdf_document.get_pages() {
             let objects = pdf_document.get_page_contents(page_id);
@@ -19,7 +17,7 @@ impl TransformerTrait for Transformer {
                 parse_object(page_id, &pdf_document, &object, &mut elements)?;
             }
         }
-        Ok(Document::new(&elements)?)
+        Ok(Document::new(elements))
     }
 
     fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)> {
@@ -31,120 +29,121 @@ impl TransformerTrait for Transformer {
         let (mut pdf, mut page1, mut layer1) =
             PdfDocument::new("PDF Document", Mm(PAGE_WIDTH), Mm(PAGE_HEIGHT), "Layer 1");
 
-
-        fn generate_pdf(document: &Document,
-            element: &Box<dyn Element>,
+        fn generate_pdf(
+            document: &Document,
+            element: &Element,
             pdf: &mut PdfDocumentReference,
             page: &mut PdfPageIndex,
             layer: &mut PdfLayerIndex,
             vertical_position: &mut f32,
         ) -> anyhow::Result<()> {
+            match element {
+                Header { level, text } => {
+                    let font_size = match level {
+                        1 => 18.0, // Example font size for level 1 header
+                        2 => 16.0, // Example font size for level 2 header
+                        3 => 14.0, // Example font size for level 3 header
+                        // Additional levels as needed...
+                        _ => 12.0, // Default font size for other header levels
+                    };
 
-
-                match element.as_ref() {
-                    e if e.element_type() == ElementType::Header => {
-                        let header = element.header_as_ref()?;
-                        let font_size = match header.level {
-                            1 => 18.0, // Example font size for level 1 header
-                            2 => 16.0, // Example font size for level 2 header
-                            3 => 14.0, // Example font size for level 3 header
-                            // Additional levels as needed...
-                            _ => 12.0, // Default font size for other header levels
-                        };
-
-                        let font_width = (0.3528 * (font_size as f32) * 0.87) as f32;
-                        let max_text_width = document.page_height - document.left_page_indent - document.right_page_indent;
-                        let max_chars = (max_text_width  / font_width) as usize ;
-                        let text_elements = split_string(&header.text, max_chars);
-                        for text in text_elements {
-                            let step: f32 = 0.3528 * font_size as f32;
-                            if (*vertical_position + step) > (document.page_height - document.bottom_page_indent) {
-                                let (new_page, new_layer) = pdf.add_page(
-                                    Mm(document.page_width),
-                                    Mm(document.page_height),
-                                    "Layer 1",
-                                );
-                                *vertical_position = 0.0 + document.top_page_indent;
-                                *layer = new_layer;
-                                *page = new_page;
-                            }
-                            *vertical_position = *vertical_position + step;
-                            let font = pdf.add_builtin_font(BuiltinFont::Courier)?;
-                            let current_layer = pdf.get_page(*page).get_layer(*layer);
-                            current_layer.use_text(
-                                text,
-                                font_size as f32,
-                                Mm(document.left_page_indent + 0.0),
-                                Mm(document.page_height - *vertical_position),
-                                &font,
+                    let font_width = (0.3528 * (font_size as f32) * 0.87) as f32;
+                    let max_text_width = document.page_height
+                        - document.left_page_indent
+                        - document.right_page_indent;
+                    let max_chars = (max_text_width / font_width) as usize;
+                    let text_elements = split_string(text, max_chars);
+                    for text in text_elements {
+                        let step: f32 = 0.3528 * font_size as f32;
+                        if (*vertical_position + step)
+                            > (document.page_height - document.bottom_page_indent)
+                        {
+                            let (new_page, new_layer) = pdf.add_page(
+                                Mm(document.page_width),
+                                Mm(document.page_height),
+                                "Layer 1",
                             );
-                            *vertical_position = *vertical_position + 2.5;
+                            *vertical_position = 0.0 + document.top_page_indent;
+                            *layer = new_layer;
+                            *page = new_page;
                         }
+                        *vertical_position = *vertical_position + step;
+                        let font = pdf.add_builtin_font(BuiltinFont::Courier)?;
+                        let current_layer = pdf.get_page(*page).get_layer(*layer);
+                        current_layer.use_text(
+                            text,
+                            font_size as f32,
+                            Mm(document.left_page_indent + 0.0),
+                            Mm(document.page_height - *vertical_position),
+                            &font,
+                        );
+                        *vertical_position = *vertical_position + 2.5;
                     }
-                    e if e.element_type() == ElementType::Paragraph => {
-                        let paragraph = element.paragraph_as_ref()?;
-                        for paragraph_element in &paragraph.elements {
-                            match paragraph_element.as_ref() {
-                                e if e.element_type() == ElementType::Text => {
-                                    let text_element = paragraph_element.text_as_ref()?;
-
-                                    let font_width = (0.3528 * (text_element.size as f32) * 0.87) as f32;
-                                    let max_text_width = document.page_height - document.left_page_indent - document.right_page_indent;
-                                    let max_chars = (max_text_width  / font_width) as usize ;
-                                    let text_elements = split_string(&text_element.text, max_chars);
-                                    for text in text_elements {
-                                        let step: f32 = 0.3528 * text_element.size as f32;
-                                        if (*vertical_position + step) > (document.page_height - document.bottom_page_indent) {
-                                            let (new_page, new_layer) = pdf.add_page(
-                                                Mm(document.page_width),
-                                                Mm(document.page_height),
-                                                "Layer 1",
-                                            );
-                                            *vertical_position = 0.0 + document.top_page_indent;
-                                            *layer = new_layer;
-                                            *page = new_page;
-                                        }
-                                        *vertical_position = *vertical_position + step;
-                                        let font = pdf.add_builtin_font(BuiltinFont::Courier)?;
-                                        let current_layer = pdf.get_page(*page).get_layer(*layer);
-                                        current_layer.use_text(
-                                            text,
-                                            text_element.size as f32,
-                                            Mm(document.left_page_indent + 0.0),
-                                            Mm(document.page_height - *vertical_position),
-                                            &font,
-                                        );
-
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
-                    }
-                    e if e.element_type() == ElementType::Table => {
-
-                        let table = element.table_as_ref()?;
-                        if !table.headers.is_empty() {
-                            for header in &table.headers {
-                            }
-                        }
-                        for row in &table.rows {
-                            for cell in &row.cells {
-                            }
-                        }
-
-                    }
-                    _ => {}
                 }
-
+                Paragraph { elements } => {
+                    for paragraph_element in elements {
+                        match paragraph_element {
+                            Text { text, size } => {
+                                let font_width = (0.3528 * (*size as f32) * 0.87) as f32;
+                                let max_text_width = document.page_height
+                                    - document.left_page_indent
+                                    - document.right_page_indent;
+                                let max_chars = (max_text_width / font_width) as usize;
+                                let text_elements = split_string(text, max_chars);
+                                for text in text_elements {
+                                    let step: f32 = 0.3528 * *size as f32;
+                                    if (*vertical_position + step)
+                                        > (document.page_height - document.bottom_page_indent)
+                                    {
+                                        let (new_page, new_layer) = pdf.add_page(
+                                            Mm(document.page_width),
+                                            Mm(document.page_height),
+                                            "Layer 1",
+                                        );
+                                        *vertical_position = 0.0 + document.top_page_indent;
+                                        *layer = new_layer;
+                                        *page = new_page;
+                                    }
+                                    *vertical_position = *vertical_position + step;
+                                    let font = pdf.add_builtin_font(BuiltinFont::Courier)?;
+                                    let current_layer = pdf.get_page(*page).get_layer(*layer);
+                                    current_layer.use_text(
+                                        text,
+                                        *size as f32,
+                                        Mm(document.left_page_indent + 0.0),
+                                        Mm(document.page_height - *vertical_position),
+                                        &font,
+                                    );
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                Table { headers, rows } => {
+                    if !headers.is_empty() {
+                        for _header in headers {}
+                    }
+                    for row in rows {
+                        for _cell in &row.cells {}
+                    }
+                }
+                _ => {}
+            }
 
             Ok(())
         }
-        let mut vertical_position = 0.0  + document.top_page_indent;
+        let mut vertical_position = 0.0 + document.top_page_indent;
         for element in &document.elements {
-            _ = generate_pdf(document, element, &mut pdf, &mut page1, &mut layer1, &mut vertical_position)?;
+            _ = generate_pdf(
+                document,
+                element,
+                &mut pdf,
+                &mut page1,
+                &mut layer1,
+                &mut vertical_position,
+            )?;
         }
-
 
         let result = pdf.save_to_bytes()?;
         let bytes = Bytes::from(result);
@@ -156,13 +155,13 @@ fn parse_object(
     page_id: ObjectId,
     pdf_document: &PdfDocument,
     _object: &Object,
-    elements: &mut Vec<Box<dyn Element>>,
+    elements: &mut Vec<Element>,
 ) -> anyhow::Result<()> {
     fn collect_text(
         text: &mut String,
         encoding: Option<&str>,
         operands: &[Object],
-        elements: &mut Vec<Box<dyn Element>>,
+        elements: &mut Vec<Element>,
     ) -> anyhow::Result<()> {
         for operand in operands.iter() {
             // println!("2 {:?}", operand);
@@ -173,52 +172,72 @@ fn parse_object(
                     if bytes.len() == 1 && bytes[0] == 1 {
                         match elements.last() {
                             None => {
-                                let list_element = ListElement {
+                                let list_element = List {
                                     elements: vec![],
                                     numbered: false,
                                 };
-                                elements.push(Box::new(list_element));
+                                elements.push(list_element);
                             }
                             Some(el) => {
-                                if el.element_type() == ElementType::List {
-                                    let old_list = elements.pop().unwrap();
-                                    let list = old_list.list_as_ref()?;
-                                    let mut list_item_elements = list.elements.clone();
-                                    let text_element = TextElement {
-                                        text: text.clone(),
-                                        size: 8,
-                                    };
-                                    let new_list_item_element = ListItemElement {
-                                        element: Box::new(text_element),
-                                    };
-                                    list_item_elements.push(new_list_item_element);
-                                    let new_list = ListElement {
-                                        elements: list_item_elements,
-                                        numbered: list.numbered,
-                                    };
-                                    elements.push(Box::new(new_list));
-                                    text.clear();
-                                } else {
-                                    if el.element_type() == ElementType::Paragraph {
-                                        let old_paragraph = elements.pop().unwrap();
-                                        let paragraph = old_paragraph.paragraph_as_ref()?;
-                                        let mut paragraph_elements = paragraph.elements.clone();
-                                        let text_element = TextElement {
-                                            text: text.clone(),
-                                            size: 8,
-                                        };
-                                        paragraph_elements.push(Box::new(text_element));
-                                        let new_paragraph = ParagraphElement {
-                                            elements: paragraph_elements,
-                                        };
-                                        elements.push(Box::new(new_paragraph));
-                                        text.clear();
+                                match el {
+                                    List { .. } => {
+                                        let old_list = elements.pop().unwrap();
+                                        // let list = old_list.list_as_ref()?;
+                                        if let List {
+                                            elements: list_elements,
+                                            numbered,
+                                        } = old_list
+                                        {
+                                            let mut list_item_elements = list_elements.clone();
+                                            let text_element = Text {
+                                                text: text.clone(),
+                                                size: 8,
+                                            };
+                                            let new_list_item_element = ListItem {
+                                                element: Box::new(text_element),
+                                            };
+                                            list_item_elements.push(new_list_item_element);
+                                            let new_list = List {
+                                                elements: list_item_elements,
+                                                numbered: numbered,
+                                            };
+                                            elements.push(new_list);
+                                            text.clear();
+                                        }
                                     }
-                                    let list_element = ListElement {
-                                        elements: vec![],
-                                        numbered: false,
-                                    };
-                                    elements.push(Box::new(list_element));
+                                    Paragraph { .. } => {
+                                        let old_paragraph = elements.pop().unwrap();
+                                        // let paragraph = old_paragraph.paragraph_as_ref()?;
+                                        if let Paragraph {
+                                            elements: paragraph_elements,
+                                        } = old_paragraph
+                                        {
+                                            let mut paragraph_elements = paragraph_elements.clone();
+                                            let text_element = Text {
+                                                text: text.clone(),
+                                                size: 8,
+                                            };
+                                            paragraph_elements.push(text_element);
+                                            let new_paragraph = Paragraph {
+                                                elements: paragraph_elements,
+                                            };
+                                            elements.push(new_paragraph);
+                                            text.clear();
+
+                                            let list_element = List {
+                                                elements: vec![],
+                                                numbered: false,
+                                            };
+                                            elements.push(list_element);
+                                        }
+                                    }
+                                    _ => {
+                                        let list_element = List {
+                                            elements: vec![],
+                                            numbered: false,
+                                        };
+                                        elements.push(*Box::new(list_element));
+                                    }
                                 }
                             }
                         }
@@ -253,31 +272,36 @@ fn parse_object(
         // println!("1 {:?}", operation.operator);
         match operation.operator.as_ref() {
             "Tm" => {
-                let text_element = TextElement {
+                let text_element = Text {
                     text: text.clone(),
                     size: 8,
                 };
                 match elements.last() {
                     None => {
-                        let paragraph_element = ParagraphElement {
-                            elements: vec![Box::new(text_element)],
+                        let paragraph_element = Paragraph {
+                            elements: vec![text_element],
                         };
-                        elements.push(Box::new(paragraph_element));
+                        elements.push(paragraph_element);
                     }
-                    Some(el) => {
-                        if el.element_type() == ElementType::Paragraph {
+                    Some(el) => match el {
+                        Paragraph { .. } => {
                             let old_paragraph = elements.pop().unwrap();
-                            let paragraph = old_paragraph.paragraph_as_ref()?;
-                            let mut paragraph_elements = paragraph.elements.clone();
-                            paragraph_elements.push(Box::new(text_element));
-                            let new_paragraph = ParagraphElement {
+                            if let Paragraph {
                                 elements: paragraph_elements,
-                            };
-                            elements.push(Box::new(new_paragraph));
-                        } else {
-                            elements.push(Box::new(text_element));
+                            } = old_paragraph
+                            {
+                                let mut paragraph_elements = paragraph_elements.clone();
+                                paragraph_elements.push(text_element);
+                                let new_paragraph = Paragraph {
+                                    elements: paragraph_elements,
+                                };
+                                elements.push(new_paragraph);
+                            }
                         }
-                    }
+                        _ => {
+                            elements.push(text_element);
+                        }
+                    },
                 }
                 text.clear();
             }
@@ -302,41 +326,54 @@ fn parse_object(
     }
 
     if text.len() > 0 {
-        let text_element = TextElement {
+        let text_element = Text {
             text: text.clone(),
             size: 8,
         };
         match elements.last() {
             None => {
-                let paragraph_element = ParagraphElement {
-                    elements: vec![Box::new(text_element)],
+                let paragraph_element = Paragraph {
+                    elements: vec![text_element],
                 };
-                elements.push(Box::new(paragraph_element));
+                elements.push(*Box::new(paragraph_element));
             }
             Some(el) => {
-                if el.element_type() == ElementType::Paragraph {
-                    let old_paragraph = elements.pop().unwrap();
-                    let paragraph = old_paragraph.paragraph_as_ref()?;
-                    let mut paragraph_elements = paragraph.elements.clone();
-                    paragraph_elements.push(Box::new(text_element));
-                    let new_paragraph = ParagraphElement {
-                        elements: paragraph_elements,
-                    };
-                    elements.push(Box::new(new_paragraph));
-                } else if el.element_type() == ElementType::List {
-                    let old_list = elements.pop().unwrap();
-                    let list = old_list.list_as_ref()?;
-                    let mut list_item_elements = list.elements.clone();
-                    let new_list_item_element = ListItemElement {
-                        element: Box::new(text_element),
-                    };
-                    list_item_elements.push(new_list_item_element);
-                    let new_list = ListElement {
-                        elements: list_item_elements,
-                        numbered: list.numbered,
-                    };
-                    elements.push(Box::new(new_list));
-                } else {
+                match el {
+                    Paragraph { .. } => {
+                        let old_paragraph = elements.pop().unwrap();
+                        if let Paragraph {
+                            elements: paragraph_elements,
+                        } = old_paragraph
+                        {
+                            let mut paragraph_elements = paragraph_elements.clone();
+                            paragraph_elements.push(text_element);
+                            let new_paragraph = Paragraph {
+                                elements: paragraph_elements,
+                            };
+                            elements.push(*Box::new(new_paragraph));
+                        }
+                    }
+                    List { .. } => {
+                        let old_list = elements.pop().unwrap();
+                        // let list = old_list.list_as_ref()?;
+                        if let List {
+                            elements: list_elements,
+                            numbered,
+                        } = old_list
+                        {
+                            let mut list_item_elements = list_elements.clone();
+                            let new_list_item_element = ListItem {
+                                element: Box::new(text_element),
+                            };
+                            list_item_elements.push(new_list_item_element);
+                            let new_list = List {
+                                elements: list_item_elements,
+                                numbered: numbered,
+                            };
+                            elements.push(*Box::new(new_list));
+                        }
+                    }
+                    _ => {}
                 }
             }
         }
@@ -346,7 +383,6 @@ fn parse_object(
 
     Ok(())
 }
-
 
 fn split_string(input: &str, max_length: usize) -> Vec<String> {
     let mut result = Vec::new();

@@ -3,6 +3,7 @@ use bytes::Bytes;
 use ego_tree::iter::Children;
 use std::collections::HashMap;
 
+use crate::core::Element::{Header, Hyperlink, Image, List, Paragraph, Table, Text};
 use scraper::{Html, Node};
 
 pub struct Transformer;
@@ -10,10 +11,10 @@ impl TransformerTrait for Transformer {
     fn parse(document: &Bytes, _images: &HashMap<String, Bytes>) -> anyhow::Result<Document> {
         let html = String::from_utf8(document.to_vec())?;
         let document = Html::parse_document(&html);
-        let mut elements: Vec<Box<dyn Element>> = Vec::new();
+        let mut elements: Vec<Element> = Vec::new();
 
         parse_html(document.root_element().children(), &mut elements)?;
-        Ok(Document::new(&elements)?)
+        Ok(Document::new(elements))
     }
 
     fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)> {
@@ -22,18 +23,13 @@ impl TransformerTrait for Transformer {
         let mut image_num: i32 = 0;
         html.push_str("<!DOCTYPE html>\n<html>\n<body>\n");
         for element in &document.elements {
-            match element.as_ref() {
-                el if el.element_type() == ElementType::Header => {
-                    let header = element.header_as_ref()?;
-                    html.push_str(&format!(
-                        "<h{}>{}</h{}>\n",
-                        header.level, header.text, header.level
-                    ));
+            match element {
+                Element::Header { level, text } => {
+                    html.push_str(&format!("<h{}>{}</h{}>\n", level, text, level));
                 }
-                el if el.element_type() == ElementType::Paragraph => {
-                    let paragraph = element.paragraph_as_ref()?;
+                Paragraph { elements } => {
                     html.push_str("<p>");
-                    for child in &paragraph.elements {
+                    for child in elements {
                         html.push_str(&generate_html_for_element(
                             child,
                             &mut images,
@@ -42,18 +38,20 @@ impl TransformerTrait for Transformer {
                     }
                     html.push_str("</p>\n");
                 }
-                el if el.element_type() == ElementType::List => {
+                List {
+                    elements: _,
+                    numbered: _,
+                } => {
                     let list = generate_html_for_element(element, &mut images, &mut image_num)?;
                     html.push_str(&list);
                 }
-                el if el.element_type() == ElementType::Table => {
-                    let table = element.table_as_ref()?;
+                Table { headers, rows } => {
                     let mut table_html = String::from("<table  border=\"1\">");
                     table_html.push_str("\n");
-                    if !table.headers.is_empty() {
+                    if !headers.is_empty() {
                         table_html.push_str("<tr>");
                         table_html.push_str("\n");
-                        for header in &table.headers {
+                        for header in headers {
                             let header_html = generate_html_for_element(
                                 &header.element,
                                 &mut images,
@@ -65,7 +63,7 @@ impl TransformerTrait for Transformer {
                         table_html.push_str("</tr>");
                         table_html.push_str("\n");
                     }
-                    for row in &table.rows {
+                    for row in rows {
                         table_html.push_str("<tr>");
                         table_html.push_str("\n");
                         for cell in &row.cells {
@@ -94,17 +92,14 @@ impl TransformerTrait for Transformer {
     }
 }
 
-fn parse_html(
-    children: Children<Node>,
-    elements: &mut Vec<Box<dyn Element>>,
-) -> anyhow::Result<()> {
+fn parse_html(children: Children<Node>, elements: &mut Vec<Element>) -> anyhow::Result<()> {
     for child in children {
         match child.value() {
             Node::Element(ref element) => {
                 match element.name() {
                     "table" => {
-                        let mut headers: Vec<TableHeaderElement> = Vec::new();
-                        let mut rows: Vec<TableRowElement> = Vec::new();
+                        let mut headers: Vec<TableHeader> = Vec::new();
+                        let mut rows: Vec<TableRow> = Vec::new();
                         for table_child in child.children() {
                             for child in table_child.children() {
                                 match child.value() {
@@ -112,7 +107,7 @@ fn parse_html(
                                         // println!("{:?}", table_element.name());
                                         match table_element.name() {
                                             "tr" => {
-                                                let mut cells: Vec<TableCellElement> = Vec::new();
+                                                let mut cells: Vec<TableCell> = Vec::new();
                                                 let mut is_header = false;
                                                 for tr_child in child.children() {
                                                     match tr_child.value() {
@@ -121,7 +116,7 @@ fn parse_html(
                                                                 "th" => {
                                                                     is_header = true;
                                                                     let mut header_elements: Vec<
-                                                                        Box<dyn Element>,
+                                                                        Element,
                                                                     > = Vec::new();
                                                                     parse_html(
                                                                         tr_child.children(),
@@ -130,12 +125,17 @@ fn parse_html(
                                                                     for header_element in
                                                                         header_elements
                                                                     {
-                                                                        headers.push(TableHeaderElement::new(&header_element)?);
+                                                                        headers.push(TableHeader {
+                                                                            element: Box::new(
+                                                                                header_element,
+                                                                            ),
+                                                                            width: 10.0,
+                                                                        });
                                                                     }
                                                                 }
                                                                 "td" => {
                                                                     let mut cell_elements: Vec<
-                                                                        Box<dyn Element>,
+                                                                        Element,
                                                                     > = Vec::new();
                                                                     parse_html(
                                                                         tr_child.children(),
@@ -144,11 +144,11 @@ fn parse_html(
                                                                     for cell_element in
                                                                         cell_elements
                                                                     {
-                                                                        cells.push(
-                                                                            TableCellElement::new(
-                                                                                &cell_element,
-                                                                            )?,
-                                                                        );
+                                                                        cells.push(TableCell {
+                                                                            element: Box::new(
+                                                                                cell_element,
+                                                                            ),
+                                                                        });
                                                                     }
                                                                 }
                                                                 _ => {}
@@ -160,7 +160,7 @@ fn parse_html(
                                                 if is_header {
                                                     // Headers are processed above
                                                 } else {
-                                                    rows.push(TableRowElement::new(&cells)?);
+                                                    rows.push(TableRow { cells });
                                                 }
                                             }
                                             _ => {}
@@ -174,15 +174,15 @@ fn parse_html(
                         // println!("{:?}", headers);
                         // println!("{:?}", rows);
                         if !headers.is_empty() || !rows.is_empty() {
-                            elements.push(TableElement::new(&headers, &rows)?);
+                            elements.push(Table { headers, rows });
                         }
                     }
                     "p" => {
-                        let mut paragraph_elements: Vec<Box<dyn Element>> = Vec::new();
+                        let mut paragraph_elements: Vec<Element> = Vec::new();
                         parse_html(child.children(), &mut paragraph_elements)?;
-                        if let Ok(paragraph_element) = ParagraphElement::new(&paragraph_elements) {
-                            elements.push(paragraph_element);
-                        }
+                        elements.push(Paragraph {
+                            elements: paragraph_elements,
+                        });
                     }
                     "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => {
                         let level = element.name()[1..].parse::<u8>().unwrap_or(1);
@@ -197,9 +197,7 @@ fn parse_html(
                             })
                             .collect::<Vec<String>>()
                             .join("");
-                        if let Ok(header_element) = HeaderElement::new(&text, level) {
-                            elements.push(header_element);
-                        }
+                        elements.push(Header { text, level });
                     }
                     "img" => {
                         let _src = element.attr("src").unwrap_or_default();
@@ -210,31 +208,33 @@ fn parse_html(
                             Ok(bytes) => bytes,
                             Err(_) => vec![],
                         };
-                        if let Ok(image_element) =
-                            ImageElement::new(&Bytes::from(image_bytes), title, alt, ImageType::Png)
-                        {
-                            elements.push(image_element);
-                        }
+                        elements.push(Image {
+                            bytes: Bytes::from(image_bytes),
+                            title: title.to_string(),
+                            alt: alt.to_string(),
+                            image_type: ImageType::Png,
+                        });
                     }
                     "ul" | "ol" => {
-                        let mut list_items: Vec<ListItemElement> = Vec::new();
+                        let mut list_items: Vec<ListItem> = Vec::new();
                         let numbered = element.name() == "ol";
                         for list_child in child.children() {
                             if let Node::Element(ref li_element) = list_child.value() {
                                 if li_element.name() == "li" {
-                                    let mut item_elements: Vec<Box<dyn Element>> = Vec::new();
+                                    let mut item_elements: Vec<Element> = Vec::new();
                                     parse_html(list_child.children(), &mut item_elements)?;
                                     for item_element in item_elements {
-                                        if let Ok(list_item) = ListItemElement::new(&item_element) {
-                                            list_items.push(list_item);
-                                        }
+                                        list_items.push(ListItem {
+                                            element: Box::new(item_element),
+                                        });
                                     }
                                 }
                             }
                         }
-                        if let Ok(list_element) = ListElement::new(&list_items, numbered) {
-                            elements.push(list_element);
-                        }
+                        elements.push(List {
+                            elements: list_items,
+                            numbered,
+                        });
                     }
 
                     "a" => {
@@ -253,9 +253,11 @@ fn parse_html(
                             .collect::<Vec<String>>()
                             .join("");
 
-                        if let Ok(hyperlink_element) = HyperlinkElement::new(&text, &href, &alt) {
-                            elements.push(hyperlink_element);
-                        }
+                        elements.push(Hyperlink {
+                            title: text,
+                            url: href,
+                            alt,
+                        });
                     }
 
                     // Add more tag handling as needed
@@ -266,8 +268,11 @@ fn parse_html(
                 }
             }
             Node::Text(ref text) => {
-                let text_element = TextElement::new(text, 8)?;
-                if text_element.text_as_ref()?.text != "\n" {
+                let text_element = Text {
+                    text: text.to_string(),
+                    size: 8,
+                };
+                if text.to_string() != "\n" {
                     elements.push(text_element);
                 }
             }
@@ -278,41 +283,33 @@ fn parse_html(
 }
 
 fn generate_html_for_element(
-    element: &Box<dyn Element>,
+    element: &Element,
     images: &mut HashMap<String, Bytes>,
     image_num: &mut i32,
 ) -> anyhow::Result<String> {
-    match element.element_type() {
-        ElementType::Text => {
-            let text_element = element.text_as_ref()?;
-            Ok(format!("{}", text_element.text))
-        }
-        ElementType::Paragraph => {
-            let paragraph = element.paragraph_as_ref()?;
+    match element {
+        Text { text, size: _ } => Ok(format!("{}", text)),
+        Paragraph { elements } => {
             let mut paragraph_html = String::from("<p>");
-            for child in &paragraph.elements {
+            for child in elements {
                 paragraph_html
                     .push_str(&generate_html_for_element(child, images, image_num)?.as_str());
             }
             paragraph_html.push_str("</p>");
             Ok(paragraph_html)
         }
-        ElementType::Header => {
-            let header = element.header_as_ref()?;
-            Ok(format!(
-                "<h{level}>{text}</h{level}>",
-                level = header.level,
-                text = header.text
-            ))
-        }
-        ElementType::List => {
-            let list = element.list_as_ref()?;
-            let tag = if list.numbered { "ol" } else { "ul" };
+        Header { level, text } => Ok(format!(
+            "<h{level}>{text}</h{level}>",
+            level = level,
+            text = text
+        )),
+        List { elements, numbered } => {
+            let tag = if *numbered { "ol" } else { "ul" };
             let mut list_html = format!("<{}>", tag);
             list_html.push_str("\n");
-            for item in &list.elements {
+            for item in elements {
                 let item_html = generate_html_for_element(&item.element, images, image_num)?;
-                if &item.element.element_type() == &ElementType::List {
+                if let List { .. } = *item.element {
                     list_html.push_str(&format!("{}", item_html));
                 } else {
                     list_html.push_str(&format!("<li>{}</li>", item_html));
@@ -323,23 +320,24 @@ fn generate_html_for_element(
             list_html.push_str("\n");
             Ok(list_html)
         }
-        ElementType::Image => {
-            let image = element.image_as_ref()?;
+        Image {
+            bytes,
+            title,
+            alt,
+            image_type: _,
+        } => {
             let image_path = format!("image{}.png", image_num);
-            images.insert(image_path.to_string(), image.bytes.clone());
+            images.insert(image_path.to_string(), bytes.clone());
             *image_num += 1;
             Ok(format!(
                 "<img src=\"{}\" alt=\"{}\" title=\"{}\" />",
-                image_path, image.alt, image.title
+                image_path, alt, title
             ))
         }
-        ElementType::Hyperlink => {
-            let hyperlink = element.hyperlink_as_ref()?;
-            Ok(format!(
-                "<a href=\"{}\" title=\"{}\">{}</a>",
-                hyperlink.url, hyperlink.alt, hyperlink.title
-            ))
-        }
+        Hyperlink { title, url, alt } => Ok(format!(
+            "<a href=\"{}\" title=\"{}\">{}</a>",
+            url, alt, title
+        )),
         _ => Ok("".to_string()),
     }
 }

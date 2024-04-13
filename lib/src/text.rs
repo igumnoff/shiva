@@ -1,3 +1,4 @@
+use crate::core::Element::{Image, Paragraph, Table};
 use crate::core::*;
 use bytes::Bytes;
 use std::collections::HashMap;
@@ -8,19 +9,25 @@ impl TransformerTrait for Transformer {
     where
         Self: Sized,
     {
-        let mut elements: Vec<Box<dyn Element>> = vec![];
+        let mut elements: Vec<Element> = vec![];
         let document: &str = std::str::from_utf8(document.as_ref())?;
         let lines = document.lines();
         let lines_vec: Vec<&str> = lines.collect();
         let mut i = 0;
         while i < lines_vec.len() {
-            let line = lines_vec[i];
-            elements.push(TextElement::new(line, 8)?);
-            elements.push(TextElement::new("\n", 8)?);
+            let line = lines_vec[i].to_string();
+            elements.push(Element::Text {
+                text: line,
+                size: 8,
+            });
+            elements.push(Element::Text {
+                text: "\n".to_string(),
+                size: 8,
+            });
             i += 1;
         }
-        let new_paragraph = ParagraphElement::new(&elements)?;
-        Ok(Document::new(&vec![new_paragraph])?)
+        let new_paragraph = Paragraph { elements };
+        Ok(Document::new(vec![new_paragraph]))
     }
 
     fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)>
@@ -32,7 +39,7 @@ impl TransformerTrait for Transformer {
 
         let mut markdown = String::new();
         fn generate_element(
-            element: &Box<dyn Element>,
+            element: &Element,
             markdown: &mut String,
             list_depth: usize,
             list_counters: &mut Vec<usize>,
@@ -41,7 +48,7 @@ impl TransformerTrait for Transformer {
             image_num: &mut i32,
         ) -> anyhow::Result<()> {
             fn generate_list_item(
-                element: &ListItemElement,
+                element: &ListItem,
                 markdown: &mut String,
                 list_depth: usize,
                 list_counters: &mut Vec<usize>,
@@ -51,7 +58,7 @@ impl TransformerTrait for Transformer {
             ) -> anyhow::Result<()> {
                 let prefix = if *list_types.last().unwrap() {
                     let counter = list_counters.last_mut().unwrap();
-                    if &element.element.element_type() == &ElementType::Text {
+                    if let Element::Text { .. } = *element.element {
                         *counter += 1;
                     }
                     format!("{}. ", counter)
@@ -60,7 +67,7 @@ impl TransformerTrait for Transformer {
                 };
                 // println!("list depth: {}", list_depth);
                 markdown.push_str(&"  ".repeat(list_depth - 1));
-                if &element.element.element_type() == &ElementType::Text {
+                if let Element::Text { .. } = *element.element {
                     markdown.push_str(&prefix);
                 }
                 generate_element(
@@ -72,22 +79,20 @@ impl TransformerTrait for Transformer {
                     images,
                     image_num,
                 )?;
-                if &element.element.element_type() == &ElementType::Text {
+                if let Element::Text { .. } = *element.element {
                     markdown.push('\n');
                 }
                 Ok(())
             }
 
-            match element.element_type() {
-                ElementType::Header => {
-                    let header = element.header_as_ref()?;
-                    markdown.push_str(&header.text);
+            match element {
+                Element::Header { level: _, text } => {
+                    markdown.push_str(text);
                     markdown.push('\n');
                     markdown.push('\n');
                 }
-                ElementType::Paragraph => {
-                    let paragraph = element.paragraph_as_ref()?;
-                    for child in &paragraph.elements {
+                Element::Paragraph { elements } => {
+                    for child in elements {
                         generate_element(
                             child,
                             markdown,
@@ -101,13 +106,10 @@ impl TransformerTrait for Transformer {
                     markdown.push('\n');
                     markdown.push('\n');
                 }
-                ElementType::List => {
-                    let list = element.list_as_ref()?;
-                    // println!("{:?}", list);
-
+                Element::List { elements, numbered } => {
                     list_counters.push(0);
-                    list_types.push(list.numbered);
-                    for item in &list.elements {
+                    list_types.push(numbered.clone());
+                    for item in elements {
                         generate_list_item(
                             &item,
                             markdown,
@@ -125,60 +127,57 @@ impl TransformerTrait for Transformer {
                         markdown.push('\n');
                     }
                 }
-                ElementType::Text => {
-                    let text = element.text_as_ref()?;
-                    markdown.push_str(&text.text);
-                    if !text.text.ends_with(" ") {
+                Element::Text { text, size: _ } => {
+                    markdown.push_str(text);
+                    if !text.ends_with(" ") {
                         markdown.push_str(" ");
                     }
                 }
-                ElementType::Hyperlink => {
-                    let hyperlink = element.hyperlink_as_ref()?;
-                    if hyperlink.url == hyperlink.alt && hyperlink.alt == hyperlink.url {
-                        markdown.push_str(&format!("{}", hyperlink.url));
+                Element::Hyperlink { title, url, alt } => {
+                    if url == alt && alt == url {
+                        markdown.push_str(&format!("{}", url));
                     } else {
-                        markdown.push_str(&format!(
-                            "[{}]({} \"{}\")",
-                            hyperlink.title, hyperlink.url, hyperlink.alt
-                        ));
+                        markdown.push_str(&format!("[{}]({} \"{}\")", title, url, alt));
                     }
                 }
-                ElementType::Image => {
-                    let image = element.image_as_ref()?;
+                Image {
+                    bytes,
+                    title,
+                    alt,
+                    image_type: _,
+                } => {
                     let image_path = format!("image{}.png", image_num);
-                    markdown.push_str(&format!(
-                        "![{}]({} \"{}\")",
-                        image.alt, image_path, image.title
-                    ));
-                    images.insert(image_path.to_string(), image.bytes.clone());
+                    markdown.push_str(&format!("![{}]({} \"{}\")", alt, image_path, title));
+                    images.insert(image_path.to_string(), bytes.clone());
                     *image_num += 1;
                 }
-                ElementType::Table => {
-                    let table = element.table_as_ref()?;
-
+                Table { headers, rows } => {
                     let mut max_lengths: Vec<usize> = Vec::new();
 
-                    for header in &table.headers {
-                        let header_text = header.element.text_as_ref()?;
-                        max_lengths.push(header_text.text.len());
+                    for header in headers {
+                        if let Element::Text { text, size: _ } = *header.element.clone() {
+                            max_lengths.push(text.len());
+                        }
                     }
-                    for row in &table.rows {
+                    for row in rows {
                         for (cell_index, cell) in row.cells.iter().enumerate() {
-                            let cell_text = cell.element.text_as_ref()?;
-                            if cell_index < max_lengths.len() {
-                                max_lengths[cell_index] =
-                                    max_lengths[cell_index].max(cell_text.text.len());
+                            if let Element::Text { text, size: _ } = *cell.element.clone() {
+                                if cell_index < max_lengths.len() {
+                                    max_lengths[cell_index] =
+                                        max_lengths[cell_index].max(text.len());
+                                }
                             }
                         }
                     }
 
-                    for (index, header) in table.headers.iter().enumerate() {
-                        let header_text = header.element.text_as_ref()?;
-                        let padding = max_lengths[index] - header_text.text.len();
-                        markdown.push_str("| ");
-                        markdown.push_str(&header_text.text);
-                        markdown.push_str(&" ".repeat(padding));
-                        markdown.push(' ');
+                    for (index, header) in headers.iter().enumerate() {
+                        if let Element::Text { text, size: _ } = *header.element.clone() {
+                            let padding = max_lengths[index] - text.len();
+                            markdown.push_str("| ");
+                            markdown.push_str(text.as_str());
+                            markdown.push_str(&" ".repeat(padding));
+                            markdown.push(' ');
+                        }
                     }
                     markdown.push_str("|\n");
 
@@ -188,20 +187,20 @@ impl TransformerTrait for Transformer {
                     }
                     markdown.push_str("|\n");
 
-                    for row in &table.rows {
+                    for row in rows {
                         for (cell_index, cell) in row.cells.iter().enumerate() {
-                            let cell_text = cell.element.text_as_ref()?;
-                            let padding = max_lengths[cell_index] - cell_text.text.len();
-                            markdown.push_str("| ");
-                            markdown.push_str(&cell_text.text);
-                            markdown.push_str(&" ".repeat(padding));
-                            markdown.push(' ');
+                            if let Element::Text { text, size: _ } = *cell.element.clone() {
+                                let padding = max_lengths[cell_index] - text.len();
+                                markdown.push_str("| ");
+                                markdown.push_str(text.as_str());
+                                markdown.push_str(&" ".repeat(padding));
+                                markdown.push(' ');
+                            }
                         }
                         markdown.push_str("|\n");
                     }
                     markdown.push('\n');
                 }
-                _ => {}
             }
             Ok(())
         }

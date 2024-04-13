@@ -46,7 +46,7 @@
 Cargo.toml
 ```toml
 [dependencies]
-shiva = "0.1.14"
+shiva = {  version = "0.2.0", features = ["html", "markdown", "text", "pdf"] }
 ```
 
 main.rs
