@@ -29,10 +29,10 @@ impl TransformerTrait for Transformer {
             {
                 let list_item_text = trimmed_line[1..].trim();
                 let list_item = ListItem {
-                    element: Box::new(Text {
+                    element: Text {
                         text: list_item_text.to_string(),
                         size: 8,
-                    }),
+                    },
                 };
                 if current_list_stack.len() <= indent_level {
                     while current_list_stack.len() <= indent_level {
@@ -48,7 +48,7 @@ impl TransformerTrait for Transformer {
                         };
                         if let Some(parent_list) = current_list_stack.last_mut() {
                             parent_list.push(ListItem {
-                                element: Box::new(nested_list),
+                                element: nested_list,
                             });
                         }
                     }
@@ -62,7 +62,7 @@ impl TransformerTrait for Transformer {
                     };
                     if let Some(parent_list) = current_list_stack.last_mut() {
                         parent_list.push(ListItem {
-                            element: Box::from(nested_list),
+                            element: nested_list,
                         });
                     }
                 }
@@ -71,10 +71,10 @@ impl TransformerTrait for Transformer {
             {
                 let list_item_text = trimmed_line.splitn(2, '.').nth(1).unwrap_or("").trim();
                 let list_item = ListItem {
-                    element: Box::from(Text {
+                    element: Text {
                         text: list_item_text.to_string(),
                         size: 8,
-                    }),
+                    },
                 };
                 if current_list_stack.len() <= indent_level {
                     while current_list_stack.len() <= indent_level {
@@ -91,7 +91,7 @@ impl TransformerTrait for Transformer {
                         };
                         if let Some(parent_list) = current_list_stack.last_mut() {
                             parent_list.push(ListItem {
-                                element: Box::from(nested_list),
+                                element: nested_list,
                             });
                         }
                     }
@@ -105,7 +105,7 @@ impl TransformerTrait for Transformer {
                     };
                     if let Some(parent_list) = current_list_stack.last_mut() {
                         parent_list.push(ListItem {
-                            element: Box::from(nested_list),
+                            element: nested_list,
                         });
                     }
                 }
@@ -118,10 +118,10 @@ impl TransformerTrait for Transformer {
                             .split('|')
                             .filter(|x| !x.trim().is_empty() && !x.contains('-'))
                             .map(|header| TableHeader {
-                                element: Box::new(Text {
+                                element: Text {
                                     text: header.trim().to_string(),
                                     size: 8,
-                                }),
+                                },
                                 width: 10.0,
                             })
                             .collect();
@@ -132,10 +132,10 @@ impl TransformerTrait for Transformer {
                             .split('|')
                             .filter(|x| !x.trim().is_empty())
                             .map(|cell| TableCell {
-                                element: Box::new(Text {
+                                element: Text {
                                     text: cell.trim().to_string(),
                                     size: 8,
-                                }),
+                                },
                             })
                             .collect();
                         table_rows.push(TableRow { cells });
@@ -288,9 +288,7 @@ impl TransformerTrait for Transformer {
                         numbered: current_list_type_stack.pop().unwrap(),
                     };
                     if let Some(parent_list) = current_list_stack.last_mut() {
-                        parent_list.push(ListItem {
-                            element: Box::new(list),
-                        });
+                        parent_list.push(ListItem { element: list });
                     } else {
                         elements.push(list);
                     }
@@ -304,9 +302,7 @@ impl TransformerTrait for Transformer {
                 numbered: current_list_type_stack.pop().unwrap(),
             };
             if let Some(parent_list) = current_list_stack.last_mut() {
-                parent_list.push(ListItem {
-                    element: Box::new(list),
-                });
+                parent_list.push(ListItem { element: list });
             } else {
                 elements.push(list);
             }
@@ -357,7 +353,7 @@ impl TransformerTrait for Transformer {
                 let prefix = if *list_types.last().unwrap() {
                     let counter = list_counters.last_mut().unwrap();
 
-                    if let Text { .. } = *element.element {
+                    if let Text { .. } = element.element {
                         *counter += 1;
                     }
                     format!("{}. ", counter)
@@ -366,7 +362,7 @@ impl TransformerTrait for Transformer {
                 };
                 // println!("list depth: {}", list_depth);
                 markdown.push_str(&"  ".repeat(list_depth - 1));
-                if let Text { .. } = *element.element {
+                if let Text { .. } = element.element {
                     markdown.push_str(&prefix);
                 }
                 generate_element(
@@ -378,7 +374,7 @@ impl TransformerTrait for Transformer {
                     images,
                     image_num,
                 )?;
-                if let Text { .. } = *element.element {
+                if let Text { .. } = element.element {
                     markdown.push('\n');
                 }
                 Ok(())
@@ -456,13 +452,13 @@ impl TransformerTrait for Transformer {
                     let mut max_lengths: Vec<usize> = Vec::new();
 
                     for header in headers {
-                        if let Text { text, .. } = *header.element.clone() {
+                        if let Text { text, .. } = header.element.clone() {
                             max_lengths.push(text.len());
                         }
                     }
                     for row in rows {
                         for (cell_index, cell) in row.cells.iter().enumerate() {
-                            if let Text { text, .. } = *cell.element.clone() {
+                            if let Text { text, .. } = cell.element.clone() {
                                 if cell_index < max_lengths.len() {
                                     max_lengths[cell_index] =
                                         max_lengths[cell_index].max(text.len());
@@ -473,7 +469,7 @@ impl TransformerTrait for Transformer {
 
                     for (index, header) in headers.iter().enumerate() {
                         // let header_text = header.element.text_as_ref()?;
-                        if let Text { text, .. } = *header.element.clone() {
+                        if let Text { text, .. } = header.element.clone() {
                             let padding = max_lengths[index] - text.len();
                             markdown.push_str("| ");
                             markdown.push_str(text.as_str());
@@ -491,7 +487,7 @@ impl TransformerTrait for Transformer {
 
                     for row in rows {
                         for (cell_index, cell) in row.cells.iter().enumerate() {
-                            if let Text { text, .. } = *cell.element.clone() {
+                            if let Text { text, .. } = cell.element.clone() {
                                 let padding = max_lengths[cell_index] - text.len();
                                 markdown.push_str("| ");
                                 markdown.push_str(text.as_str());

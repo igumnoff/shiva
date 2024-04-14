@@ -126,9 +126,7 @@ fn parse_html(children: Children<Node>, elements: &mut Vec<Element>) -> anyhow::
                                                                         header_elements
                                                                     {
                                                                         headers.push(TableHeader {
-                                                                            element: Box::new(
-                                                                                header_element,
-                                                                            ),
+                                                                            element: header_element,
                                                                             width: 10.0,
                                                                         });
                                                                     }
@@ -145,9 +143,7 @@ fn parse_html(children: Children<Node>, elements: &mut Vec<Element>) -> anyhow::
                                                                         cell_elements
                                                                     {
                                                                         cells.push(TableCell {
-                                                                            element: Box::new(
-                                                                                cell_element,
-                                                                            ),
+                                                                            element: cell_element,
                                                                         });
                                                                     }
                                                                 }
@@ -225,7 +221,7 @@ fn parse_html(children: Children<Node>, elements: &mut Vec<Element>) -> anyhow::
                                     parse_html(list_child.children(), &mut item_elements)?;
                                     for item_element in item_elements {
                                         list_items.push(ListItem {
-                                            element: Box::new(item_element),
+                                            element: item_element,
                                         });
                                     }
                                 }
@@ -309,7 +305,7 @@ fn generate_html_for_element(
             list_html.push_str("\n");
             for item in elements {
                 let item_html = generate_html_for_element(&item.element, images, image_num)?;
-                if let List { .. } = *item.element {
+                if let List { .. } = item.element {
                     list_html.push_str(&format!("{}", item_html));
                 } else {
                     list_html.push_str(&format!("<li>{}</li>", item_html));

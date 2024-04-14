@@ -58,7 +58,7 @@ impl TransformerTrait for Transformer {
             ) -> anyhow::Result<()> {
                 let prefix = if *list_types.last().unwrap() {
                     let counter = list_counters.last_mut().unwrap();
-                    if let Element::Text { .. } = *element.element {
+                    if let Element::Text { .. } = element.element {
                         *counter += 1;
                     }
                     format!("{}. ", counter)
@@ -67,7 +67,7 @@ impl TransformerTrait for Transformer {
                 };
                 // println!("list depth: {}", list_depth);
                 markdown.push_str(&"  ".repeat(list_depth - 1));
-                if let Element::Text { .. } = *element.element {
+                if let Element::Text { .. } = element.element {
                     markdown.push_str(&prefix);
                 }
                 generate_element(
@@ -79,7 +79,7 @@ impl TransformerTrait for Transformer {
                     images,
                     image_num,
                 )?;
-                if let Element::Text { .. } = *element.element {
+                if let Element::Text { .. } = element.element {
                     markdown.push('\n');
                 }
                 Ok(())
@@ -155,13 +155,13 @@ impl TransformerTrait for Transformer {
                     let mut max_lengths: Vec<usize> = Vec::new();
 
                     for header in headers {
-                        if let Element::Text { text, size: _ } = *header.element.clone() {
+                        if let Element::Text { text, size: _ } = header.element.clone() {
                             max_lengths.push(text.len());
                         }
                     }
                     for row in rows {
                         for (cell_index, cell) in row.cells.iter().enumerate() {
-                            if let Element::Text { text, size: _ } = *cell.element.clone() {
+                            if let Element::Text { text, size: _ } = cell.element.clone() {
                                 if cell_index < max_lengths.len() {
                                     max_lengths[cell_index] =
                                         max_lengths[cell_index].max(text.len());
@@ -171,7 +171,7 @@ impl TransformerTrait for Transformer {
                     }
 
                     for (index, header) in headers.iter().enumerate() {
-                        if let Element::Text { text, size: _ } = *header.element.clone() {
+                        if let Element::Text { text, size: _ } = header.element.clone() {
                             let padding = max_lengths[index] - text.len();
                             markdown.push_str("| ");
                             markdown.push_str(text.as_str());
@@ -189,7 +189,7 @@ impl TransformerTrait for Transformer {
 
                     for row in rows {
                         for (cell_index, cell) in row.cells.iter().enumerate() {
-                            if let Element::Text { text, size: _ } = *cell.element.clone() {
+                            if let Element::Text { text, size: _ } = cell.element.clone() {
                                 let padding = max_lengths[cell_index] - text.len();
                                 markdown.push_str("| ");
                                 markdown.push_str(text.as_str());

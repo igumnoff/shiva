@@ -194,7 +194,7 @@ fn parse_object(
                                                 size: 8,
                                             };
                                             let new_list_item_element = ListItem {
-                                                element: Box::new(text_element),
+                                                element: text_element,
                                             };
                                             list_item_elements.push(new_list_item_element);
                                             let new_list = List {
@@ -363,7 +363,7 @@ fn parse_object(
                         {
                             let mut list_item_elements = list_elements.clone();
                             let new_list_item_element = ListItem {
-                                element: Box::new(text_element),
+                                element: text_element,
                             };
                             list_item_elements.push(new_list_item_element);
                             let new_list = List {

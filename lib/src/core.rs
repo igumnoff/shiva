@@ -84,11 +84,11 @@ pub enum Element {
 
 #[derive(Debug, Clone)]
 pub struct ListItem {
-    pub element: Box<Element>,
+    pub element: Element,
 }
 #[derive(Debug, Clone)]
 pub struct TableHeader {
-    pub element: Box<Element>,
+    pub element: Element,
     pub width: f32,
 }
 
@@ -99,7 +99,7 @@ pub struct TableRow {
 
 #[derive(Debug, Clone)]
 pub struct TableCell {
-    pub element: Box<Element>,
+    pub element: Element,
 }
 
 #[derive(Debug, Clone)]
