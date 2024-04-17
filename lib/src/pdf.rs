@@ -1,5 +1,5 @@
 use crate::core::Element::{Header, List, Paragraph, Table, Text};
-use crate::core::{Document, Element, ListItem, ParserError, TableHeader, TransformerTrait};
+use crate::core::{Document, Element, ListItem, ParserError, TableHeader, TableRow, TransformerTrait};
 use bytes::Bytes;
 use lopdf::content::Content;
 use lopdf::{Document as PdfDocument, Object, ObjectId};
@@ -40,6 +40,7 @@ impl TransformerTrait for Transformer {
             horizontal_position: &mut f32,
             document: &Document
         ) -> anyhow::Result<()> {
+            *vertical_position += *vertical_position + 2.5; // Additional spacing after text
             let font_size:f32 = match &header.element {
                 Text { text: _, size } => {
                     size.clone() as f32
@@ -86,6 +87,65 @@ impl TransformerTrait for Transformer {
 
             Ok(())
         }
+
+        fn render_table_row(
+            row: &TableRow,
+            pdf: &mut PdfDocumentReference,
+            page: &mut PdfPageIndex,
+            layer: &mut PdfLayerIndex,
+            vertical_position: &mut f32,
+            headers:  &Vec<TableHeader> ,
+            document: &Document
+        ) -> anyhow::Result<()> {
+            let mut horizontal_position: f32 = 0.0;
+
+            let mut vertical_position_max: f32 = *vertical_position;
+            for (i, cell) in row.cells.iter().enumerate() {
+                let vertical_position_backup: f32 = *vertical_position;
+                match &cell.element {
+                    Text { text, size } => {
+                        let font_size = *size as f32;
+                        let font = pdf.add_builtin_font(BuiltinFont::Helvetica)?;
+                        let max_text_width = headers[i].width;
+                        let max_chars = (max_text_width / (0.3528 * font_size)) as usize;
+
+                        let text_elements = split_string(text, max_chars);
+                        let step: f32 = 0.3528 * font_size;  // Height adjustment for text elements
+                        for text in text_elements {
+                            if (*vertical_position + step) > (document.page_height - document.bottom_page_indent) {
+                                let (new_page, new_layer) = pdf.add_page(
+                                    Mm(document.page_width),
+                                    Mm(document.page_height),
+                                    "Layer 1"
+                                );
+                                *vertical_position = document.top_page_indent;
+                                *page = new_page;
+                                *layer = new_layer;
+                            }
+                            let current_layer = pdf.get_page(*page).get_layer(*layer);
+                            current_layer.use_text(
+                                text,
+                                font_size,
+                                Mm(document.left_page_indent + horizontal_position),
+                                Mm(document.page_height - *vertical_position),
+                                &font
+                            );
+                            *vertical_position += step;  // Additional vertical spacing between cells
+                        }
+                        horizontal_position = horizontal_position + headers[i].width;
+                        if *vertical_position > vertical_position_max {
+                            vertical_position_max = *vertical_position;
+                        };
+                    }
+
+                    _ => {}  // Implement other element types as necessary
+                }
+                *vertical_position = vertical_position_backup;
+            }
+            *vertical_position = vertical_position_max;
+            Ok(())
+        }
+
 
         fn generate_pdf(
             document: &Document,
@@ -203,7 +263,8 @@ impl TransformerTrait for Transformer {
                     }
                     *vertical_position = vertical_position_max;
                     for row in rows {
-                        for _cell in &row.cells {}
+                        render_table_row(row, pdf, page, layer, vertical_position, headers, document)?;
+                        *vertical_position += 5.0;  // Additional vertical spacing between rows
                     }
                 }
                 _ => {}
