@@ -1,5 +1,5 @@
 use crate::core::Element::{Header, List, Paragraph, Table, Text};
-use crate::core::{Document, Element, ListItem, ParserError, TransformerTrait};
+use crate::core::{Document, Element, ListItem, ParserError, TableHeader, TransformerTrait};
 use bytes::Bytes;
 use lopdf::content::Content;
 use lopdf::{Document as PdfDocument, Object, ObjectId};
@@ -28,6 +28,64 @@ impl TransformerTrait for Transformer {
 
         let (mut pdf, mut page1, mut layer1) =
             PdfDocument::new("PDF Document", Mm(PAGE_WIDTH), Mm(PAGE_HEIGHT), "Layer 1");
+
+
+
+        fn render_table_header(
+            header: &TableHeader,
+            pdf: &mut PdfDocumentReference,
+            page: &mut PdfPageIndex,
+            layer: &mut PdfLayerIndex,
+            vertical_position: &mut f32,
+            horizontal_position: &mut f32,
+            document: &Document
+        ) -> anyhow::Result<()> {
+            let font_size:f32 = match &header.element {
+                Text { text: _, size } => {
+                    size.clone() as f32
+                }
+                _ => { 10.0 }
+            };
+
+            let font = pdf.add_builtin_font(BuiltinFont::Helvetica)?;
+
+            let max_text_width = header.width;
+            let max_chars = (max_text_width / (0.3528 * font_size)) as usize;
+
+            let text_elements:Vec<String> = match &header.element {
+                Text { text, size: _ } => {
+                    split_string(text, max_chars)
+                }
+                _ => { vec!["".to_string()] }
+            };
+
+            for text in text_elements {
+                let step: f32 = 0.3528 * font_size;
+                if (*vertical_position + step) > (document.page_height - document.bottom_page_indent) {
+                    let (new_page, new_layer) = pdf.add_page(
+                        Mm(document.page_width),
+                        Mm(document.page_height),
+                        "Layer 1"
+                    );
+                    *vertical_position = document.top_page_indent;
+                    *page = new_page;
+                    *layer = new_layer;
+                }
+
+                let current_layer = pdf.get_page(*page).get_layer(*layer);
+                current_layer.use_text(
+                    text,
+                    font_size,
+                    Mm(document.left_page_indent + *horizontal_position),
+                    Mm(document.page_height - *vertical_position),
+                    &font
+                );
+
+                *vertical_position += step + 2.5; // Adjust vertical position for next element
+            }
+
+            Ok(())
+        }
 
         fn generate_pdf(
             document: &Document,
@@ -121,9 +179,29 @@ impl TransformerTrait for Transformer {
                     }
                 }
                 Table { headers, rows } => {
+                    let mut vertical_position_max: f32 = *vertical_position;
                     if !headers.is_empty() {
-                        for _header in headers {}
+                        let mut horizontal_position: f32 = 0.0;
+                        let vertical_position_backup: f32 = *vertical_position;
+
+                        for header in headers {
+                            render_table_header(
+                                &header,
+                                pdf,
+                                page,
+                                layer,
+                                vertical_position,
+                                &mut horizontal_position,
+                                document
+                            )?;
+                            horizontal_position = horizontal_position + header.width;
+                            if *vertical_position > vertical_position_max {
+                                vertical_position_max = *vertical_position;
+                            }
+                            *vertical_position = vertical_position_backup;
+                        }
                     }
+                    *vertical_position = vertical_position_max;
                     for row in rows {
                         for _cell in &row.cells {}
                     }
