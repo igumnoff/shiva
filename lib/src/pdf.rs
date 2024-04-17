@@ -40,7 +40,6 @@ impl TransformerTrait for Transformer {
             horizontal_position: &mut f32,
             document: &Document
         ) -> anyhow::Result<()> {
-            *vertical_position += *vertical_position + 2.5; // Additional spacing after text
             let font_size:f32 = match &header.element {
                 Text { text: _, size } => {
                     size.clone() as f32
@@ -48,7 +47,7 @@ impl TransformerTrait for Transformer {
                 _ => { 10.0 }
             };
 
-            let font = pdf.add_builtin_font(BuiltinFont::Helvetica)?;
+            let font = pdf.add_builtin_font(BuiltinFont::Courier)?;
 
             let max_text_width = header.width;
             let max_chars = (max_text_width / (0.3528 * font_size)) as usize;
@@ -105,7 +104,7 @@ impl TransformerTrait for Transformer {
                 match &cell.element {
                     Text { text, size } => {
                         let font_size = *size as f32;
-                        let font = pdf.add_builtin_font(BuiltinFont::Helvetica)?;
+                        let font = pdf.add_builtin_font(BuiltinFont::Courier)?;
                         let max_text_width = headers[i].width;
                         let max_chars = (max_text_width / (0.3528 * font_size)) as usize;
 
@@ -241,9 +240,9 @@ impl TransformerTrait for Transformer {
                 Table { headers, rows } => {
                     let mut vertical_position_max: f32 = *vertical_position;
                     if !headers.is_empty() {
+                        *vertical_position += 2.5; // Additional spacing after text
                         let mut horizontal_position: f32 = 0.0;
                         let vertical_position_backup: f32 = *vertical_position;
-
                         for header in headers {
                             render_table_header(
                                 &header,
@@ -264,7 +263,6 @@ impl TransformerTrait for Transformer {
                     *vertical_position = vertical_position_max;
                     for row in rows {
                         render_table_row(row, pdf, page, layer, vertical_position, headers, document)?;
-                        *vertical_position += 5.0;  // Additional vertical spacing between rows
                     }
                 }
                 _ => {}
