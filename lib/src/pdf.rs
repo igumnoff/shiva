@@ -4,6 +4,7 @@ use bytes::Bytes;
 use lopdf::content::Content;
 use lopdf::{Document as PdfDocument, Object, ObjectId};
 use std::collections::{BTreeMap, HashMap};
+use printpdf::{BuiltinFont, Mm, PdfDocumentReference, PdfLayerIndex, PdfPageIndex};
 
 pub struct Transformer;
 impl TransformerTrait for Transformer {
@@ -29,6 +30,7 @@ impl TransformerTrait for Transformer {
         let (mut pdf, mut page1, mut layer1) =
             PdfDocument::new("PDF Document", Mm(PAGE_WIDTH), Mm(PAGE_HEIGHT), "Layer 1");
 
+        render_header_footer(&mut pdf, &mut page1, &mut layer1, document)?;
 
 
         fn render_table_header(
@@ -62,11 +64,12 @@ impl TransformerTrait for Transformer {
             for text in text_elements {
                 let step: f32 = 0.3528 * font_size;
                 if (*vertical_position + step) > (document.page_height - document.bottom_page_indent) {
-                    let (new_page, new_layer) = pdf.add_page(
+                    let (mut new_page,mut new_layer) = pdf.add_page(
                         Mm(document.page_width),
                         Mm(document.page_height),
                         "Layer 1"
                     );
+                    render_header_footer(pdf, &mut new_page, &mut new_layer, document)?;
                     *vertical_position = document.top_page_indent;
                     *page = new_page;
                     *layer = new_layer;
@@ -112,11 +115,12 @@ impl TransformerTrait for Transformer {
                         let step: f32 = 0.3528 * font_size;  // Height adjustment for text elements
                         for text in text_elements {
                             if (*vertical_position + step) > (document.page_height - document.bottom_page_indent) {
-                                let (new_page, new_layer) = pdf.add_page(
+                                let (mut new_page,mut new_layer) = pdf.add_page(
                                     Mm(document.page_width),
                                     Mm(document.page_height),
                                     "Layer 1"
                                 );
+                                render_header_footer(pdf, &mut new_page, &mut new_layer, document)?;
                                 *vertical_position = document.top_page_indent;
                                 *page = new_page;
                                 *layer = new_layer;
@@ -164,8 +168,8 @@ impl TransformerTrait for Transformer {
                         _ => 12.0, // Default font size for other header levels
                     };
 
-                    let font_width = (0.3528 * (font_size as f32) * 0.87) as f32;
-                    let max_text_width = document.page_height
+                    let font_width = (0.3528 * (font_size as f32) * 0.6) as f32;
+                    let max_text_width = document.page_width
                         - document.left_page_indent
                         - document.right_page_indent;
                     let max_chars = (max_text_width / font_width) as usize;
@@ -175,11 +179,12 @@ impl TransformerTrait for Transformer {
                         if (*vertical_position + step)
                             > (document.page_height - document.bottom_page_indent)
                         {
-                            let (new_page, new_layer) = pdf.add_page(
+                            let (mut new_page, mut new_layer) = pdf.add_page(
                                 Mm(document.page_width),
                                 Mm(document.page_height),
                                 "Layer 1",
                             );
+                            render_header_footer(pdf, &mut new_page, &mut new_layer, document)?;
                             *vertical_position = 0.0 + document.top_page_indent;
                             *layer = new_layer;
                             *page = new_page;
@@ -201,8 +206,8 @@ impl TransformerTrait for Transformer {
                     for paragraph_element in elements {
                         match paragraph_element {
                             Text { text, size } => {
-                                let font_width = (0.3528 * (*size as f32) * 0.87) as f32;
-                                let max_text_width = document.page_height
+                                let font_width = (0.3528 * (*size as f32) * 0.6) as f32;
+                                let max_text_width = document.page_width
                                     - document.left_page_indent
                                     - document.right_page_indent;
                                 let max_chars = (max_text_width / font_width) as usize;
@@ -212,11 +217,12 @@ impl TransformerTrait for Transformer {
                                     if (*vertical_position + step)
                                         > (document.page_height - document.bottom_page_indent)
                                     {
-                                        let (new_page, new_layer) = pdf.add_page(
+                                        let (mut new_page,mut new_layer) = pdf.add_page(
                                             Mm(document.page_width),
                                             Mm(document.page_height),
                                             "Layer 1",
                                         );
+                                        render_header_footer(pdf, &mut new_page, &mut new_layer, document)?;
                                         *vertical_position = 0.0 + document.top_page_indent;
                                         *layer = new_layer;
                                         *page = new_page;
@@ -521,6 +527,72 @@ fn parse_object(
     Ok(())
 }
 
+fn render_header_footer(
+    pdf: &mut PdfDocumentReference,
+    page: &mut PdfPageIndex,
+    layer: &mut PdfLayerIndex,
+    document: &Document
+) -> anyhow::Result<()> {
+    let mut vertical_position = 0.0;
+    let font = pdf.add_builtin_font(BuiltinFont::Courier)?;
+    document.page_header.iter().for_each(|element| {
+        match element {
+            Text { text, size } => {
+                let font_size = *size as f32;
+                let font_width = (0.3528 * font_size * 0.6) as f32;
+                let max_text_width = document.page_width
+                    - document.left_page_indent
+                    - document.right_page_indent;
+                let max_chars = (max_text_width / font_width) as usize;
+                let text_elements = split_string(text, max_chars);
+                for text in text_elements {
+                    let step: f32 = 0.3528 * font_size;
+                    vertical_position += step;
+                    let current_layer = pdf.get_page(*page).get_layer(*layer);
+                    current_layer.use_text(
+                        text,
+                        font_size,
+                        Mm(document.left_page_indent),
+                        Mm(document.page_height - vertical_position),
+                        &font
+                    );
+                }
+            }
+            _ => {}
+        }
+    });
+    vertical_position = 0.0;
+    document.page_footer.iter().for_each(|element| {
+        match element {
+            Text { text, size } => {
+                let font_size = *size as f32;
+                let font_width = (0.3528 * font_size * 0.6) as f32;
+                let max_text_width = document.page_width
+                    - document.left_page_indent
+                    - document.right_page_indent;
+                let max_chars = (max_text_width / font_width) as usize;
+                let text_elements = split_string(text, max_chars);
+                for text in text_elements {
+                    let step: f32 = 0.3528 * font_size;
+                    vertical_position += step;
+                    let current_layer = pdf.get_page(*page).get_layer(*layer);
+                    current_layer.use_text(
+                        text,
+                        font_size,
+                        Mm(document.left_page_indent),
+                        Mm(document.bottom_page_indent - vertical_position),
+                        &font
+                    );
+                }
+            }
+            _ => {}
+        }
+    });
+
+    Ok(())
+}
+
+
 fn split_string(input: &str, max_length: usize) -> Vec<String> {
     let mut result = Vec::new();
     let mut current_string = String::new();
@@ -557,8 +629,8 @@ mod tests {
         println!("==========================");
         println!("{:?}", parsed_document);
         println!("==========================");
-        let generated_result = Transformer::generate(&parsed_document);
-        assert!(generated_result.is_ok());
+        let generated_result = Transformer::generate(&parsed_document)?;
+        std::fs::write("test/data/generated.pdf",generated_result.0)?;
         Ok(())
     }
 }

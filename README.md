@@ -39,14 +39,14 @@
 | Plain text    | +      | +         | +    | +     | -     | +         | -          | -          |
 | Markdown      | +      | +         | +    | +     | +     | +         | +          | +          |
 | HTML          | +      | +         | +    | +     | +     | +         | -          | -          |
-| PDF           | +      | +         | -    | -     | -     | -         | -          | -          |
+| PDF           | +      | +         | -    | +     | -     | -         | +          | +          |
 
 ## Usage Shiva library
 
 Cargo.toml
 ```toml
 [dependencies]
-shiva = {  version = "0.2.2", features = ["html", "markdown", "text", "pdf"] }
+shiva = {  version = "0.2.3", features = ["html", "markdown", "text", "pdf"] }
 ```
 
 main.rs
