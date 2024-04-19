@@ -533,6 +533,7 @@ mod tests {
     use crate::core::*;
     use crate::markdown::*;
     use crate::text;
+    use crate::pdf;
 
     #[test]
     fn test() -> anyhow::Result<()> {
@@ -601,6 +602,9 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         let generated_bytes = generated_result?;
         let generated_text = std::str::from_utf8(&generated_bytes.0)?;
         println!("{}", generated_text);
+
+        let generated_result = pdf::Transformer::generate(&parsed_document)?;
+        std::fs::write("test/data/generated.pdf",generated_result.0)?;
 
         Ok(())
     }
