@@ -1,4 +1,5 @@
 use bytes::Bytes;
+use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use thiserror::Error;
@@ -47,7 +48,6 @@ pub enum GeneratorError {
     #[error("Generator error")]
     Common,
 }
-
 #[derive(Debug, Clone)]
 pub enum Element {
     Text {
@@ -82,27 +82,26 @@ pub enum Element {
     },
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ListItem {
     pub element: Element,
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct TableHeader {
     pub element: Element,
     pub width: f32,
 }
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct TableRow {
     pub cells: Vec<TableCell>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct TableCell {
     pub element: Element,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub enum ImageType {
     Png,
     Jpeg,

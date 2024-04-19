@@ -1,5 +1,5 @@
 //!
-#![doc = include_str!("../README.md")]
+#![doc = include_str!("../../README.md")]
 //!
 
 pub mod core;
@@ -15,3 +15,7 @@ pub mod html;
 
 #[cfg(feature = "pdf")]
 pub mod pdf;
+
+#[cfg(feature = "json")]
+pub mod json;
+mod json;
