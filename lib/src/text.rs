@@ -219,9 +219,34 @@ impl TransformerTrait for Transformer {
             )?;
         }
 
+        for element in &document.page_header {
+            generate_element(
+                element,
+                &mut markdown,
+                0,
+                &mut list_counters,
+                &mut list_types,
+                &mut images,
+                &mut image_num,
+            )?;
+        }
+
+        for element in &document.page_footer {
+            generate_element(
+                element,
+                &mut markdown,
+                0,
+                &mut list_counters,
+                &mut list_types,
+                &mut images,
+                &mut image_num,
+            )?;
+        }
+
         Ok((Bytes::from(markdown), HashMap::new()))
     }
 }
+
 
 #[cfg(test)]
 mod tests {
