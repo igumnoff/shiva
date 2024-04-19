@@ -159,6 +159,7 @@ impl TransformerTrait for Transformer {
             vertical_position: &mut f32,
             list_depth: usize,
         ) -> anyhow::Result<()> {
+            let bullet_type = ["\u{2022} ", "\u{9702} ", "\u{2219} "];
             for (index, list_item) in elements.iter().enumerate() {
                 match &list_item.element {
                     Text { text, size } => {
@@ -189,15 +190,14 @@ impl TransformerTrait for Transformer {
                             let current_layer = pdf.get_page(*page).get_layer(*layer);
                             let mut item_text;
                             if numbered {
-                                item_text = index.to_string();
-                                item_text.push(' ');
+                                item_text = (index + 1).to_string();
+                                item_text.push_str(". ");
                             } else {
-                                item_text = String::from("• ");
+                                item_text = bullet_type[list_depth % bullet_type.len()].to_string();
                             }
-    
                             item_text.push_str(&text);
 
-                            let left_indent = 2.0 * (list_depth as f32);
+                            let left_indent = 12.0 * (list_depth as f32);
 
                             current_layer.use_text(
                                 item_text,
