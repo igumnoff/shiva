@@ -1,4 +1,4 @@
-use crate::core::Element::{Image, Paragraph, Table};
+use crate::core::Element::{Image, Paragraph, Table, Header};
 use crate::core::*;
 use bytes::Bytes;
 use std::collections::HashMap;
@@ -207,7 +207,8 @@ impl TransformerTrait for Transformer {
 
         let mut list_counters: Vec<usize> = Vec::new();
         let mut list_types: Vec<bool> = Vec::new();
-        for element in &document.elements {
+
+        for element in &document.page_header {
             generate_element(
                 element,
                 &mut markdown,
@@ -219,7 +220,7 @@ impl TransformerTrait for Transformer {
             )?;
         }
 
-        for element in &document.page_header {
+        for element in &document.elements {
             generate_element(
                 element,
                 &mut markdown,
@@ -251,6 +252,7 @@ impl TransformerTrait for Transformer {
 #[cfg(test)]
 mod tests {
     use crate::core::*;
+    use crate::core::Element::Header;
     use crate::text::*;
 
     #[test]
@@ -277,10 +279,18 @@ Second header
         let document_string = std::str::from_utf8(document.as_bytes())?;
         println!("{}", document_string);
         assert!(parsed.is_ok());
-        let parsed_document = parsed.unwrap();
+        let mut parsed_document = parsed.unwrap();
         println!("==========================");
         println!("{:?}", parsed_document);
         println!("==========================");
+        let mut footer_elements = Vec::new();
+        let mut header_elements = Vec::new();
+        let header = Header { level: 0, text: std::string::String::from("my header string")};
+        let footer = Header {level: 0, text: std::string::String::from("my footer string")};
+        footer_elements.push(footer);
+        header_elements.push(header);
+        parsed_document.page_footer = footer_elements;
+        parsed_document.page_header = header_elements;
         let generated_result = Transformer::generate(&parsed_document);
         assert!(generated_result.is_ok());
         // println!("{:?}", generated_result.unwrap());
