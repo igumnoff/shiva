@@ -26,7 +26,7 @@ description = "Shiva library: Implementation in Rust of a parser and generator f
 
 
 [package.metadata.docs.rs]
-features = ["text", "markdown", "html", "pdf"]
+features = ["text", "markdown", "html", "pdf", "json"]
 
 
 [dependencies]
@@ -38,16 +38,17 @@ scraper = { version = "0.19.0", optional = true }
 ego-tree = { version = "0.6.2", optional = true }
 lopdf = { version = "0.32.0", optional = true }
 printpdf = { version = "0.7.0", optional = true }
-serde_json = "1.0.116"
-serde = { version = "1.0.198", features = ["derive"] }
+serde_json = { version = "1.0.116", optional = true }
+serde = { version = "1.0.198", features = ["derive"], optional = true }
 
 [dev-dependencies]
 env_logger = "0.10.0"
 
 [features]
 default = ["all"]
-all = ["text", "markdown", "html", "pdf"]
+all = ["text", "markdown", "html", "pdf", "json"]
 text = []
 markdown = ["regex"]
 html = ["scraper", "ego-tree"]
 pdf = ["lopdf", "printpdf"]
+json = ["serde", "serde_json"]
