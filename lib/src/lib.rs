@@ -18,4 +18,3 @@ pub mod pdf;
 
 #[cfg(feature = "json")]
 pub mod json;
-mod json;
