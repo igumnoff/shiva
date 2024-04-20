@@ -159,11 +159,10 @@ impl TransformerTrait for Transformer {
             vertical_position: &mut f32,
             list_depth: usize,
         ) -> anyhow::Result<()> {
-            let bullet_type = ["\u{2022} ", "\u{9702} ", "\u{2219} "];
+            let bullet_type = ["\u{2022} ", " ", " "];
             for (index, list_item) in elements.iter().enumerate() {
                 match &list_item.element {
                     Text { text, size } => {
-                    
                         let font_width = (0.3528 * (*size as f32) * 0.6) as f32;
                         let max_text_width = document.page_width
                             - document.left_page_indent
@@ -189,28 +188,83 @@ impl TransformerTrait for Transformer {
                             let font = pdf.add_builtin_font(BuiltinFont::Courier)?;
                             let current_layer = pdf.get_page(*page).get_layer(*layer);
                             let mut item_text;
-                            if numbered {
-                                item_text = (index + 1).to_string();
-                                item_text.push_str(". ");
-                            } else {
-                                item_text = bullet_type[list_depth % bullet_type.len()].to_string();
-                            }
-                            item_text.push_str(&text);
-
                             let left_indent = 12.0 * (list_depth as f32);
 
-                            current_layer.use_text(
-                                item_text,
-                                *size as f32,
-                                Mm(document.left_page_indent + left_indent),
-                                Mm(document.page_height - *vertical_position),
-                                &font,
-                            );
+                            if numbered {
+                                item_text = (index + 1).to_string();
+                                item_text.push_str(&format!(". {}", text));
+
+                                current_layer.use_text(
+                                    item_text,
+                                    *size as f32,
+                                    Mm(document.left_page_indent + left_indent),
+                                    Mm(document.page_height - *vertical_position),
+                                    &font,
+                                );
+                            } else {
+                                item_text = bullet_type[list_depth % bullet_type.len()].to_string();
+                                item_text.push_str(&text);
+
+                                match list_depth % bullet_type.len() {
+                                    0 => {
+                                        current_layer.use_text(
+                                            item_text,
+                                            *size as f32,
+                                            Mm(document.left_page_indent + left_indent),
+                                            Mm(document.page_height - *vertical_position),
+                                            &font,
+                                        );
+                                    }
+                                    1 => {
+                                        let mut rect = Rect::new(
+                                            Mm(document.left_page_indent + left_indent),
+                                            Mm(document.page_height - *vertical_position + 0.5),
+                                            Mm(document.left_page_indent + left_indent + 1.),
+                                            Mm(document.page_height - *vertical_position + 1.5),
+                                        );
+
+                                        rect = rect.with_mode(path::PaintMode::Stroke);
+                                        current_layer.add_rect(rect);
+
+                                        current_layer.use_text(
+                                            item_text,
+                                            *size as f32,
+                                            Mm(document.left_page_indent + left_indent + 2.),
+                                            Mm(document.page_height - *vertical_position),
+                                            &font,
+                                        );
+                                    }
+                                    2 => {
+                                        current_layer.add_rect(Rect::new(
+                                            Mm(document.left_page_indent + left_indent),
+                                            Mm(document.page_height - *vertical_position + 0.5),
+                                            Mm(document.left_page_indent + left_indent + 1.),
+                                            Mm(document.page_height - *vertical_position + 1.5),
+                                        ));
+
+                                        current_layer.use_text(
+                                            item_text,
+                                            *size as f32,
+                                            Mm(document.left_page_indent + left_indent + 2.),
+                                            Mm(document.page_height - *vertical_position),
+                                            &font,
+                                        );
+                                    }
+                                    _ => {}
+                                }
+                            }
                         }
                     }
-                    List { elements, numbered } => {
-                        render_list(pdf, document, layer, page, elements, *numbered, vertical_position, list_depth + 1)?
-                    }
+                    List { elements, numbered } => render_list(
+                        pdf,
+                        document,
+                        layer,
+                        page,
+                        elements,
+                        *numbered,
+                        vertical_position,
+                        list_depth + 1,
+                    )?,
                     _ => {}
                 }
             }
@@ -316,18 +370,16 @@ impl TransformerTrait for Transformer {
                         }
                     }
                 }
-                List { elements, numbered } => {
-                    render_list(
-                        pdf,
-                        document,
-                        layer,
-                        page,
-                        elements,
-                        *numbered,
-                        vertical_position,
-                        0,
-                    )?
-                }
+                List { elements, numbered } => render_list(
+                    pdf,
+                    document,
+                    layer,
+                    page,
+                    elements,
+                    *numbered,
+                    vertical_position,
+                    0,
+                )?,
                 Table { headers, rows } => {
                     let mut vertical_position_max: f32 = *vertical_position;
                     if !headers.is_empty() {
@@ -723,11 +775,9 @@ mod tests {
         println!("{:?}", parsed_document);
         println!("==========================");
         let generated_result = Transformer::generate(&parsed_document)?;
-        std::fs::write("test/data/generated.pdf",generated_result.0)?;
+        std::fs::write("test/data/generated.pdf", generated_result.0)?;
         Ok(())
     }
-
-
 
     #[test]
     fn test_list() -> anyhow::Result<()> {
@@ -741,9 +791,8 @@ mod tests {
         println!("==========================");
         let generated_result = Transformer::generate(&parsed_document);
         assert!(generated_result.is_ok());
-        std::fs::write("test/data/generated_list.pdf",generated_result.unwrap().0)?;
+        std::fs::write("test/data/generated_list.pdf", generated_result.unwrap().0)?;
 
         Ok(())
     }
-
 }
