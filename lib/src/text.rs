@@ -285,8 +285,8 @@ Second header
         println!("==========================");
         let mut footer_elements = Vec::new();
         let mut header_elements = Vec::new();
-        let header = Header { level: 0, text: std::string::String::from("my header string")};
-        let footer = Header {level: 0, text: std::string::String::from("my footer string")};
+        let header = Header { level: 0, text: std::string::String::from("page header string") };
+        let footer = Header { level: 0, text: std::string::String::from("page footer string") };
         footer_elements.push(footer);
         header_elements.push(header);
         parsed_document.page_footer = footer_elements;
