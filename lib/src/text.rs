@@ -1,4 +1,4 @@
-use crate::core::Element::{Image, Paragraph, Table, Header};
+use crate::core::Element::{Image, Paragraph, Table};
 use crate::core::*;
 use bytes::Bytes;
 use std::collections::HashMap;
