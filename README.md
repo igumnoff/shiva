@@ -17,7 +17,7 @@
 | Markdown      | +     | +        |
 | HTML          | +     | +        |
 | PDF           | +     | +        |
-| JSON          | -     | -        |
+| JSON          | -     | +        |
 | XML           | -     | -        |
 | DOC           | -     | -        |
 | XLS           | -     | -        |
@@ -31,15 +31,17 @@
 | Markdown      | +      | +         | +    | +     | +     | +         | -          | -          |
 | HTML          | +      | +         | +    | +     | +     | +         | -          | -          |
 | PDF           | -      | +         | +    | -     | -     | -         | -          | -          |
+| Json          | -      | -         | -    | -     | -     | -         | -          | -          |
 
 ## Generate document features
 
 | Document type | Header | Paragraph | List | Table | Image | Hyperlink | PageHeader | PageFooter |
 |---------------|--------|-----------|------|-------|-------|-----------|------------|------------|
-| Plain text    | +      | +         | +    | +     | -     | +         | -          | -          |
+| Plain text    | +      | +         | +    | +     | -     | +         | +          | +          |
 | Markdown      | +      | +         | +    | +     | +     | +         | +          | +          |
 | HTML          | +      | +         | +    | +     | +     | +         | -          | -          |
 | PDF           | +      | +         | -    | +     | -     | -         | +          | +          |
+| Json          | +      | +         | +    | +     | +     | +         | +          | +          |
 
 ## Usage Shiva library
 
