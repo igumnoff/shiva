@@ -1,22 +1,9 @@
 use crate::core::{Document, Element, TransformerTrait};
 use bytes::Bytes;
-use serde::ser::{SerializeSeq, SerializeStructVariant};
+use serde::ser::SerializeStructVariant;
 use serde::{Serialize, Serializer};
 use std::collections::HashMap;
 pub struct Transformer;
-
-impl Serialize for Document {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut seq = serializer.serialize_seq(Some(self.elements.len()))?;
-        for e in &self.elements {
-            seq.serialize_element(e)?
-        }
-        seq.end()
-    }
-}
 
 impl Serialize for Element {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
