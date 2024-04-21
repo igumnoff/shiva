@@ -1,5 +1,5 @@
 //!
-#![doc = include_str!("C:/Users/Lucky/RustroverProjects/shiva/README.md")]
+#![doc = include_str!("../README.md")]
 //!
 
 pub mod core;
