@@ -1,4 +1,4 @@
-use crate::core::Element::{Header, List, Paragraph, Table, Text};
+use crate::core::Element::{Header, Hyperlink, List, Paragraph, Table, Text};
 use crate::core::{
     Document, Element, ListItem, ParserError, TableHeader, TableRow, TransformerTrait,
 };
@@ -135,13 +135,13 @@ impl TransformerTrait for Transformer {
                             );
                             *vertical_position += step; // Additional vertical spacing between cells
                         }
-                        horizontal_position = horizontal_position + headers[i].width;
+                        horizontal_position += headers[i].width;
                         if *vertical_position > vertical_position_max {
                             vertical_position_max = *vertical_position;
                         };
                     }
 
-                    _ => {} // Implement other element types as necessary
+                    _ => { /* */ } // Implement other element types as necessary
                 }
                 *vertical_position = vertical_position_backup;
             }
@@ -290,7 +290,7 @@ impl TransformerTrait for Transformer {
                         _ => 12.0, // Default font size for other header levels
                     };
 
-                    let font_width = (0.3528 * (font_size as f32) * 0.6) as f32;
+                    let font_width = 0.3528 * (font_size as f32) * 0.6;
                     let max_text_width = document.page_width
                         - document.left_page_indent
                         - document.right_page_indent;
@@ -311,7 +311,7 @@ impl TransformerTrait for Transformer {
                             *layer = new_layer;
                             *page = new_page;
                         }
-                        *vertical_position = *vertical_position + step;
+                        *vertical_position += step;
                         let font = pdf.add_builtin_font(BuiltinFont::Courier)?;
                         let current_layer = pdf.get_page(*page).get_layer(*layer);
                         current_layer.use_text(
@@ -321,14 +321,15 @@ impl TransformerTrait for Transformer {
                             Mm(document.page_height - *vertical_position),
                             &font,
                         );
-                        *vertical_position = *vertical_position + 2.5;
+                        *vertical_position += 2.5;
                     }
                 }
                 Paragraph { elements } => {
                     for paragraph_element in elements {
                         match paragraph_element {
                             Text { text, size } => {
-                                let font_width = (0.3528 * (*size as f32) * 0.6) as f32;
+                                println!("{size}");
+                                let font_width = 0.3528 * (*size as f32) * 0.6;
                                 let max_text_width = document.page_width
                                     - document.left_page_indent
                                     - document.right_page_indent;
@@ -354,7 +355,7 @@ impl TransformerTrait for Transformer {
                                         *layer = new_layer;
                                         *page = new_page;
                                     }
-                                    *vertical_position = *vertical_position + step;
+                                    *vertical_position += step;
                                     let font = pdf.add_builtin_font(BuiltinFont::Courier)?;
                                     let current_layer = pdf.get_page(*page).get_layer(*layer);
                                     current_layer.use_text(
@@ -366,7 +367,7 @@ impl TransformerTrait for Transformer {
                                     );
                                 }
                             }
-                            _ => {}
+                            _ => { /* */ }
                         }
                     }
                 }
@@ -388,7 +389,7 @@ impl TransformerTrait for Transformer {
                         let vertical_position_backup: f32 = *vertical_position;
                         for header in headers {
                             render_table_header(
-                                &header,
+                                header,
                                 pdf,
                                 page,
                                 layer,
@@ -396,7 +397,7 @@ impl TransformerTrait for Transformer {
                                 &mut horizontal_position,
                                 document,
                             )?;
-                            horizontal_position = horizontal_position + header.width;
+                            horizontal_position += header.width;
                             if *vertical_position > vertical_position_max {
                                 vertical_position_max = *vertical_position;
                             }
@@ -416,14 +417,68 @@ impl TransformerTrait for Transformer {
                         )?;
                     }
                 }
+
+                // This currently doesn't support inline, inline support will be added to Paragraph itself.
+                Hyperlink { title, url, alt } => {
+                    let text = title;
+                    let font = pdf.add_builtin_font(BuiltinFont::Courier)?;
+
+                    let font_size = 16_u8; // this is the typographical size,
+                                           // currently it's set to default "16"
+
+                    let font_width = 0.3528 * (font_size as f32) * 0.6;
+
+                    let current_layer = pdf.get_page(*page).get_layer(*layer);
+
+                    *vertical_position += 0.3528 * (font_size as f32);
+
+                    let (x, y) = (
+                        document.left_page_indent + 0.0,
+                        document.page_height - *vertical_position,
+                    );
+
+                    current_layer.use_text(text, font_size as f32, Mm(x), Mm(y), &font);
+
+                    let y = y - 0.3;
+
+                    // Adding the clickable border box around the text.
+                    current_layer.add_link_annotation(LinkAnnotation::new(
+                        printpdf::Rect::new(
+                            Mm(x),
+                            Mm(y),
+                            Mm(x + ((text.len() as f32) * font_width)),
+                            Mm(y + font_width + 0.3),
+                        ),
+                        Some(printpdf::BorderArray::default()),
+                        Some(printpdf::ColorArray::Transparent),
+                        printpdf::Actions::uri(url.clone()),
+                        Some(printpdf::HighlightingMode::Invert),
+                    ));
+
+                    // Insertion of UnderLine (Can be improved)
+                    current_layer.add_link_annotation(LinkAnnotation::new(
+                        printpdf::Rect::new(
+                            Mm(x),
+                            Mm(y),
+                            Mm(x + ((text.len() as f32) * font_width)),
+                            Mm(y),
+                        ),
+                        Some(printpdf::BorderArray::default()),
+                        Some(printpdf::ColorArray::Gray([0.0])),
+                        printpdf::Actions::uri(url.clone()),
+                        Some(printpdf::HighlightingMode::Invert),
+                    ));
+                }
+
                 _ => {}
             }
 
             Ok(())
         }
+
         let mut vertical_position = 0.0 + document.top_page_indent;
         for element in &document.elements {
-            _ = generate_pdf(
+            generate_pdf(
                 document,
                 element,
                 &mut pdf,
