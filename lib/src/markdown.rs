@@ -189,6 +189,7 @@ impl TransformerTrait for Transformer {
                                         title: markdown.to_string(),
                                         url: markdown.to_string(),
                                         alt: markdown.to_string(),
+                                        size: 8,
                                     });
                                 } else if markdown.starts_with("[") && markdown.ends_with("\")") {
                                     let start_alt_text = markdown.find("[").unwrap() + 1;
@@ -204,6 +205,7 @@ impl TransformerTrait for Transformer {
                                         title: alt_text.to_string(),
                                         url: url.to_string(),
                                         alt: title.to_string(),
+                                        size: 8,
                                     });
                                 } else {
                                     let start_alt_text = markdown.find("[").unwrap() + 1;
@@ -215,6 +217,7 @@ impl TransformerTrait for Transformer {
                                         title: alt_text.to_string(),
                                         url: url.to_string(),
                                         alt: alt_text.to_string(),
+                                        size: 8,
                                     });
                                 }
                                 start = end;
@@ -430,7 +433,9 @@ impl TransformerTrait for Transformer {
                         markdown.push_str(" ");
                     }
                 }
-                Hyperlink { title, url, alt } => {
+                Hyperlink {
+                    title, url, alt, ..
+                } => {
                     if url == alt && alt == url {
                         markdown.push_str(&format!("{}", url));
                     } else {
@@ -532,8 +537,8 @@ impl TransformerTrait for Transformer {
 mod tests {
     use crate::core::*;
     use crate::markdown::*;
-    use crate::text;
     use crate::pdf;
+    use crate::text;
 
     #[test]
     fn test() -> anyhow::Result<()> {
@@ -604,7 +609,7 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         println!("{}", generated_text);
 
         let generated_result = pdf::Transformer::generate(&parsed_document)?;
-        std::fs::write("test/data/generated.pdf",generated_result.0)?;
+        std::fs::write("test/data/generated.pdf", generated_result.0)?;
 
         Ok(())
     }

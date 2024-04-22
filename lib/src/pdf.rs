@@ -418,12 +418,16 @@ impl TransformerTrait for Transformer {
                 }
 
                 // This currently doesn't support inline, inline support will be added to Paragraph itself.
-                Hyperlink { title, url, alt } => {
+                Hyperlink {
+                    title,
+                    url,
+                    alt: _,
+                    size,
+                } => {
                     let text = title;
                     let font = pdf.add_builtin_font(BuiltinFont::Courier)?;
 
-                    let font_size = 16_u8; // this is the typographical size,
-                                           // currently it's set to default "16"
+                    let font_size = *size;
 
                     let font_width = 0.3528 * (font_size as f32) * 0.6;
 

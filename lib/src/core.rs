@@ -82,6 +82,7 @@ pub enum Element {
         title: String,
         url: String,
         alt: String,
+        size: u8,
     },
 }
 

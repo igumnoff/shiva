@@ -253,6 +253,7 @@ fn parse_html(children: Children<Node>, elements: &mut Vec<Element>) -> anyhow::
                             title: text,
                             url: href,
                             alt,
+                            size: 8,
                         });
                     }
 
@@ -330,7 +331,9 @@ fn generate_html_for_element(
                 image_path, alt, title
             ))
         }
-        Hyperlink { title, url, alt } => Ok(format!(
+        Hyperlink {
+            title, url, alt, ..
+        } => Ok(format!(
             "<a href=\"{}\" title=\"{}\">{}</a>",
             url, alt, title
         )),
