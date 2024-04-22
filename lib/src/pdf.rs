@@ -811,6 +811,7 @@ fn split_string(input: &str, max_length: usize) -> Vec<String> {
 
     result
 }
+
 #[cfg(test)]
 mod tests {
     use crate::core::*;
@@ -847,6 +848,65 @@ mod tests {
         let generated_result = Transformer::generate(&parsed_document);
         assert!(generated_result.is_ok());
         std::fs::write("test/data/generated_list.pdf", generated_result.unwrap().0)?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_hyperlink_generation() -> anyhow::Result<()> {
+        use Element::*;
+
+        let document = Document {
+            elements: vec![
+                Paragraph {
+                    elements: vec![
+                        Text {
+                            text: "Line 1".to_owned(),
+                            size: 8,
+                        },
+                        Text {
+                            text: "Line 2".to_owned(),
+                            size: 8,
+                        },
+                        Text {
+                            text: "Line 3".to_owned(),
+                            size: 8,
+                        },
+                    ],
+                },
+                Hyperlink {
+                    title: "Example".to_owned(),
+                    url: "https://www.example.com".to_owned(),
+                    alt: "Example Site".to_owned(),
+                },
+                Hyperlink {
+                    title: "GitHub".to_owned(),
+                    url: "https://www.github.com".to_owned(),
+                    alt: "GitHub".to_owned(),
+                },
+            ],
+            page_width: 210.0,
+            page_height: 297.0,
+            left_page_indent: 10.0,
+            right_page_indent: 10.0,
+            top_page_indent: 20.0,
+            bottom_page_indent: 10.0,
+            page_header: vec![],
+            page_footer: vec![],
+        };
+
+        println!("==========================");
+        println!("{:?}", document);
+        println!("==========================");
+
+        let generated_result = Transformer::generate(&document);
+
+        assert!(generated_result.is_ok());
+
+        std::fs::write(
+            "test/data/generated_hyperlink.pdf",
+            generated_result.unwrap().0,
+        )?;
 
         Ok(())
     }
