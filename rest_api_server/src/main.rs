@@ -1,25 +1,34 @@
-
 pub use self::error::{Error, Result};
 
 use axum::extract::{Path, Query};
-use tokio::net::TcpListener;
-use axum::response::{Html, IntoResponse};
-use axum::Router;
+use axum::response::{Html, IntoResponse, Response};
 use axum::routing::{get, get_service};
+use axum::{middleware, Router};
 use serde::Deserialize;
+use tokio::net::TcpListener;
+use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
+use crate::model::ModelController;
 
 mod error;
+mod model;
 mod web;
 
 #[tokio::main]
-async fn main () {
+async fn main() -> Result<()> {
+    //Инициализируем MadelController
+    let mc = ModelController::new().await?;
+
     let routes_all = Router::new() //указываем все маршруты
         .merge(routes_hello())
+        .merge(web::routes_login::routes())
+        .nest("/api", web::routes_tickets::routes(mc.clone()))
+        .layer(middleware::map_response(main_response_mapper)) //Промежуточный слой. На данный момент просто добавляется в терминал результат выполнения функции main_response_mapper
+        .layer(CookieManagerLayer::new())
         .fallback_service(routes_static()); //статический маршрут нужен для перенаправления в случае отсутствия динамического маршрута
 
     // region:   ---Start server
-    let listener = TcpListener::bind("127.0.0.1:8080")//создаём сервер с прослушиванием порта 8080
+    let listener = TcpListener::bind("127.0.0.1:8080") //создаём сервер с прослушиванием порта 8080
         .await
         .unwrap();
 
@@ -27,15 +36,26 @@ async fn main () {
 
     axum::serve(listener, routes_all).await.unwrap();
     //endregion: ---Start server
+
+    Ok(())
 }
 
-fn routes_static() -> Router { //создаём статический маршрут
-Router::new().nest_service("/", get_service(ServeDir::new("./"))) /*Если в браузере указать
-127.0.0.1:8080/src/main.rs, то будет отображен весь код файла main.rs текущего проекта*/
+async fn main_response_mapper(res: Response) -> Response {
+    println!("-->> {:<12} - main_response_mapper", "RES_MAPPER");
+
+    println!();
+    res
+}
+
+fn routes_static() -> Router {
+    //создаём статический маршрут
+    Router::new().nest_service("/", get_service(ServeDir::new("./"))) /*Если в браузере указать
+                                                                      127.0.0.1:8080/src/main.rs, то будет отображен весь код файла main.rs текущего проекта*/
 }
 
 //region:    ---Routes Hello
-fn routes_hello() -> Router { //группируем маршруты по типу
+fn routes_hello() -> Router {
+    //группируем маршруты по типу
     Router::new()
         .route("/hello", get(handler_hello))
         .route("/hello2/:name", get(handler_hello2))
@@ -43,7 +63,6 @@ fn routes_hello() -> Router { //группируем маршруты по ти�
 #[derive(Debug, Deserialize)]
 struct HelloParams {
     name: Option<String>,
-
 }
 
 async fn handler_hello(Query(params): Query<HelloParams>) -> impl IntoResponse {
