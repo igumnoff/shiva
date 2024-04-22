@@ -133,7 +133,9 @@ impl TransformerTrait for Transformer {
                         markdown.push_str(" ");
                     }
                 }
-                Element::Hyperlink { title, url, alt } => {
+                Element::Hyperlink {
+                    title, url, alt, ..
+                } => {
                     if url == alt && alt == url {
                         markdown.push_str(&format!("{}", url));
                     } else {
@@ -248,11 +250,10 @@ impl TransformerTrait for Transformer {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use crate::core::*;
     use crate::core::Element::Header;
+    use crate::core::*;
     use crate::text::*;
 
     #[test]
@@ -285,8 +286,14 @@ Second header
         println!("==========================");
         let mut footer_elements = Vec::new();
         let mut header_elements = Vec::new();
-        let header = Header { level: 0, text: std::string::String::from("page header string") };
-        let footer = Header { level: 0, text: std::string::String::from("page footer string") };
+        let header = Header {
+            level: 0,
+            text: std::string::String::from("page header string"),
+        };
+        let footer = Header {
+            level: 0,
+            text: std::string::String::from("page footer string"),
+        };
         footer_elements.push(footer);
         header_elements.push(header);
         parsed_document.page_footer = footer_elements;
