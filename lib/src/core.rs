@@ -1,11 +1,12 @@
 use bytes::Bytes;
 #[cfg(feature = "json")]
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use thiserror::Error;
+
 #[derive(Debug)]
-#[cfg_attr(feature = "json", derive(Serialize))]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct Document {
     pub elements: Vec<Element>,
     pub page_width: f32,
@@ -50,6 +51,7 @@ pub enum GeneratorError {
     Common,
 }
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub enum Element {
     Text {
         text: String,
@@ -84,30 +86,30 @@ pub enum Element {
 }
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "json", derive(Serialize))]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct ListItem {
     pub element: Element,
 }
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "json", derive(Serialize))]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct TableHeader {
     pub element: Element,
     pub width: f32,
 }
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "json", derive(Serialize))]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct TableRow {
     pub cells: Vec<TableCell>,
 }
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "json", derive(Serialize))]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct TableCell {
     pub element: Element,
 }
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "json", derive(Serialize))]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub enum ImageType {
     Png,
     Jpeg,
