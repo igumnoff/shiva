@@ -17,7 +17,7 @@
 | Markdown      | +     | +        |
 | HTML          | +     | +        |
 | PDF           | +     | +        |
-| JSON          | -     | +        |
+| JSON          | +     | +        |
 | XML           | -     | -        |
 | DOC           | -     | -        |
 | XLS           | -     | -        |
