@@ -44,7 +44,7 @@ impl TransformerTrait for Transformer {
             document: &Document,
         ) -> anyhow::Result<()> {
             let font_size: f32 = match &header.element {
-                Text { text: _, size } => size.clone() as f32,
+                Text { text: _, size } => *size as f32,
                 _ => 10.0,
             };
 
@@ -328,7 +328,6 @@ impl TransformerTrait for Transformer {
                     for paragraph_element in elements {
                         match paragraph_element {
                             Text { text, size } => {
-                                println!("{size}");
                                 let font_width = 0.3528 * (*size as f32) * 0.6;
                                 let max_text_width = document.page_width
                                     - document.left_page_indent
