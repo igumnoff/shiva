@@ -881,11 +881,13 @@ mod tests {
                     title: "Example".to_owned(),
                     url: "https://www.example.com".to_owned(),
                     alt: "Example Site".to_owned(),
+                    size: 8,
                 },
                 Hyperlink {
                     title: "GitHub".to_owned(),
                     url: "https://www.github.com".to_owned(),
                     alt: "GitHub".to_owned(),
+                    size: 8,
                 },
             ],
             page_width: 210.0,
