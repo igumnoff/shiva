@@ -1,5 +1,4 @@
 ///Упрощенный слой модели со встроенным слоем пакетного хранилища
-
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 
