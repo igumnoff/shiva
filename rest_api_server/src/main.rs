@@ -10,6 +10,7 @@ use tokio::net::TcpListener;
 use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
 
+mod ctx; //модуль контекста
 mod error;
 mod model;
 mod web;
@@ -27,6 +28,10 @@ async fn main() -> Result<()> {
         .merge(web::routes_login::routes())
         .nest("/api", routes_apis)
         .layer(middleware::map_response(main_response_mapper)) //Промежуточный слой. На данный момент просто добавляется в терминал результат выполнения функции main_response_mapper
+        .layer(middleware::from_fn_with_state(
+            mc.clone(),
+            web::mw_auth::mw_ctx_resolver,
+        ))
         .layer(CookieManagerLayer::new())
         .fallback_service(routes_static()); //статический маршрут нужен для перенаправления в случае отсутствия динамического маршрута
 
