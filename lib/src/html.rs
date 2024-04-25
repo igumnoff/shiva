@@ -21,7 +21,9 @@ impl TransformerTrait for Transformer {
         let mut html = String::new();
         let mut images: HashMap<String, Bytes> = HashMap::new();
         let mut image_num: i32 = 0;
+
         html.push_str("<!DOCTYPE html>\n<html>\n<body>\n");
+
         for element in &document.elements {
             match element {
                 Element::Header { level, text } => {
@@ -29,6 +31,7 @@ impl TransformerTrait for Transformer {
                 }
                 Paragraph { elements } => {
                     html.push_str("<p>");
+
                     for child in elements {
                         html.push_str(&generate_html_for_element(
                             child,
@@ -36,6 +39,7 @@ impl TransformerTrait for Transformer {
                             &mut image_num,
                         )?);
                     }
+
                     html.push_str("</p>\n");
                 }
                 List {
@@ -43,43 +47,44 @@ impl TransformerTrait for Transformer {
                     numbered: _,
                 } => {
                     let list = generate_html_for_element(element, &mut images, &mut image_num)?;
+
                     html.push_str(&list);
                 }
                 Table { headers, rows } => {
-                    let mut table_html = String::from("<table  border=\"1\">");
-                    table_html.push_str("\n");
+                    let mut table_html = String::from("<table  border=\"1\">\n");
+
                     if !headers.is_empty() {
-                        table_html.push_str("<tr>");
-                        table_html.push_str("\n");
+                        table_html.push_str("<tr>\n");
+
                         for header in headers {
                             let header_html = generate_html_for_element(
                                 &header.element,
                                 &mut images,
                                 &mut image_num,
                             )?;
-                            table_html.push_str(&format!("<th>{}</th>", header_html));
-                            table_html.push_str("\n");
+
+                            table_html.push_str(&format!("<th>{}</th>\n", header_html));
                         }
-                        table_html.push_str("</tr>");
-                        table_html.push_str("\n");
+
+                        table_html.push_str("</tr>\n");
                     }
                     for row in rows {
-                        table_html.push_str("<tr>");
-                        table_html.push_str("\n");
+                        table_html.push_str("<tr>\n");
+
                         for cell in &row.cells {
                             let cell_html = generate_html_for_element(
                                 &cell.element,
                                 &mut images,
                                 &mut image_num,
                             )?;
-                            table_html.push_str(&format!("<td>{}</td>", cell_html));
-                            table_html.push_str("\n");
+
+                            table_html.push_str(&format!("<td>{}</td>\n", cell_html));
                         }
-                        table_html.push_str("</tr>");
-                        table_html.push_str("\n");
+
+                        table_html.push_str("</tr>\n");
                     }
-                    table_html.push_str("</table>");
-                    table_html.push_str("\n");
+
+                    table_html.push_str("</table>\n");
                     html.push_str(&table_html)
                 }
 
@@ -147,10 +152,10 @@ fn parse_html(children: Children<Node>, elements: &mut Vec<Element>) -> anyhow::
                                                                         });
                                                                     }
                                                                 }
-                                                                _ => {}
+                                                                _ => { /*  */ }
                                                             }
                                                         }
-                                                        _ => {}
+                                                        _ => { /*  */ }
                                                     }
                                                 }
                                                 if is_header {
@@ -159,10 +164,10 @@ fn parse_html(children: Children<Node>, elements: &mut Vec<Element>) -> anyhow::
                                                     rows.push(TableRow { cells });
                                                 }
                                             }
-                                            _ => {}
+                                            _ => { /*  */ }
                                         }
                                     }
-                                    _ => {}
+                                    _ => { /*  */ }
                                 }
                             }
                         }
@@ -181,7 +186,8 @@ fn parse_html(children: Children<Node>, elements: &mut Vec<Element>) -> anyhow::
                         });
                     }
                     "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => {
-                        let level = element.name()[1..].parse::<u8>().unwrap_or(1);
+                        let level = element.name().as_bytes()[1] - b'0';
+
                         let text = child
                             .children()
                             .filter_map(|n| {
@@ -285,12 +291,12 @@ fn generate_html_for_element(
     image_num: &mut i32,
 ) -> anyhow::Result<String> {
     match element {
-        Text { text, size: _ } => Ok(format!("{}", text)),
+        Text { text, size: _ } => Ok(text.to_string()),
         Paragraph { elements } => {
             let mut paragraph_html = String::from("<p>");
             for child in elements {
                 paragraph_html
-                    .push_str(&generate_html_for_element(child, images, image_num)?.as_str());
+                    .push_str(generate_html_for_element(child, images, image_num)?.as_str());
             }
             paragraph_html.push_str("</p>");
             Ok(paragraph_html)
@@ -303,18 +309,18 @@ fn generate_html_for_element(
         List { elements, numbered } => {
             let tag = if *numbered { "ol" } else { "ul" };
             let mut list_html = format!("<{}>", tag);
-            list_html.push_str("\n");
+            list_html.push('\n');
             for item in elements {
                 let item_html = generate_html_for_element(&item.element, images, image_num)?;
                 if let List { .. } = item.element {
-                    list_html.push_str(&format!("{}", item_html));
+                    list_html.push_str(&item_html.to_string());
                 } else {
                     list_html.push_str(&format!("<li>{}</li>", item_html));
-                    list_html.push_str("\n");
+                    list_html.push('\n');
                 }
             }
             list_html.push_str(&format!("</{}>", tag));
-            list_html.push_str("\n");
+            list_html.push('\n');
             Ok(list_html)
         }
         Image {
