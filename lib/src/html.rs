@@ -1,6 +1,6 @@
 use crate::core::*;
 use bytes::Bytes;
-use ego_tree::iter::Children;
+use ego_tree::{iter::Children, NodeRef};
 use std::collections::HashMap;
 
 use crate::core::Element::{Header, Hyperlink, Image, List, Paragraph, Table, Text};
@@ -100,186 +100,156 @@ impl TransformerTrait for Transformer {
 fn parse_html(children: Children<Node>, elements: &mut Vec<Element>) -> anyhow::Result<()> {
     for child in children {
         match child.value() {
-            Node::Element(ref element) => {
-                match element.name() {
-                    "table" => {
-                        let mut headers: Vec<TableHeader> = Vec::new();
-                        let mut rows: Vec<TableRow> = Vec::new();
-                        for table_child in child.children() {
-                            for child in table_child.children() {
-                                match child.value() {
-                                    Node::Element(ref table_element) => {
-                                        // println!("{:?}", table_element.name());
-                                        match table_element.name() {
-                                            "tr" => {
-                                                let mut cells: Vec<TableCell> = Vec::new();
-                                                let mut is_header = false;
-                                                for tr_child in child.children() {
-                                                    match tr_child.value() {
-                                                        Node::Element(ref tr_element) => {
-                                                            match tr_element.name() {
-                                                                "th" => {
-                                                                    is_header = true;
-                                                                    let mut header_elements: Vec<
-                                                                        Element,
-                                                                    > = Vec::new();
-                                                                    parse_html(
-                                                                        tr_child.children(),
-                                                                        &mut header_elements,
-                                                                    )?;
-                                                                    for header_element in
-                                                                        header_elements
-                                                                    {
-                                                                        headers.push(TableHeader {
-                                                                            element: header_element,
-                                                                            width: 10.0,
-                                                                        });
-                                                                    }
-                                                                }
-                                                                "td" => {
-                                                                    let mut cell_elements: Vec<
-                                                                        Element,
-                                                                    > = Vec::new();
-                                                                    parse_html(
-                                                                        tr_child.children(),
-                                                                        &mut cell_elements,
-                                                                    )?;
-                                                                    for cell_element in
-                                                                        cell_elements
-                                                                    {
-                                                                        cells.push(TableCell {
-                                                                            element: cell_element,
-                                                                        });
-                                                                    }
-                                                                }
-                                                                _ => { /*  */ }
-                                                            }
+            Node::Element(ref element) => match element.name() {
+                "table" => {
+                    let mut headers: Vec<TableHeader> = Vec::new();
+                    let mut rows: Vec<TableRow> = Vec::new();
+                    for table_child in child.children() {
+                        for child in table_child.children() {
+                            match child.value() {
+                                Node::Element(ref table_element) => match table_element.name() {
+                                    "tr" => {
+                                        let mut cells: Vec<TableCell> = Vec::new();
+                                        let mut is_header = false;
+                                        for tr_child in child.children() {
+                                            match tr_child.value() {
+                                                Node::Element(ref tr_element) => {
+                                                    match tr_element.name() {
+                                                        "th" => {
+                                                            is_header = true;
+                                                            let mut header_elements: Vec<Element> =
+                                                                Vec::new();
+                                                            parse_html(
+                                                                tr_child.children(),
+                                                                &mut header_elements,
+                                                            )?;
+                                                            headers.extend(
+                                                                header_elements.into_iter().map(
+                                                                    |element| TableHeader {
+                                                                        element,
+                                                                        width: 10.0,
+                                                                    },
+                                                                ),
+                                                            );
+                                                        }
+                                                        "td" => {
+                                                            let mut cell_elements: Vec<Element> =
+                                                                Vec::new();
+                                                            parse_html(
+                                                                tr_child.children(),
+                                                                &mut cell_elements,
+                                                            )?;
+                                                            cells.extend(
+                                                                cell_elements.into_iter().map(
+                                                                    |element| TableCell { element },
+                                                                ),
+                                                            );
                                                         }
                                                         _ => { /*  */ }
                                                     }
                                                 }
-                                                if is_header {
-                                                    // Headers are processed above
-                                                } else {
-                                                    rows.push(TableRow { cells });
-                                                }
+                                                _ => { /*  */ }
                                             }
-                                            _ => { /*  */ }
+                                        }
+                                        if !is_header {
+                                            rows.push(TableRow { cells });
                                         }
                                     }
                                     _ => { /*  */ }
-                                }
+                                },
+                                _ => { /*  */ }
                             }
                         }
-
-                        // println!("{:?}", headers);
-                        // println!("{:?}", rows);
-                        if !headers.is_empty() || !rows.is_empty() {
-                            elements.push(Table { headers, rows });
-                        }
                     }
-                    "p" => {
-                        let mut paragraph_elements: Vec<Element> = Vec::new();
-                        parse_html(child.children(), &mut paragraph_elements)?;
-                        elements.push(Paragraph {
-                            elements: paragraph_elements,
-                        });
-                    }
-                    "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => {
-                        let level = element.name().as_bytes()[1] - b'0';
-
-                        let text = child
-                            .children()
-                            .filter_map(|n| {
-                                if let Node::Text(ref text) = n.value() {
-                                    Some(text.clone().to_string())
-                                } else {
-                                    None
-                                }
-                            })
-                            .collect::<Vec<String>>()
-                            .join("");
-                        elements.push(Header { text, level });
-                    }
-                    "img" => {
-                        let _src = element.attr("src").unwrap_or_default();
-                        let title = element.attr("title").unwrap_or_default();
-                        let alt = element.attr("alt").unwrap_or_default();
-                        // TODO fix debug for image bytes
-                        let image_bytes = match std::fs::read("src") {
-                            Ok(bytes) => bytes,
-                            Err(_) => vec![],
-                        };
-                        elements.push(Image {
-                            bytes: Bytes::from(image_bytes),
-                            title: title.to_string(),
-                            alt: alt.to_string(),
-                            image_type: ImageType::Png,
-                        });
-                    }
-                    "ul" | "ol" => {
-                        let mut list_items: Vec<ListItem> = Vec::new();
-                        let numbered = element.name() == "ol";
-                        for list_child in child.children() {
-                            if let Node::Element(ref li_element) = list_child.value() {
-                                if li_element.name() == "li" {
-                                    let mut item_elements: Vec<Element> = Vec::new();
-                                    parse_html(list_child.children(), &mut item_elements)?;
-                                    for item_element in item_elements {
-                                        list_items.push(ListItem {
-                                            element: item_element,
-                                        });
-                                    }
-                                }
-                            }
-                        }
-                        elements.push(List {
-                            elements: list_items,
-                            numbered,
-                        });
-                    }
-
-                    "a" => {
-                        let href = element.attr("href").unwrap_or_default().to_string();
-                        let _title = element.attr("title").unwrap_or_default().to_string();
-                        let alt = element.attr("alt").unwrap_or_default().to_string(); // 'alt' is not standard for 'a' tags but included for consistency
-                        let text = child
-                            .children()
-                            .filter_map(|n| {
-                                if let Node::Text(ref text) = n.value() {
-                                    Some(text.clone().to_string())
-                                } else {
-                                    None
-                                }
-                            })
-                            .collect::<Vec<String>>()
-                            .join("");
-
-                        elements.push(Hyperlink {
-                            title: text,
-                            url: href,
-                            alt,
-                            size: 8,
-                        });
-                    }
-
-                    // Add more tag handling as needed
-                    _ => {
-                        // For any unhandled tags, recursively parse their children without creating a new element
-                        parse_html(child.children(), elements)?;
+                    if !headers.is_empty() || !rows.is_empty() {
+                        elements.push(Table { headers, rows });
                     }
                 }
-            }
+                "p" => {
+                    let mut paragraph_elements: Vec<Element> = Vec::new();
+                    parse_html(child.children(), &mut paragraph_elements)?;
+                    elements.push(Paragraph {
+                        elements: paragraph_elements,
+                    });
+                }
+                "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => {
+                    let level = element.name().as_bytes()[1] - b'0';
+                    // Retrieve the deepest text within any nested structure of the same header tag
+                    let text = retrieve_deep_text(child, element.name()).trim().to_string();
+
+                    if text.is_empty() {
+                        continue;
+                    }
+
+                    elements.push(Header { text, level });
+                }
+                "img" => {
+                    let src = element.attr("src").unwrap_or_default();
+                    let title = element.attr("title").unwrap_or_default();
+                    let alt = element.attr("alt").unwrap_or_default();
+                    let image_bytes = std::fs::read(src).unwrap_or_default();
+                    elements.push(Image {
+                        bytes: Bytes::from(image_bytes),
+                        title: title.to_string(),
+                        alt: alt.to_string(),
+                        image_type: ImageType::Png,
+                    });
+                }
+                "ul" | "ol" => {
+                    let mut list_items: Vec<ListItem> = Vec::new();
+                    let numbered = element.name() == "ol";
+                    for list_child in child.children() {
+                        if let Node::Element(ref li_element) = list_child.value() {
+                            if li_element.name() == "li" {
+                                let mut item_elements: Vec<Element> = Vec::new();
+                                parse_html(list_child.children(), &mut item_elements)?;
+                                list_items.extend(
+                                    item_elements
+                                        .into_iter()
+                                        .map(|element| ListItem { element }),
+                                );
+                            }
+                        }
+                    }
+                    elements.push(List {
+                        elements: list_items,
+                        numbered,
+                    });
+                }
+                "a" => {
+                    let href = element.attr("href").unwrap_or_default().to_string();
+                    let text = child
+                        .children()
+                        .filter_map(|n| {
+                            if let Node::Text(ref text) = n.value() {
+                                Some(text.clone().to_string())
+                            } else {
+                                None
+                            }
+                        })
+                        .collect::<Vec<String>>()
+                        .join("");
+                    elements.push(Hyperlink {
+                        title: text,
+                        url: href,
+                        alt: "".to_owned(),
+                        size: 8,
+                    });
+                }
+                _ => {
+                    parse_html(child.children(), elements)?;
+                }
+            },
             Node::Text(ref text) => {
-                let text_element = Text {
-                    text: text.to_string(),
-                    size: 8,
-                };
-                if text.to_string() != "\n" {
-                    elements.push(text_element);
+                let text_str = text.to_string();
+                if !text_str.trim().is_empty() {
+                    elements.push(Text {
+                        text: text_str,
+                        size: 8,
+                    });
                 }
             }
-            _ => {} // Ignore other node types
+            _ => {}
         }
     }
     Ok(())
@@ -345,6 +315,28 @@ fn generate_html_for_element(
         )),
         _ => Ok("".to_string()),
     }
+}
+
+fn retrieve_deep_text(node: NodeRef<Node>, tag_name: &str) -> String {
+    let mut text = String::new();
+    let mut current_node = Some(node);
+    while let Some(n) = current_node {
+        if let Node::Element(ref el) = n.value() {
+            if el.name() == tag_name {
+                current_node = n.children().next(); // Move deeper if the same tag is nested
+            } else {
+                break; // Stop if a different tag is encountered
+            }
+        } else if let Node::Text(ref txt) = n.value() {
+            text = txt.to_string(); // Set text if text node is found
+
+            break;
+        } else {
+            break; // Break on encountering any other type of node
+        }
+    }
+
+    text
 }
 
 #[cfg(test)]
