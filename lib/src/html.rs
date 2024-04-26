@@ -497,4 +497,32 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
 
         Ok(())
     }
+
+    #[test]
+    fn indent_test() -> anyhow::Result<()> {
+        let html_document = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Document</title>\n</head>\n<body>\n    ABC\n    Lorem\n    Ipsum\n    Dolor\n    <h1> H1 </h1>\n    <h1> h1 </h1>\n    <h2> H2 </h2>\n    <h3> H3 </h3>\n    <h4> H4 </h4>\n    <h5> H5 </h5>\n    <h6> H6 </h6>\n    <h1>\n        TEST\n    </h1>\n    <h1>\n        <h1>TEST</h1>\n    </h1>\n    <h1>\n        <h1>TEST</h1>\n    </h1>\n    <h1>\n        <h1>\n            TEST\n        </h1>\n    </h1>\n    <h1>\n        <h1>\n            TEST\n        </h1>\n    </h1>\n    <div>\n        ABC\n        Lorem\n        Ipsum\n        Dolor\n        <h1> H1 </h1>\n        <h1> h1 </h1>\n        <h2> H2 </h2>\n        <h3> H3 </h3>\n        <h4> H4 </h4>\n        <h5> H5 </h5>\n        <h6> H6 </h6>\n        <h1>\n            TEST\n        </h1>\n        <h1>\n            <h1>TEST</h1>\n        </h1>\n        <h1>\n            <h1>TEST</h1>\n        </h1>\n        <h1>\n            <h1>\n                TEST\n            </h1>\n        </h1>\n        <h1>\n            <h1>\n                TEST\n            </h1>\n        </h1>\n    </div>\n    <h1> This is a test doc </h1>\n</body>\n</html>";
+        let expected_md_document = "Document \n    ABC\n    Lorem\n    Ipsum\n    Dolor\n    # H1\n\n# h1\n\n## H2\n\n### H3\n\n#### H4\n\n##### H5\n\n###### H6\n\n# TEST\n\n# TEST\n\n# TEST\n\n# TEST\n\n# TEST\n\n\n        ABC\n        Lorem\n        Ipsum\n        Dolor\n        # H1\n\n# h1\n\n## H2\n\n### H3\n\n#### H4\n\n##### H5\n\n###### H6\n\n# TEST\n\n# TEST\n\n# TEST\n\n# TEST\n\n# TEST\n\n# This is a test doc\n\n";
+
+        let parsed = Transformer::parse(&html_document.as_bytes().into(), &HashMap::new());
+
+        assert!(parsed.is_ok());
+
+        let parsed = parsed?;
+
+        println!("==========================");
+        println!("{:?}", parsed);
+        println!("==========================");
+
+        let generated_document = crate::markdown::Transformer::generate(&parsed);
+
+        assert!(generated_document.is_ok());
+
+        let generated_document = generated_document?;
+
+        let generated_md_document = std::str::from_utf8(&generated_document.0)?;
+
+        assert_eq!(generated_md_document, expected_md_document);
+
+        Ok(())
+    }
 }
