@@ -5,32 +5,51 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use tower_cookies::{Cookie, Cookies};
 
+//Создает маршрут аутентификации
 pub fn routes() -> Router {
-    Router::new().route("/api/login", post(api_login))
+    Router::new() //Создает новый экземпляр маршрута
+        .route("/api/login", //Путь по которому будет обрабатываться запрос
+               post(api_login)) //Создает обработчик для HTTP-метода POST и принимает в качестве аргумента функцию-обработчик, которая будет вызвана при получении POST-запроса
 }
-async fn api_login(cookies: Cookies, payload: Json<LoginPayLoad>) -> Result<Json<Value>> {
-    println!("-->> {:<12} - api_login", "HANDLER");
 
-    //TODO: Implement real db/auth logic.
-    if payload.username != "demo1" || payload.pwd != "welcome" {
-        //хардкодим логин и пароль для проверки работоспособности
-        return Err(Error::LoginFail);
+
+async fn api_login(cookies: Cookies, //Аргумент представляет куки, связанные с текущим запросом
+                   payload: Json<LoginPayLoad> //Аргумент представляет десериализованные данные запроса в формате JSON, которые соответствуют структуре LoginPayLoad
+) -> Result<Json<Value>> { //Возвращает результат типа Result<Json<Value>>, где Json<Value> представляет JSON-ответ, который будет отправлен клиенту
+
+    println!("-->> {:<12} - api_login", "HANDLER"); //Отладочный вывод, который показывает, что выполняется обработчик api_login
+
+    //TODO: реализовать реальную логику аутентификации
+    //Проверка данных при аутенитификации
+    if payload.username != "demo1" || payload.pwd != "welcome" { //Хардкодим логин и пароль для проверки работоспособности
+        //Если username полученный из payload не demo1
+        //Или если password полученный из payload не
+
+        return Err(Error::LoginFail); //То возвращает ошибку LoginFail
     }
 
-    cookies.add(Cookie::new(web::AUTH_TOKEN, "user-1.exp.sign")); //хардкодим кукис для проверки работоспособности
+    //Создание токена авторизации
+    //Хардкодим для проверки работоспособности
+    cookies.add(Cookie::new(web::AUTH_TOKEN, "user-1.exp.sign")); //Создает куку у которой имя будет токеном аутентификации, значением будет user-1.exp.sign
+//user-    --префикс, который указывает на то, что кука содержит информацию об авторизации пользователя
+//1        --идентификатор пользователя, который был аутентифицирован
+//.        --разделитель, который отделяет различные части значения куки
+//exp      --время истечения срока действия токена авторизации
+//.        --разделитель, который отделяет различные части значения куки
+//sign     --подпись токена авторизации
 
-
-    let body = Json(json!({
-        "result": {
-            "success": true
-        }
+    let body = Json( //Создает новый объект типа Json из переданных данных
+        json!({ //Макрос, который позволяет создавать JSON-объекты
+        "result": { "success": true } //Структура JSON-ответа, с одним полем подтверждающим успех аутентификации
     }));
 
-    Ok(body)
+    Ok(body) //Возвращает успешный результат с созданным JSON-ответом
 }
 
+
+//
 #[derive(Debug, Deserialize)]
 struct LoginPayLoad {
-    username: String,
-    pwd: String,
+    username: String, //Будет содержать имя пользователя, полученное из запроса
+    pwd: String, //Будет содержать пароль пользователя, полученное из запроса
 }
