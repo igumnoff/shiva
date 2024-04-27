@@ -28,22 +28,16 @@ pub enum DocumentType {
     Text,
     Pdf,
     Json,
-    Xml,
-    Doc,
-    XLS
 }
 
 impl fmt::Display for DocumentType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            DocumentType::Html => write!(f, "Html"),
-            DocumentType::Markdown => write!(f, "Markdown"),
+            DocumentType::Html => write!(f, "HTML"),
+            DocumentType::Markdown => write!(f, "MarkDown"),
             DocumentType::Text => write!(f, "Text"),
-            DocumentType::Pdf => write!(f, "Pdf"),
-            DocumentType::Json => write!(f, "Json"),
-            DocumentType::Xml => write!(f, "Xml"),
-            DocumentType::Doc => write!(f, "Doc"),
-            DocumentType::XLS => write!(f, "XLS"),
+            DocumentType::Pdf => write!(f, "PDF"),
+            DocumentType::Json => write!(f, "JSON"),
         }
     }
 }
