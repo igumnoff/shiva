@@ -2,6 +2,7 @@ use bytes::Bytes;
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt;
 use std::fmt::Debug;
 use thiserror::Error;
 
@@ -17,6 +18,34 @@ pub struct Document {
     pub bottom_page_indent: f32,
     pub page_header: Vec<Element>,
     pub page_footer: Vec<Element>,
+}
+
+#[derive(Error, Debug)]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+pub enum DocumentType {
+    Html,
+    Markdown,
+    Text,
+    Pdf,
+    Json,
+    Xml,
+    Doc,
+    XLS
+}
+
+impl fmt::Display for DocumentType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            DocumentType::Html => write!(f, "Html"),
+            DocumentType::Markdown => write!(f, "Markdown"),
+            DocumentType::Text => write!(f, "Text"),
+            DocumentType::Pdf => write!(f, "Pdf"),
+            DocumentType::Json => write!(f, "Json"),
+            DocumentType::Xml => write!(f, "Xml"),
+            DocumentType::Doc => write!(f, "Doc"),
+            DocumentType::XLS => write!(f, "XLS"),
+        }
+    }
 }
 
 impl Document {
