@@ -21,7 +21,6 @@ pub struct Document {
 }
 
 #[derive(Error, Debug)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub enum DocumentType {
     Html,
     Markdown,
