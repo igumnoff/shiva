@@ -425,9 +425,16 @@ impl TransformerTrait for Transformer {
                     }
                 }
                 Text { text, size: _ } => {
-                    markdown.push_str(text);
-                    if !text.ends_with(" ") {
-                        markdown.push_str(" ");
+                    let re = Regex::new(
+                        r#"^(\n)*\s+$?"#,
+                    )?;
+                    if !re.is_match(&text) {
+                        markdown.push_str("\n");
+                        markdown.push_str(text);
+                        if !text.ends_with(" ") {
+                            markdown.push_str(" ");
+                        }
+                        markdown.push_str("\n");
                     }
                 }
                 Hyperlink { title, url, alt } => {
