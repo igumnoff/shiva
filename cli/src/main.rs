@@ -25,6 +25,7 @@ enum InputFormat {
     Html,
     Text,
     Pdf,
+    Xml,
 }
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
@@ -42,6 +43,7 @@ fn main() -> anyhow::Result<()> {
         InputFormat::Html => shiva::html::Transformer::parse(&input_bytes, &HashMap::new())?,
         InputFormat::Text => shiva::text::Transformer::parse(&input_bytes, &HashMap::new())?,
         InputFormat::Pdf => shiva::pdf::Transformer::parse(&input_bytes, &HashMap::new())?,
+        InputFormat::Xml => shiva::xml::Transformer::parse(&input_bytes, &HashMap::new())?,
     };
 
     let output = match args.output_format {
@@ -49,6 +51,7 @@ fn main() -> anyhow::Result<()> {
         InputFormat::Html => shiva::html::Transformer::generate(&document)?,
         InputFormat::Markdown => shiva::markdown::Transformer::generate(&document)?,
         InputFormat::Pdf => shiva::pdf::Transformer::generate(&document)?,
+        InputFormat::Xml => shiva::xml::Transformer::generate(&document)?,
     };
 
     let file_name = args
