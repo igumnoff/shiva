@@ -86,7 +86,7 @@ cd ./target/release/
 
 ## Contributing
 I would love to see contributions from the community. If you experience bugs, feel free to open an issue. If you would like to implement a new feature or bug fix, please follow the steps:
-1. Contact with me via telegram: @ievkz
+1. Contact with me via telegram @ievkz or discord @igumnovnsk
 2. Confirm e-mail invitation in repository
 3. Do "git clone"
 4. Create branch with your assigned issue
