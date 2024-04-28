@@ -47,8 +47,9 @@ env_logger = "0.10.0"
 
 [features]
 default = ["all"]
-all = ["text", "markdown", "html", "pdf", "json", "xml"]
+all = ["text", "markdown", "html", "pdf", "json", "xml", "csv"]
 text = []
+csv = []
 markdown = ["regex"]
 html = ["scraper", "ego-tree"]
 pdf = ["lopdf", "printpdf"]
