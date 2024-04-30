@@ -20,7 +20,7 @@ pub struct Document {
     pub page_footer: Vec<Element>,
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Deserialize)]
 pub enum DocumentType {
     Html,
     Markdown,
