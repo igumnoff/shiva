@@ -4,18 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = { version = "0.7.5", features = ["macros"] }
-tokio = { version = "1.37.0", features = ["full"] }
-serde = { version = "1.0.198", features = ["derive"] }
-serde_json = "1.0.116"
-tower-http = { version = "0.5.2", features = ["fs"] }
-tower-cookies = "0.10.0"
-lazy-regex = "3.1.0"
-async-trait = "0.1.80"
-strum_macros = "0.26.2"
-uuid = { version = "1.8.0", features = ["v4", "fast-rng"]}
-serde_with = "3.7.0"
+axum = {version =  "0.7.5", features = ["multipart"] }
+tokio = { version = "1.37.0", features = ["rt", "rt-multi-thread", "macros"] }
+serde = { version = "1.0.199", features = ["derive"] }
+futures-util = "0.3.30"
+shiva = "0.3.1"
+clap = { version = "4.5.4", features = ["derive"] }
 
 [dev-dependencies]
+httpc-test = "0.1.9"
 anyhow = "1.0.82"
-httpc-test = "0.1.1"

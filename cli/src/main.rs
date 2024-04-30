@@ -36,9 +36,7 @@ fn main() -> anyhow::Result<()> {
     let input_bytes = Bytes::from(input_vec);
 
     let document = match args.input_format {
-        InputFormat::Markdown => {
-            shiva::markdown::Transformer::parse(&input_bytes, &HashMap::new())?
-        }
+        InputFormat::Markdown => { shiva::markdown::Transformer::parse(&input_bytes, &HashMap::new())? }
         InputFormat::Html => shiva::html::Transformer::parse(&input_bytes, &HashMap::new())?,
         InputFormat::Text => shiva::text::Transformer::parse(&input_bytes, &HashMap::new())?,
         InputFormat::Pdf => shiva::pdf::Transformer::parse(&input_bytes, &HashMap::new())?,
