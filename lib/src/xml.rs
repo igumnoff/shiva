@@ -1,7 +1,7 @@
 use crate::core::{Document, TransformerTrait};
 use anyhow::Ok;
 use bytes::Bytes;
-use serde_xml::de::from_str;
+use serde_xml_rs::de::from_str;
 use std::collections::HashMap;
 pub struct Transformer;
 
