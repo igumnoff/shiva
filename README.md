@@ -18,7 +18,7 @@
 | HTML          | +     | +        |
 | PDF           | +     | +        |
 | JSON          | +     | +        |
-| XML           | -     | -        |
+| XML           | +     | +        |
 | DOC           | -     | -        |
 | XLS           | -     | -        |
 
@@ -32,6 +32,7 @@
 | HTML          | +      | +         | +    | +     | +     | +         | -          | -          |
 | PDF           | -      | +         | +    | -     | -     | -         | -          | -          |
 | JSON          | +      | +         | +    | +     | -     | +         | +          | +          |
+| XML           | +      | +         | -    | -     | -     | +         | +          | +          |
 
 ## Generate document features
 
@@ -42,6 +43,7 @@
 | HTML          | +      | +         | +    | +     | +     | +         | -          | -          |
 | PDF           | +      | +         | +    | +     | -     | +         | +          | +          |
 | JSON          | +      | +         | +    | +     | -     | +         | +          | +          |
+| XML           | +      | +         | -    | -     | -     | +         | +          | +          |
 
 ## Usage Shiva library
 
@@ -74,7 +76,7 @@ https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe
 ```
 ### Build executable Shiva
 ```bash
-gti clone https://github.com/igumnoff/shiva.git
+git clone https://github.com/igumnoff/shiva.git
 cd shiva/cli
 cargo build --release
 ```
