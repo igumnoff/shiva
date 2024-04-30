@@ -47,7 +47,7 @@ env_logger = "0.10.0"
 
 [features]
 default = ["all"]
-all = ["text", "markdown", "html", "pdf", "json", "xml", "csv"]
+all = ["text", "markdown", "html", "pdf", "json", "xml", "csv", "docx"]
 text = []
 csv = []
 markdown = ["regex"]
@@ -55,3 +55,4 @@ html = ["scraper", "ego-tree"]
 pdf = ["lopdf", "printpdf"]
 json = ["serde", "serde_json"]
 xml = ["serde", "serde_xml"]
+docx = ["serde", "serde_xml"]

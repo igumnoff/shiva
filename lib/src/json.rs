@@ -4,7 +4,7 @@ use std::collections::HashMap;
 pub struct Transformer;
 
 impl TransformerTrait for Transformer {
-    fn parse(document: &Bytes, images: &HashMap<String, Bytes>) -> anyhow::Result<Document> {
+    fn parse(document: &Bytes, _images: &HashMap<String, Bytes>) -> anyhow::Result<Document> {
         let doc: Document = serde_json::from_slice(document.as_ref())?;
         return Ok(doc);
     }

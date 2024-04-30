@@ -25,3 +25,6 @@ pub mod xml;
 #[cfg(feature = "csv")]
 pub mod csv;
 
+#[cfg(feature = "docx")]
+pub mod docx;
+

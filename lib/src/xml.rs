@@ -4,10 +4,10 @@ use std::collections::HashMap;
 pub struct Transformer;
 
 impl TransformerTrait for Transformer {
-    fn parse(document: &Bytes, images: &HashMap<String, Bytes>) -> anyhow::Result<Document> {
+    fn parse(_document: &Bytes, _images: &HashMap<String, Bytes>) -> anyhow::Result<Document> {
         todo!()
     }
-    fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)> {
+    fn generate(_document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)> {
         todo!()
     }
 }
