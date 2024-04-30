@@ -1,11 +1,15 @@
 use crate::core::{Document, TransformerTrait};
+use anyhow::Ok;
 use bytes::Bytes;
+use serde_xml::de::from_str;
 use std::collections::HashMap;
 pub struct Transformer;
 
 impl TransformerTrait for Transformer {
-    fn parse(_document: &Bytes, _images: &HashMap<String, Bytes>) -> anyhow::Result<Document> {
-        todo!()
+    fn parse(document: &Bytes, _images: &HashMap<String, Bytes>) -> anyhow::Result<Document> {
+        let doc_string = std::str::from_utf8(document.as_ref())?;
+        let doc = from_str(doc_string)?;
+        return Ok(doc);
     }
     fn generate(_document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)> {
         todo!()
@@ -14,9 +18,9 @@ impl TransformerTrait for Transformer {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
     use crate::core::TransformerTrait;
     use crate::json;
+    use std::collections::HashMap;
 
     #[test]
     fn test() -> anyhow::Result<()> {
