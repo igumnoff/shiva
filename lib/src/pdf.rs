@@ -9,10 +9,11 @@ use bytes::Bytes;
 use lopdf::content::Content;
 use lopdf::{Document as PdfDocument, Object, ObjectId};
 use printpdf::{BuiltinFont, Mm, PdfDocumentReference, PdfLayerIndex, PdfPageIndex};
+use typst::syntax::VirtualPath;
+use std::collections::{BTreeMap, HashMap};
 use time::{OffsetDateTime, UtcOffset};
 use typst::diag::{FileError, FileResult};
-use typst::foundations::Datetime;
-use std::collections::{BTreeMap, HashMap};
+use typst::foundations::{Datetime, Smart};
 use typst::{
     eval::Tracer,
     syntax::{FileId, Source},
@@ -29,6 +30,10 @@ struct ShivaWorld {
 
 impl ShivaWorld {
     fn new(source: String) -> Self {
+    let id = FileId::new(None, VirtualPath::new("main.typ"));
+
+    let source = Source::new(id, source);
+
         let fonts = std::fs::read_dir("fonts")
             .unwrap()
             .map(Result::unwrap)
@@ -49,10 +54,9 @@ impl ShivaWorld {
             fonts,
             book: Prehashed::new(FontBook::default()),
             library: Prehashed::new(Library::default()),
-            source: Source::detached(source),
+            source: source,
         }
     }
-
 }
 
 impl World for ShivaWorld {
@@ -61,32 +65,34 @@ impl World for ShivaWorld {
     }
 
     fn library(&self) -> &Prehashed<Library> {
-		&self.library
-	}
+        &self.library
+    }
 
-	fn main(&self) -> Source {
-		self.source.clone()
-	}
+    fn main(&self) -> Source {
+        self.source.clone()
+    }
 
-	fn source(&self, id: FileId) -> FileResult<Source> {
-		Ok(self.source.clone())
-	}
+    fn source(&self, id: FileId) -> FileResult<Source> {
+        println!("self.source - {:?}", self.source);
+        println!("self.source.text - {:?}", self.source.text());
+        Ok(self.source.clone())
+    }
 
-	fn font(&self, id: usize) -> Option<Font> {
-		self.fonts.get(id).cloned()
-	}
+    fn font(&self, id: usize) -> Option<Font> {
+        self.fonts.get(id).cloned()
+    }
 
-	fn file(&self, id: FileId) -> Result<typst::foundations::Bytes, FileError> {
+    fn file(&self, id: FileId) -> Result<typst::foundations::Bytes, FileError> {
         todo!()
     }
 
-	fn today(&self, offset: Option<i64>) -> Option<Datetime> {
-		// We are in UTC.
-		let offset = offset.unwrap_or(0);
-		let offset = UtcOffset::from_hms(offset.try_into().ok()?, 0, 0).ok()?;
-		let time = 	OffsetDateTime::now_utc().checked_to_offset(offset)?;
-		Some(Datetime::Date(time.date()))
-	}
+    fn today(&self, offset: Option<i64>) -> Option<Datetime> {
+        // We are in UTC.
+        let offset = offset.unwrap_or(0);
+        let offset = UtcOffset::from_hms(offset.try_into().ok()?, 0, 0).ok()?;
+        let time = OffsetDateTime::now_utc().checked_to_offset(offset)?;
+        Some(Datetime::Date(time.date()))
+    }
 }
 
 pub struct Transformer;
@@ -108,29 +114,43 @@ impl TransformerTrait for Transformer {
         use typst::syntax::*;
         use typst::*;
 
-        let mut source = String::new();
-        for element in &document.elements {
-            println!("element - {:?}", element);
+        let mut source = String::from(
+            r#"
+            // Test the `upper` and `lower` functions.
 
-            match element {
-                Paragraph { elements } => {
-                    for paragraph_element in elements {
-                        match paragraph_element {
-                            Text { text, size } => {
-                                // let sn = parse(text);
-                                // typst::syntax::parse(&sn);
-                                source.push_str(&text);
-                                // println!("SN - {:?}", sn);
-                            }
-                            _ => { /* */ }
-                        }
-                    }
-                }
-                _ => {}
-            }
+--- lower-and-upper ---
+#let memes = "ArE mEmEs gReAt?";
+#test(lower(memes), "are memes great?")
+#test(upper(memes), "ARE MEMES GREAT?")
+#test(upper("Ελλάδα"), "ΕΛΛΆΔΑ")
 
+--- upper-bad-type ---
+// Error: 8-9 expected string or content, found integer
+#upper(1)
 
-        }
+        "#,
+        );
+        // for element in &document.elements {
+        //     println!("element - {:?}", element);
+
+        //     match element {
+        //         Paragraph { elements } => {
+        //             for paragraph_element in elements {
+        //                 match paragraph_element {
+        //                     Text { text, size } => {
+        //                         // let sn = parse(text);
+        //                         // typst::syntax::parse(&sn);
+        //                         source.push_str("= Introduction In this report, we will explore the various factors that influence fluid");
+        //                         // println!("SN - {:?}", sn);
+        //                     }
+        //                     _ => { /* */ }
+        //                 }
+        //             }
+        //         }
+        //         _ => {}
+        //     }
+
+        // }
 
         println!("source - {:?}", source);
 
@@ -139,10 +159,19 @@ impl TransformerTrait for Transformer {
 
         let document = typst::compile(&world, &mut tracer).unwrap();
         let warnings = tracer.warnings();
+        println!("world - {:?}", world.source);
         println!("document - {:?}", document);
         println!("warnings - {:?}", warnings);
 
-        
+        let pdf = typst_pdf::pdf(&document, Smart::Auto, None);
+        std::fs::write("test/data/typst.pdf", pdf).unwrap();
+
+        for p in document.pages {
+            println!("P - {:?}", p.frame);
+            for x in p.frame.items() {
+                println!("x - {:?}", x);
+            }
+        }
         todo!()
     }
 
