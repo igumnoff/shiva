@@ -19,7 +19,7 @@ impl TransformerTrait for Transformer {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::{Document, Element, ImageType, TableCell, TableHeader, TableRow, TransformerTrait};
+    use crate::core::{Document, Element, ImageType, TransformerTrait};
     use crate::xml;
     #[test]
     fn test() -> anyhow::Result<()> {

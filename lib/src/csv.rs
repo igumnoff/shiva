@@ -152,6 +152,7 @@ mod tests {
     use crate::core::TransformerTrait;
     use crate::csv::{self, deserialize_csv, serialize_csv};
     use std::collections::HashMap;
+    use crate::markdown;
 
     #[test]
     fn test() -> anyhow::Result<()> {
@@ -165,6 +166,13 @@ mod tests {
         assert!(parsed.is_ok());
 
         let parsed = parsed?;
+        {
+            let (generated, _) = markdown::Transformer::generate(&parsed)?;
+            let generated_string = std::str::from_utf8(&generated)?;
+            println!("{}", generated_string);
+
+        }
+
         let (generated, _) = csv::Transformer::generate(&parsed)?;
         let generated_string = std::str::from_utf8(&generated)?;
 
