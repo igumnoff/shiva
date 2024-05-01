@@ -1,37 +1,45 @@
 use std::collections::HashMap;
 use axum::extract::{Multipart, Path};
 use axum::http::{HeaderMap, HeaderValue, StatusCode};
-use axum::routing::{get, post};
-use axum::{Router};
 use axum::body::Bytes;
 use shiva::core::{Document, TransformerTrait};
 use clap::{Parser, ValueEnum};
 use axum::body::Body;
-use axum::response::{IntoResponse, Response};
+use axum::response::{Response};
+use serde::Serialize;
+use crate::error::Error;
+use crate::Result;
 
-
-pub fn route_input_file() -> Router {
-    Router::new()
-        .route("/upload/:output_format", post(handler_input_file))
+struct ConvertFile {
+    file: (Bytes, HashMap<String, Bytes>),
 }
 
+#[derive(Debug, Clone, Serialize)]
+struct InputFileInfo {
+    file_name: String,
+    file_extension: String,
+    file_data: Bytes,
+}
 
-async fn handler_input_file(
+pub async fn handler_convert_file(
     multipart: Multipart,
     Path(output_format): Path<&str>,
-) -> impl IntoResponse {
+) -> Result<ConvertFile> {
     println!("-->> {:<12} - handler_input_file - output_extension_", "HANDLER");
 
-    let data_uploaded_file = upload_file(multipart).await.unwrap();
+    let data_uploaded_file = upload_file(multipart).await?;
 
-    build_file_response(data_uploaded_file.file_name,
-                        data_uploaded_file.file_extension,
-                        data_uploaded_file.file_data,
-                        output_format,
-    ).await
+    let build_file_response = convert_file(
+        data_uploaded_file.file_name,
+        data_uploaded_file.file_extension,
+        data_uploaded_file.file_data,
+        output_format,
+    ).await?;
+
+    Ok(build_file_response)
 }
 
-async fn upload_file(mut multipart: Multipart) -> Result<InputFileInfo, Response> {
+async fn upload_file(mut multipart: Multipart) -> Result<InputFileInfo> {
     let mut fail_name = None;
     let mut fail_extension = None;
     let mut file_data = Bytes::new();
@@ -53,14 +61,10 @@ async fn upload_file(mut multipart: Multipart) -> Result<InputFileInfo, Response
                 if is_supported_format(ext) {
                     file_data = field.bytes().await.unwrap();
                 } else {
-                    build_error_response(
-                        format!("Unsupported file format: {}", ext).to_string(),
-                        StatusCode::BAD_REQUEST).await;
+                    return Err(Error::FailBytes)
                 }
             } else {
-                build_error_response(
-                    "File has no extension".to_string(),
-                    StatusCode::BAD_REQUEST).await;
+                return Err(Error::UnsupportedFormat)
             }
         }
     }
@@ -76,12 +80,7 @@ async fn upload_file(mut multipart: Multipart) -> Result<InputFileInfo, Response
 }
 
 
-#[derive(Debug)]
-struct InputFileInfo {
-    file_name: String,
-    file_extension: String,
-    file_data: Bytes,
-}
+
 
 fn is_supported_format(file_extension: &str) -> bool {
     match file_extension {
@@ -100,73 +99,52 @@ enum Format {
 }
 
 
-async fn build_file_response(filename: String,
-                             extension: String,
-                             input_file_bytes: Bytes,
-                             output_format: &str,
-) -> Response {
-    let document = match extension.as_str() {
-        "md" => {
-            let md = shiva::markdown::Transformer::parse(
-                &input_file_bytes,
-                &HashMap::new(),
-            ).unwrap();
-            Document::from(md)
-        }
-        "html" | "htm" => {
-            let html = shiva::html::Transformer::parse(
-                &input_file_bytes,
-                &HashMap::new(),
-            ).unwrap();
-            Document::from(html)
-        }
-        "txt" => {
-            let text = shiva::text::Transformer::parse(
-                &input_file_bytes,
-                &HashMap::new(),
-            ).unwrap();
-            Document::from(text)
-        }
-        "pdf" => {
-            let pdf = shiva::pdf::Transformer::parse(
-                &input_file_bytes,
-                &HashMap::new(),
-            ).unwrap();
-            Document::from(pdf)
-        }
+async fn convert_file(
+    filename: String,
+    extension: String,
+    input_file_bytes: Bytes,
+    output_format: &str,
+) -> Result<ConvertFile> {
 
-        _ => return build_error_response(
-            "Unsupported input file format".to_string(),
-            StatusCode::BAD_REQUEST).await,
+    // region:    ---Create document
+    let document = match extension.as_str() {
+        "md" => Document::from(
+            shiva::markdown::Transformer::parse(&input_file_bytes, &HashMap::new()).unwrap()
+        ),
+        "html" | "htm" => Document::from(
+            shiva::html::Transformer::parse(&input_file_bytes, &HashMap::new()).unwrap()
+        ),
+        "txt" => Document::from(
+            shiva::text::Transformer::parse(&input_file_bytes, &HashMap::new()).unwrap()
+        ),
+        "pdf" => Document::from(
+            shiva::pdf::Transformer::parse(&input_file_bytes, &HashMap::new()).unwrap()
+        ),
+        "json" => Document::from(
+            shiva::json::Transformer::parse(&input_file_bytes, &HashMap::new()).unwrap()
+        ),
+        _ => return Err(Error::FailParseDocument),
     };
-    let output = match output_format {
-        "md" => {
-            let _md = shiva::markdown::Transformer::generate(&document)
-                .unwrap();
-        }
-        "html" | "htm" => {
-            let _html = shiva::html::Transformer::generate(&document)
-                .unwrap();
-        }
-        "txt" => {
-            let _txt = shiva::text::Transformer::generate(&document)
-                .unwrap();
-        }
-        "pdf" => {
-            let _pdf = shiva::pdf::Transformer::generate(&document)
-                .unwrap();
-        }
-        _ => return build_error_response(
-            "Unsupported output file format".to_string(),
-            StatusCode::BAD_REQUEST).await,
+    // endregion: ---Create document
+
+    // region:    ---Convert file
+    let output_bytes = match output_format {
+        "md" => shiva::markdown::Transformer::generate(&document).unwrap(),
+        "html" | "htm" => shiva::html::Transformer::generate(&document).unwrap(),
+        "txt" => shiva::text::Transformer::generate(&document).unwrap(),
+        "pdf" => shiva::pdf::Transformer::generate(&document).unwrap(),
+        "json" => shiva::json::Transformer::generate(&document).unwrap(),
+        _ => return Err(Error::FailConvertFile),
     };
+    // endregion: ---Convert file
 
     let mut headers = HeaderMap::new();
     headers.insert(
         "Content-Disposition",
-        HeaderValue::from_str(format!("attachment: filename=\"{}.{}\"", filename, output_format)
-            .as_str())
-            .unwrap());
+        HeaderValue::from_str(&format!("attachment; filename=\"{}.{}\"", filename, output_format))
+            .map_err(|_| Error::FailHeader)?,
+    );
+
     headers.insert(
         "Content-Type",
         match output_format {
@@ -174,16 +152,14 @@ async fn build_file_response(filename: String,
             "html" | "htm" => HeaderValue::from_static("text/html"),
             "txt" => HeaderValue::from_static("text/plain"),
             "pdf" => HeaderValue::from_static("application/pdf"),
+            "json" => HeaderValue::from_static("application/json"),
             _ => HeaderValue::from_static("application/octet-stream"),
         },
     );
 
-
-    Response::builder()
-        .status(StatusCode::OK)
-        .headers(headers)
-        .body(Body::from(output))
-        .unwrap()
+    Ok(ConvertFile {
+        file: output_bytes,
+    })
 
 }
 

@@ -1,7 +1,7 @@
 pub use self::error::Result;
-use crate::web::routes_files::route_input_file;
+use crate::web::routes_files::{handler_convert_file};
 use axum::response::{Html, IntoResponse, Response};
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::{middleware, Router};
 use tokio::net::TcpListener;
 
@@ -10,13 +10,17 @@ mod error;
 mod web;
 
 
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let route_test = Router::new().route("/test_server", get(handler_answer_server));
 
+    let route_input_file = Router::new()
+        .route("//upload/:output_format", post(handler_convert_file));
+
     let routes_all = Router::new()
         .merge(route_test)
-        .merge(route_input_file())
+        .merge(route_input_file)
         .layer(middleware::map_response(main_response_mapper));
 
     // region:    ---Start Server

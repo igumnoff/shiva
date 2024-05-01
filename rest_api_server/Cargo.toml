@@ -10,6 +10,7 @@ serde = { version = "1.0.199", features = ["derive"] }
 futures-util = "0.3.30"
 shiva = "0.3.1"
 clap = { version = "4.5.4", features = ["derive"] }
+strum_macros = "0.26.2"
 
 [dev-dependencies]
 httpc-test = "0.1.9"
