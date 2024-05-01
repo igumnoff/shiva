@@ -47,6 +47,7 @@ typst = "0.11.0"
 ttf-parser = "0.20.0"
 comemo = "0.4.0"
 time = "0.3.36"
+typst-pdf = "0.11.0"
 
 [dev-dependencies]
 env_logger = "0.10.0"
