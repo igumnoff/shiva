@@ -9,17 +9,19 @@ use bytes::Bytes;
 use lopdf::content::Content;
 use lopdf::{Document as PdfDocument, Object, ObjectId};
 use printpdf::{BuiltinFont, Mm, PdfDocumentReference, PdfLayerIndex, PdfPageIndex};
-use typst::syntax::VirtualPath;
 use std::collections::{BTreeMap, HashMap};
 use time::{OffsetDateTime, UtcOffset};
 use typst::diag::{FileError, FileResult};
 use typst::foundations::{Datetime, Smart};
+use typst::syntax::VirtualPath;
 use typst::{
     eval::Tracer,
     syntax::{FileId, Source},
     text::{Font, FontBook},
     Library, World,
 };
+
+type TypstString = String;
 
 struct ShivaWorld {
     fonts: Vec<Font>,
@@ -30,9 +32,7 @@ struct ShivaWorld {
 
 impl ShivaWorld {
     fn new(source: String) -> Self {
-    let id = FileId::new(None, VirtualPath::new("main.typ"));
-
-    let source = Source::new(id, source);
+        let source = Source::detached(source);
 
         let fonts = std::fs::read_dir("fonts")
             .unwrap()
@@ -51,8 +51,8 @@ impl ShivaWorld {
             .collect::<Vec<Font>>();
 
         Self {
+            book: Prehashed::new(FontBook::from_fonts(&fonts)),
             fonts,
-            book: Prehashed::new(FontBook::default()),
             library: Prehashed::new(Library::default()),
             source: source,
         }
@@ -111,68 +111,133 @@ impl TransformerTrait for Transformer {
     }
 
     fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)> {
-        use typst::syntax::*;
-        use typst::*;
+        fn process_header(
+            source: &mut TypstString,
+            level: usize,
+            text: &str,
+        ) -> anyhow::Result<()> {
+            let header_depth = "=".repeat(level);
+            let header_text = format!("{header_depth} {text}");
+            source.push_str(&header_text);
+            source.push('\n');
 
-        let mut source = String::from(
-            r#"
-            // Test the `upper` and `lower` functions.
+            Ok(())
+        }
 
---- lower-and-upper ---
-#let memes = "ArE mEmEs gReAt?";
-#test(lower(memes), "are memes great?")
-#test(upper(memes), "ARE MEMES GREAT?")
-#test(upper("Ελλάδα"), "ΕΛΛΆΔΑ")
+        fn process_text(source: &mut TypstString, _size: u8, text: &str) -> anyhow::Result<()> {
+            source.push_str(text);
+            source.push('\n');
 
---- upper-bad-type ---
-// Error: 8-9 expected string or content, found integer
-#upper(1)
+            Ok(())
+        }
 
-        "#,
-        );
-        // for element in &document.elements {
-        //     println!("element - {:?}", element);
+        fn process_link(source: &mut TypstString, url: &str) -> anyhow::Result<()> {
+            let link = format!("#link(\"{url}\") \n");
 
-        //     match element {
-        //         Paragraph { elements } => {
-        //             for paragraph_element in elements {
-        //                 match paragraph_element {
-        //                     Text { text, size } => {
-        //                         // let sn = parse(text);
-        //                         // typst::syntax::parse(&sn);
-        //                         source.push_str("= Introduction In this report, we will explore the various factors that influence fluid");
-        //                         // println!("SN - {:?}", sn);
-        //                     }
-        //                     _ => { /* */ }
-        //                 }
-        //             }
-        //         }
-        //         _ => {}
-        //     }
+            println!("{}", link);
 
-        // }
+            source.push_str(&link);
 
-        println!("source - {:?}", source);
+            Ok(())
+        }
+
+
+        fn process_link(source: &mut TypstString, url: &str) -> anyhow::Result<()> {
+            let link = format!("#link(\"{url}\") \n");
+
+            println!("{}", link);
+
+            source.push_str(&link);
+
+            Ok(())
+        }
+
+        fn process_list(
+            source: &mut TypstString,
+            list: &Vec<ListItem>,
+            numbered: bool,
+            depth: usize,
+        ) -> anyhow::Result<()> {
+            source.push_str(&" ".repeat(depth));
+            for el in list {
+                if let List { elements, numbered } = &el.element {
+                    process_list(source, elements, *numbered, depth + 1)?;
+                } else {
+                    if numbered {
+                        source.push_str("+ ")
+                    } else {
+                        source.push_str("- ")
+                    };
+
+                    process_element(source, &el.element)?;
+                }
+            }
+
+            Ok(())
+        }
+
+        fn process_element(source: &mut TypstString, element: &Element) -> anyhow::Result<()> {
+            match element {
+                Header { level, text } => process_header(source, *level as usize, text),
+                Paragraph { elements } => {
+                    for paragraph_element in elements {
+                        process_element(source, paragraph_element)?;
+                    }
+
+                    Ok(())
+                }
+                Text { text, size } => process_text(source, *size, text),
+                List { elements, numbered } => {
+                    process_list(source, elements, *numbered, 0)?;
+                    Ok(())
+                }
+                Hyperlink {
+                    url,
+                    title: _,
+                    alt: _,
+                    size: _,
+                } => {
+                    process_link(source, url)?;
+
+                    Ok(())
+                },
+                                Table { headers, rows } => {
+                                    
+
+             Ok(())
+                }
+                _ => {
+                    eprintln!("Should implement element - {:?}", element);
+                    Ok(())
+                }
+            }
+        }
+
+        let mut source = TypstString::new();
+        for element in &document.elements {
+            println!("element - {:?}", element);
+            process_element(&mut source, element)?;
+        }
+
+        println!("source - {}", source);
 
         let world = ShivaWorld::new(source);
         let mut tracer = Tracer::default();
 
         let document = typst::compile(&world, &mut tracer).unwrap();
-        let warnings = tracer.warnings();
-        println!("world - {:?}", world.source);
         println!("document - {:?}", document);
-        println!("warnings - {:?}", warnings);
+        let warnings = tracer.warnings();
 
-        let pdf = typst_pdf::pdf(&document, Smart::Auto, None);
-        std::fs::write("test/data/typst.pdf", pdf).unwrap();
-
-        for p in document.pages {
-            println!("P - {:?}", p.frame);
-            for x in p.frame.items() {
-                println!("x - {:?}", x);
+        if !warnings.is_empty() {
+            for warn in warnings {
+                println!("Warning - {}", warn.message);
             }
         }
-        todo!()
+
+        let pdf = typst_pdf::pdf(&document, Smart::Auto, None);
+
+        let bytes = Bytes::from(pdf);
+        Ok((bytes, HashMap::new()))
     }
 
     // fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)> {
@@ -1003,7 +1068,7 @@ mod tests {
         println!("==========================");
         let generated_result = Transformer::generate(&parsed_document);
         assert!(generated_result.is_ok());
-        std::fs::write("test/data/generated_list.pdf", generated_result.unwrap().0)?;
+        std::fs::write("test/data/typst.pdf", generated_result.unwrap().0)?;
 
         Ok(())
     }
