@@ -95,6 +95,7 @@ pub enum Element {
         numbered: bool,
     },
     Image {
+        #[cfg_attr(feature = "json", serde(skip))]
         bytes: Bytes,
         title: String,
         alt: String,
