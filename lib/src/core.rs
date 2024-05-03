@@ -44,7 +44,7 @@ impl fmt::Display for DocumentType {
 impl Document {
     pub fn new(elements: Vec<Element>) -> Document {
         Document {
-            elements: elements,
+            elements,
             page_width: 210.0,
             page_height: 297.0,
             left_page_indent: 10.0,
@@ -95,6 +95,7 @@ pub enum Element {
         numbered: bool,
     },
     Image {
+        path: Option<String>,
         #[cfg_attr(feature = "json", serde(skip))]
         bytes: Bytes,
         title: String,
