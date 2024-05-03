@@ -30,7 +30,6 @@ mod tests {
         Element::Header { level: 1, text: "123".to_string() },
         Element::Image {
             bytes: Default::default(),
-            path: Option::default(),
             title: "".to_string(),
             alt: "".to_string(),
             image_type: ImageType::Png,
