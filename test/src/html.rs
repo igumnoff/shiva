@@ -36,7 +36,7 @@ mod tests {
 
     #[test]
     fn test_html_header_generate() -> anyhow::Result<()> {
-        let html_document = r#"<!DOCTYPE html>
+        let html_str = r#"<!DOCTYPE html>
 <html>
 <body>
 <h1>First header</h1>
@@ -48,7 +48,7 @@ mod tests {
 </body>
 </html>"#;
 
-        let parsed: Document = Document {
+        let html_document: Document = Document {
             elements: [
                 Header {
                     level: 1,
@@ -86,11 +86,11 @@ mod tests {
             page_footer: [].to_vec(),
         };
 
-        let generated_result = Transformer::generate(&parsed);
+        let generated_result = Transformer::generate(&html_document);
         assert!(generated_result.is_ok());
         let generated_bytes = generated_result?;
         let generated_text = std::str::from_utf8(&generated_bytes.0)?;
-        assert_eq!(generated_text, html_document);
+        assert_eq!(generated_text, html_str);
 
         Ok(())
     }
