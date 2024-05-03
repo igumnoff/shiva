@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use shiva::*
+    use shiva::core::*;
+    use shiva::html::Transformer;
+    use shiva::markdown;
     use std::collections::HashMap;
 
     #[test]
@@ -170,7 +172,7 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         println!("{:?}", parsed);
         println!("==========================");
 
-        let generated_document = crate::markdown::Transformer::generate(&parsed);
+        let generated_document = markdown::Transformer::generate(&parsed);
 
         assert!(generated_document.is_ok());
 

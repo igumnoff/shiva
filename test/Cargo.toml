@@ -7,3 +7,4 @@ publish = false
 
 [dependencies]
 shiva = { path = "../lib" }
+anyhow = "1.0.75"
