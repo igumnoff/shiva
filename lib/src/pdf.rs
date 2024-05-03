@@ -1,6 +1,6 @@
 use crate::core::Element::{Header, Hyperlink, Image, List, Paragraph, Table, Text};
 use crate::core::{
-    Document, Element, ListItem, ParserError, TableHeader, TableRow, TransformerTrait,
+    Document, Element, ImageType, ListItem, ParserError, TableHeader, TableRow, TransformerTrait,
 };
 
 use comemo::Prehashed;
@@ -26,10 +26,11 @@ struct ShivaWorld {
     book: Prehashed<FontBook>,
     library: Prehashed<Library>,
     source: Source,
+    img_map: HashMap<String, typst::foundations::Bytes>,
 }
 
 impl ShivaWorld {
-    fn new(source: String) -> Self {
+    fn new(source: String, img_map: HashMap<String, typst::foundations::Bytes>) -> Self {
         let source = Source::detached(source);
 
         let fonts = std::fs::read_dir("fonts")
@@ -53,6 +54,7 @@ impl ShivaWorld {
             fonts,
             library: Prehashed::new(Library::default()),
             source,
+            img_map,
         }
     }
 }
@@ -71,8 +73,6 @@ impl World for ShivaWorld {
     }
 
     fn source(&self, _id: FileId) -> FileResult<Source> {
-        println!("self.source - {:?}", self.source);
-        println!("self.source.text - {:?}", self.source.text());
         Ok(self.source.clone())
     }
 
@@ -81,14 +81,13 @@ impl World for ShivaWorld {
     }
 
     // need to think how to implement path and file extraction
-    fn file(&self, id: FileId) -> Result<typst::foundations::Bytes, FileError>{
+    fn file(&self, id: FileId) -> Result<typst::foundations::Bytes, FileError> {
         let path = id.vpath();
 
-        let bytes = std::fs::read(path.as_rootless_path()).unwrap_or_default();
+        let key = path.as_rootless_path().to_str().unwrap();
+        let img = self.img_map.get(key).unwrap();
 
-        println!("bytes - {:?}",bytes);
-
-        Ok(bytes.into())
+        Ok(img.clone())
     }
 
     fn today(&self, offset: Option<i64>) -> Option<Datetime> {
@@ -200,7 +199,6 @@ impl TransformerTrait for Transformer {
                 cells_text.push('\n');
             }
 
-            println!("cells_text - {}", cells_text);
             let columns = headers.len();
             let table_text = format!(
                 r#"
@@ -218,6 +216,7 @@ impl TransformerTrait for Transformer {
 
         fn process_list(
             source: &mut TypstString,
+            img_map: &mut HashMap<String, typst::foundations::Bytes>,
             list: &Vec<ListItem>,
             numbered: bool,
             depth: usize,
@@ -225,7 +224,7 @@ impl TransformerTrait for Transformer {
             source.push_str(&" ".repeat(depth));
             for el in list {
                 if let List { elements, numbered } = &el.element {
-                    process_list(source, elements, *numbered, depth + 1)?;
+                    process_list(source, img_map, elements, *numbered, depth + 1)?;
                 } else {
                     if numbered {
                         source.push_str("+ ")
@@ -233,43 +232,46 @@ impl TransformerTrait for Transformer {
                         source.push_str("- ")
                     };
 
-                    process_element(source, &el.element)?;
+                    process_element(source, img_map, &el.element)?;
                 }
             }
 
             Ok(())
         }
 
-        fn _process_image(
+        fn process_image(
             source: &mut TypstString,
             bytes: &Bytes,
-            path: &Option<String>,
             title: &str,
             alt: &str,
+            image_type: &str,
         ) -> anyhow::Result<()> {
-            if bytes.is_empty() && path.is_some() {
-                let path = path.as_ref().unwrap();
+            if !bytes.is_empty() {
                 let image_text = format!(
                     "
             #figure(
-                image(\"{path}\", alt: \"{alt}\"), 
+                image(\"{title}{image_type}\", alt: \"{alt}\"), 
                 caption: [
                  {title}
                 ],
               )"
                 );
                 source.push_str(&image_text);
-            } 
+            }
             // need to think how to implement using raw bytes
             Ok(())
         }
 
-        fn process_element(source: &mut TypstString, element: &Element) -> anyhow::Result<()> {
+        fn process_element(
+            source: &mut TypstString,
+            img_map: &mut HashMap<String, typst::foundations::Bytes>,
+            element: &Element,
+        ) -> anyhow::Result<()> {
             match element {
                 Header { level, text } => process_header(source, *level as usize, text),
                 Paragraph { elements } => {
                     for paragraph_element in elements {
-                        process_element(source, paragraph_element)?;
+                        process_element(source, img_map, paragraph_element)?;
                     }
 
                     Ok(())
@@ -281,7 +283,7 @@ impl TransformerTrait for Transformer {
                     Ok(())
                 }
                 List { elements, numbered } => {
-                    process_list(source, elements, *numbered, 0)?;
+                    process_list(source, img_map, elements, *numbered, 0)?;
                     Ok(())
                 }
                 Hyperlink {
@@ -300,17 +302,19 @@ impl TransformerTrait for Transformer {
                     Ok(())
                 }
                 Image {
-                    path: _,
-                    bytes: _,
-                    title: _,
-                    alt: _,
-                    image_type: _,
+                    bytes,
+                    title,
+                    alt,
+                    image_type,
                 } => {
-                    //  Need to think how to properly implement image 
-                    // There's 2 approach. One is to use filepath and here we have to implement file method of impl World
-                    // and if using bytes need to research how to add them into string In process_image as bytes
-                    // process_image(source, bytes, path, title, alt)?;
-                    // source.push('\n');
+                    let image_type = match image_type {
+                        ImageType::Jpeg => ".jpeg",
+                        ImageType::Png => ".png",
+                    };
+                    let key = format!("{title}{image_type}");
+                    img_map.insert(key, typst::foundations::Bytes::from(bytes.to_vec()));
+                    process_image(source, bytes, title, alt, image_type)?;
+                    source.push('\n');
                     Ok(())
                 }
                 _ => {
@@ -321,12 +325,37 @@ impl TransformerTrait for Transformer {
         }
 
         let mut source = TypstString::new();
+        let mut img_map: HashMap<String, typst::foundations::Bytes> = HashMap::new();
+
+        let mut header_text = String::new();
+        document.page_header.iter().for_each(|el| match el {
+            Text { text, size: _ } => {
+                header_text.push_str(text);
+            }
+            _ => {}
+        });
+        let mut footer_text = String::new();
+
+        document.page_footer.iter().for_each(|el| match el {
+            Text { text, size: _ } => {
+                footer_text.push_str(text);
+            }
+            _ => {}
+        });
+
+        let footer_header_text = format!(
+            "#set page(
+            header: \"{header_text}\",
+            footer: \"{footer_text}\",
+          )\n"
+        );
+
+        source.push_str(&footer_header_text);
         for element in &document.elements {
-            process_element(&mut source, element)?;
+            process_element(&mut source, &mut img_map, element)?;
         }
 
-
-        let world = ShivaWorld::new(source);
+        let world = ShivaWorld::new(source, img_map);
         let mut tracer = Tracer::default();
 
         let document = typst::compile(&world, &mut tracer).unwrap();
@@ -343,7 +372,6 @@ impl TransformerTrait for Transformer {
         let bytes = Bytes::from(pdf);
         Ok((bytes, HashMap::new()))
     }
-
 }
 
 fn parse_object(
@@ -579,7 +607,6 @@ fn parse_object(
     Ok(())
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::core::*;
@@ -592,7 +619,11 @@ mod tests {
     fn test() -> anyhow::Result<()> {
         let pdf = std::fs::read("test/data/document.pdf")?;
         let pdf_bytes = Bytes::from(pdf);
-        let parsed = Transformer::parse(&pdf_bytes, &HashMap::new());
+        let mut images = HashMap::new();
+        let image_bytes = std::fs::read("test/data/picture.png")?;
+        let image_bytes = Bytes::from(image_bytes);
+        images.insert("test/data/image0.png".to_string(), image_bytes);
+        let parsed = Transformer::parse(&pdf_bytes, &images);
         assert!(parsed.is_ok());
         let parsed_document = parsed.unwrap();
         println!("==========================");
@@ -607,12 +638,25 @@ mod tests {
     fn test_list() -> anyhow::Result<()> {
         let document = std::fs::read("test/data/document.md")?;
         let documents_bytes = Bytes::from(document);
-        let parsed = markdown::Transformer::parse(&documents_bytes, &HashMap::new());
+        let mut images = HashMap::new();
+        let image_bytes = std::fs::read("test/data/picture.png")?;
+        let image_bytes = Bytes::from(image_bytes);
+        images.insert("image0.png".to_string(), image_bytes);
+        let parsed = markdown::Transformer::parse(&documents_bytes, &images);
         assert!(parsed.is_ok());
-        let parsed_document = parsed.unwrap();
+        let mut parsed_document = parsed.unwrap();
         println!("==========================");
-        println!("{:?}", parsed_document);
+        // println!("{:?}", parsed_document);
         println!("==========================");
+        parsed_document.page_header = vec![Element::Text {
+            text: "header".to_string(),
+            size: 10,
+        }];
+
+        parsed_document.page_footer = vec![Element::Text {
+            text: "footer".to_string(),
+            size: 10,
+        }];
         let generated_result = Transformer::generate(&parsed_document);
         assert!(generated_result.is_ok());
         std::fs::write("test/data/typst.pdf", generated_result.unwrap().0)?;

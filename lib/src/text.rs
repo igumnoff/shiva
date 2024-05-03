@@ -147,7 +147,6 @@ impl TransformerTrait for Transformer {
                     title,
                     alt,
                     image_type: _,
-                    path: _,
                 } => {
                     let image_path = format!("image{}.png", image_num);
                     markdown.push_str(&format!("![{}]({} \"{}\")", alt, image_path, title));

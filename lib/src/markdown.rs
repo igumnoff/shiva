@@ -258,7 +258,6 @@ impl TransformerTrait for Transformer {
                             let image_empty = Bytes::new();
                             let image_bytes = images.get(file_path).map_or(&image_empty, |x| x);
                             current_paragraph_elements.push(Image {
-                                path: Some(file_path.to_string()),
                                 bytes: image_bytes.clone(),
                                 title: title.to_string(),
                                 alt: alt_text.to_string(),
@@ -450,7 +449,6 @@ impl TransformerTrait for Transformer {
                     title,
                     alt,
                     image_type: _,
-                    path: _,
                 } => {
                     let image_path = format!("image{}.png", image_num);
                     markdown.push_str(&format!("![{}]({} \"{}\")", alt, image_path, title));
@@ -589,7 +587,7 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         // println!("{:?}", document);
         let mut images = HashMap::new();
         let image_bytes = std::fs::read("test/data/picture.png")?;
-        images.insert("test/data/picture.png".to_string(), image_bytes);
+        images.insert("test/data/image0.png".to_string(), image_bytes);
         let parsed = Transformer::parse(&document.as_bytes().into(), &HashMap::new());
         let document_string = std::str::from_utf8(document.as_bytes())?;
         println!("{}", document_string);
