@@ -189,6 +189,7 @@ fn parse_html(children: Children<Node>, elements: &mut Vec<Element>) -> anyhow::
                     let alt = element.attr("alt").unwrap_or_default();
                     let image_bytes = std::fs::read(src).unwrap_or_default();
                     elements.push(Image {
+                        path: Some(src.to_string()),
                         bytes: Bytes::from(image_bytes),
                         title: title.to_string(),
                         alt: alt.to_string(),
@@ -298,6 +299,7 @@ fn generate_html_for_element(
             title,
             alt,
             image_type: _,
+            path: _,
         } => {
             let image_path = format!("image{}.png", image_num);
             images.insert(image_path.to_string(), bytes.clone());

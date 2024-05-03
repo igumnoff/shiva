@@ -6,7 +6,7 @@ pub struct Transformer;
 impl TransformerTrait for Transformer {
     fn parse(document: &Bytes, _images: &HashMap<String, Bytes>) -> anyhow::Result<Document> {
         let doc: Document = serde_json::from_slice(document.as_ref())?;
-        return Ok(doc);
+        Ok(doc)
     }
     fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)> {
         let hm: HashMap<String, Bytes> = HashMap::new();
