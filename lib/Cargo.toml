@@ -25,7 +25,7 @@ readme = "../README.md"
 description = "Shiva library: Implementation in Rust of a parser and generator for documents of any type"
 
 
-exclude = ["fonts"]
+exclude = ["fonts", "test"]
 
 
 [package.metadata.docs.rs]
