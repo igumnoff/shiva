@@ -25,8 +25,11 @@ readme = "../README.md"
 description = "Shiva library: Implementation in Rust of a parser and generator for documents of any type"
 
 
+exclude = ["lib/fonts"]
+
+
 [package.metadata.docs.rs]
-features = ["text", "markdown", "html", "pdf", "json"]
+features = ["text", "markdown", "html", "pdf", "json", "xml", "csv", "docx"]
 
 
 [dependencies]
