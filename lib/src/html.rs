@@ -22,7 +22,23 @@ impl TransformerTrait for Transformer {
         let mut images: HashMap<String, Bytes> = HashMap::new();
         let mut image_num: i32 = 0;
 
-        html.push_str("<!DOCTYPE html>\n<html>\n<body>\n");
+        let mut header_text = String::new();
+        document.page_header.iter().for_each(|el| match el {
+            Text { text, size: _ } => {
+                header_text.push_str(text);
+            }
+            _ => {}
+        });
+        let mut footer_text = String::new();
+        
+        document.page_footer.iter().for_each(|el| match el {
+            Text { text, size: _ } => {
+                footer_text.push_str(text);
+            }
+            _ => {}
+        });
+
+        html.push_str(&header_text);
 
         for element in &document.elements {
             match element {
@@ -92,7 +108,8 @@ impl TransformerTrait for Transformer {
             }
         }
 
-        html.push_str("</body>\n</html>");
+        html.push_str(&footer_text);
+
         Ok((Bytes::from(html), HashMap::new()))
     }
 }
@@ -345,6 +362,7 @@ mod tests {
     use crate::html::Transformer;
     use crate::markdown;
     use std::collections::HashMap;
+    use crate::core::Element::Text;
 
     #[test]
     fn test() -> anyhow::Result<()> {
@@ -525,4 +543,44 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
 
         Ok(())
     }
+
+    #[test]
+fn header_footer_test() -> anyhow::Result<()> {
+    let md_document = "Document\nABC\nLorem\nIpsum\nDolor\n    \n# H1\n\n# h1\n\n## H2\n\n### H3\n\n#### H4\n\n##### H5\n\n###### H6\n\n# TEST\n\n# TEST\n\n# TEST\n\n# TEST\n\n# TEST\n\nABC\nLorem\nIpsum\nDolor\n\n# H1\n\n# h1\n\n## H2\n\n### H3\n\n#### H4\n\n##### H5\n\n###### H6\n\n# TEST\n\n# TEST\n\n# TEST\n\n# TEST\n\n# TEST\n\n# This is a test doc\n";
+    let expected_html_document = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>Document</title>\n</head>\n<body>\n<p>DocumentABCLoremIpsumDolor</p>\n<h1>H1</h1>\n<h1>h1</h1>\n<h2>H2</h2>\n<h3>H3</h3>\n<h4>H4</h4>\n<h5>H5</h5>\n<h6>H6</h6>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<p>ABCLoremIpsumDolor</p>\n<h1>H1</h1>\n<h1>h1</h1>\n<h2>H2</h2>\n<h3>H3</h3>\n<h4>H4</h4>\n<h5>H5</h5>\n<h6>H6</h6>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<h1>This is a test doc</h1>\n</body>\n</html>";
+
+    let parsed = markdown::Transformer::parse(&md_document.as_bytes().into(), &HashMap::new());
+    assert!(parsed.is_ok());
+
+    let mut parsed = parsed?;
+    let mut footer_elements = Vec::new();
+    let mut header_elements = Vec::new();
+    let header = Text {
+        size: 10,
+        text: std::string::String::from("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>Document</title>\n</head>\n<body>\n"),
+    };
+    let footer = Text {
+        size: 10,
+        text: std::string::String::from("</body>\n</html>"),
+    };
+    footer_elements.push(footer);
+    header_elements.push(header);
+    parsed.page_header = header_elements;
+    parsed.page_footer = footer_elements;
+    println!("==========================");
+    println!("{:?}", parsed);
+    println!("==========================");
+
+    let generated_document = crate::html::Transformer::generate(&parsed);
+
+    assert!(generated_document.is_ok());
+
+    let generated_document = generated_document?;
+
+    let generated_html_document = std::str::from_utf8(&generated_document.0)?;
+
+    assert_eq!(generated_html_document, expected_html_document);
+
+    Ok(())
+}
 }
