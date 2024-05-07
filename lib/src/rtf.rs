@@ -101,8 +101,6 @@ impl TransformerTrait for Transformer {
 #[cfg(test)]
 
 mod test {
-    use crate::{markdown, rtf};
-    use printpdf::image;
     use std::collections::HashMap;
 
     use super::*;
@@ -115,7 +113,7 @@ mod test {
  this is a second paragraph
         \par}
         }"#;
-        let parsed = rtf::TransformerTrait::parse(&document.as_bytes().into(), &HashMap::new());
+        let parsed = Transformer::parse(&document.as_bytes().into(), &HashMap::new());
         assert!(parsed.is_ok());
         let parsed = parsed?;
        Ok(())
