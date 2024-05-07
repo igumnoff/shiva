@@ -19,8 +19,11 @@
 | PDF           | +     | +        |
 | JSON          | +     | +        |
 | XML           | +     | +        |
-| DOC           | -     | -        |
+| CSV           | +     | +        |
+| RTF           | -     | -        |
+| DOCX          | -     | -        |
 | XLS           | -     | -        |
+| Typst         | -     | -        |
 
 
 ## Parse document features
@@ -33,6 +36,7 @@
 | PDF           | -      | +         | +    | -     | -     | -         | -          | -          |
 | JSON          | +      | +         | +    | +     | -     | +         | +          | +          |
 | XML           | +      | +         | -    | -     | -     | +         | +          | +          |
+| CSV           | -      | -         | -    | +     | -     | -         | -          | -          |
 
 ## Generate document features
 
@@ -41,16 +45,17 @@
 | Plain text    | +      | +         | +    | +     | -     | +         | +          | +          |
 | Markdown      | +      | +         | +    | +     | +     | +         | +          | +          |
 | HTML          | +      | +         | +    | +     | +     | +         | -          | -          |
-| PDF           | +      | +         | +    | +     | -     | +         | +          | +          |
+| PDF           | +      | +         | +    | +     | +     | +         | +          | +          |
 | JSON          | +      | +         | +    | +     | -     | +         | +          | +          |
 | XML           | +      | +         | -    | -     | -     | +         | +          | +          |
+| CSV           | -      | -         | -    | +     | -     | -         | -          | -          |
 
 ## Usage Shiva library
 
 Cargo.toml
 ```toml
 [dependencies]
-shiva = {  version = "0.3.1", features = ["html", "markdown", "text", "pdf", "json"] }
+shiva = {  version = "0.3.4", features = ["html", "markdown", "text", "pdf", "json", "csv"] }
 ```
 
 main.rs

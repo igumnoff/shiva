@@ -108,10 +108,10 @@ impl TransformerTrait for Transformer {
                 }
                 Element::List { elements, numbered } => {
                     list_counters.push(0);
-                    list_types.push(numbered.clone());
+                    list_types.push(*numbered);
                     for item in elements {
                         generate_list_item(
-                            &item,
+                            item,
                             markdown,
                             list_depth + 1,
                             list_counters,
@@ -123,21 +123,21 @@ impl TransformerTrait for Transformer {
                     list_counters.pop();
                     list_types.pop();
 
-                    if list_counters.len() == 0 {
+                    if list_counters.is_empty() {
                         markdown.push('\n');
                     }
                 }
                 Element::Text { text, size: _ } => {
                     markdown.push_str(text);
-                    if !text.ends_with(" ") {
-                        markdown.push_str(" ");
+                    if !text.ends_with(' ') {
+                        markdown.push(' ');
                     }
                 }
                 Element::Hyperlink {
                     title, url, alt, ..
                 } => {
                     if url == alt && alt == url {
-                        markdown.push_str(&format!("{}", url));
+                        markdown.push_str(&url.to_string());
                     } else {
                         markdown.push_str(&format!("[{}]({} \"{}\")", title, url, alt));
                     }
@@ -184,7 +184,7 @@ impl TransformerTrait for Transformer {
                     markdown.push_str("|\n");
 
                     for max_length in &max_lengths {
-                        markdown.push_str("|");
+                        markdown.push('|');
                         markdown.push_str(&"-".repeat(*max_length + 2));
                     }
                     markdown.push_str("|\n");
