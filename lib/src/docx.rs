@@ -77,9 +77,9 @@ impl TransformerTrait for Transformer {
                         elements: vec![list_item],
                         numbered,
                     };
-    
+
                     result.push(element);
-    
+
                     *last_list_indent = list_indent;
                 }
 
@@ -162,7 +162,7 @@ impl TransformerTrait for Transformer {
                             let docx_rs::TableChild::TableRow(tr) = row;
                             // println!("tr - {:?}", tr);
                             let mut cells = TableRow { cells: vec![] };
-    
+
                             for table_cell in &tr.cells {
                                 let TableRowChild::TableCell(tc) = table_cell;
                                 println!("tc - {:?}", tc);
@@ -180,7 +180,7 @@ impl TransformerTrait for Transformer {
                             }
                             rows.push(cells);
                         }
-    
+
                         result.push(Table {
                             headers: vec![],
                             rows,
@@ -189,7 +189,7 @@ impl TransformerTrait for Transformer {
                     _ => {}
                 }
             }
-      
+
         }
 
         Ok(Document::new(result))
@@ -201,10 +201,10 @@ impl TransformerTrait for Transformer {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::TransformerTrait;
-    use crate::docx;
-    use bytes::Bytes;
     use std::collections::HashMap;
+    use bytes::Bytes;
+    use crate::core::TransformerTrait;
+    use crate::{docx};
 
     #[test]
     fn test() -> anyhow::Result<()> {
