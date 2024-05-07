@@ -38,12 +38,23 @@ impl TransformerTrait for Transformer {
             _ => {}
         });
 
-        html.push_str(&header_text);
+        html.push_str("<!DOCTYPE html>\n<html>\n<body>\n");
 
-        for element in &document.elements {
+        let all_elements: Vec<Element> = document
+        .page_header
+        .iter()
+        .cloned()
+        .chain(document.elements.iter().cloned())
+        .chain(document.page_footer.iter().cloned())
+        .collect();
+
+        for element in &all_elements {
             match element {
                 Element::Header { level, text } => {
                     html.push_str(&format!("<h{}>{}</h{}>\n", level, text, level));
+                }
+                Element::Text { text, size } => {
+                    html.push_str(&format!("<p>{}</p>\n", text));
                 }
                 Paragraph { elements } => {
                     html.push_str("<p>");
@@ -103,12 +114,11 @@ impl TransformerTrait for Transformer {
                     table_html.push_str("</table>\n");
                     html.push_str(&table_html)
                 }
-
                 _ => {}
             }
         }
 
-        html.push_str(&footer_text);
+        html.push_str("</body>\n</html>");
 
         Ok((Bytes::from(html), HashMap::new()))
     }
@@ -547,7 +557,7 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
     #[test]
 fn header_footer_test() -> anyhow::Result<()> {
     let md_document = "Document\nABC\nLorem\nIpsum\nDolor\n    \n# H1\n\n# h1\n\n## H2\n\n### H3\n\n#### H4\n\n##### H5\n\n###### H6\n\n# TEST\n\n# TEST\n\n# TEST\n\n# TEST\n\n# TEST\n\nABC\nLorem\nIpsum\nDolor\n\n# H1\n\n# h1\n\n## H2\n\n### H3\n\n#### H4\n\n##### H5\n\n###### H6\n\n# TEST\n\n# TEST\n\n# TEST\n\n# TEST\n\n# TEST\n\n# This is a test doc\n";
-    let expected_html_document = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>Document</title>\n</head>\n<body>\n<p>DocumentABCLoremIpsumDolor</p>\n<h1>H1</h1>\n<h1>h1</h1>\n<h2>H2</h2>\n<h3>H3</h3>\n<h4>H4</h4>\n<h5>H5</h5>\n<h6>H6</h6>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<p>ABCLoremIpsumDolor</p>\n<h1>H1</h1>\n<h1>h1</h1>\n<h2>H2</h2>\n<h3>H3</h3>\n<h4>H4</h4>\n<h5>H5</h5>\n<h6>H6</h6>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<h1>This is a test doc</h1>\n</body>\n</html>";
+    let expected_html_document = "<!DOCTYPE html>\n<html>\n<body>\n<p>This is page header text</p>\n<p>DocumentABCLoremIpsumDolor</p>\n<h1>H1</h1>\n<h1>h1</h1>\n<h2>H2</h2>\n<h3>H3</h3>\n<h4>H4</h4>\n<h5>H5</h5>\n<h6>H6</h6>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<p>ABCLoremIpsumDolor</p>\n<h1>H1</h1>\n<h1>h1</h1>\n<h2>H2</h2>\n<h3>H3</h3>\n<h4>H4</h4>\n<h5>H5</h5>\n<h6>H6</h6>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<h1>TEST</h1>\n<h1>This is a test doc</h1>\n<p>This is page footer text</p>\n</body>\n</html>";
 
     let parsed = markdown::Transformer::parse(&md_document.as_bytes().into(), &HashMap::new());
     assert!(parsed.is_ok());
@@ -557,11 +567,11 @@ fn header_footer_test() -> anyhow::Result<()> {
     let mut header_elements = Vec::new();
     let header = Text {
         size: 10,
-        text: std::string::String::from("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>Document</title>\n</head>\n<body>\n"),
+        text: std::string::String::from("This is page header text"),
     };
     let footer = Text {
         size: 10,
-        text: std::string::String::from("</body>\n</html>"),
+        text: std::string::String::from("This is page footer text"),
     };
     footer_elements.push(footer);
     header_elements.push(header);
