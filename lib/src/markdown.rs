@@ -428,9 +428,7 @@ impl TransformerTrait for Transformer {
                     }
                 }
                 Text { text, size: _ } => {
-                    let re = Regex::new(
-                        r#"^(\n)*\s+$?"#,
-                    )?;
+                    let re = Regex::new(r#"^(\n)*\s+$?"#)?;
                     if !re.is_match(&text) {
                         markdown.push_str("\n");
                         markdown.push_str(text);

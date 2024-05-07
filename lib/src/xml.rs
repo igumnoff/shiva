@@ -23,86 +23,90 @@ mod tests {
     use crate::xml;
     #[test]
     fn test() -> anyhow::Result<()> {
-        let elements = vec![Element::Text {
-            text: "Hello, world!".to_string(),
-            size: 12,
-        },
-        Element::Header { level: 1, text: "123".to_string() },
-        Element::Image {
-            bytes: Default::default(),
-            title: "".to_string(),
-            alt: "".to_string(),
-            image_type: ImageType::Png,
-        },
-        Element::Paragraph {
-            elements: vec![Element::Text {
+        let elements = vec![
+            Element::Text {
                 text: "Hello, world!".to_string(),
                 size: 12,
-            }],
-        },
-        // Element::Table {
-        //     headers: vec![
-        //         TableHeader {
-        //             element: Element::Text {
-        //                 text: "Syntax".to_string(),
-        //                 size: 8,
-        //             },
-        //             width: 10.0,
-        //         },
-        //         TableHeader {
-        //             element: Element::Text {
-        //                 text: "Description".to_string(),
-        //                 size: 8,
-        //             },
-        //             width: 10.0,
-        //         },
-        //     ],
-        //     rows: vec![
-        //         TableRow {
-        //             cells: vec![
-        //                 TableCell {
-        //                     element: Element::Text {
-        //                         text: "Header".to_string(),
-        //                         size: 8,
-        //                     },
-        //                 },
-        //                 TableCell {
-        //                     element: Element::Text {
-        //                         text: "Title".to_string(),
-        //                         size: 8,
-        //                     },
-        //                 },
-        //             ],
-        //         },
-        //         TableRow {
-        //             cells: vec![
-        //                 TableCell {
-        //                     element: Element::Text {
-        //                         text: "Paragraph".to_string(),
-        //                         size: 8,
-        //                     },
-        //                 },
-        //                 TableCell {
-        //                     element: Element::Text {
-        //                         text: "Text".to_string(),
-        //                         size: 8,
-        //                     },
-        //                 },
-        //             ],
-        //         },
-        //     ],
-        // },
-        // Element::List {
-        //     elements: vec![
-        //         crate::core::ListItem {
-        //             element: Element::Text {
-        //                 text: "List item 1".to_string(),
-        //                 size: 8,
-        //             },
-        //         },
-        //     ],
-        //     numbered: false,
-        // }
+            },
+            Element::Header {
+                level: 1,
+                text: "123".to_string(),
+            },
+            Element::Image {
+                bytes: Default::default(),
+                title: "".to_string(),
+                alt: "".to_string(),
+                image_type: ImageType::Png,
+            },
+            Element::Paragraph {
+                elements: vec![Element::Text {
+                    text: "Hello, world!".to_string(),
+                    size: 12,
+                }],
+            },
+            // Element::Table {
+            //     headers: vec![
+            //         TableHeader {
+            //             element: Element::Text {
+            //                 text: "Syntax".to_string(),
+            //                 size: 8,
+            //             },
+            //             width: 10.0,
+            //         },
+            //         TableHeader {
+            //             element: Element::Text {
+            //                 text: "Description".to_string(),
+            //                 size: 8,
+            //             },
+            //             width: 10.0,
+            //         },
+            //     ],
+            //     rows: vec![
+            //         TableRow {
+            //             cells: vec![
+            //                 TableCell {
+            //                     element: Element::Text {
+            //                         text: "Header".to_string(),
+            //                         size: 8,
+            //                     },
+            //                 },
+            //                 TableCell {
+            //                     element: Element::Text {
+            //                         text: "Title".to_string(),
+            //                         size: 8,
+            //                     },
+            //                 },
+            //             ],
+            //         },
+            //         TableRow {
+            //             cells: vec![
+            //                 TableCell {
+            //                     element: Element::Text {
+            //                         text: "Paragraph".to_string(),
+            //                         size: 8,
+            //                     },
+            //                 },
+            //                 TableCell {
+            //                     element: Element::Text {
+            //                         text: "Text".to_string(),
+            //                         size: 8,
+            //                     },
+            //                 },
+            //             ],
+            //         },
+            //     ],
+            // },
+            // Element::List {
+            //     elements: vec![
+            //         crate::core::ListItem {
+            //             element: Element::Text {
+            //                 text: "List item 1".to_string(),
+            //                 size: 8,
+            //             },
+            //         },
+            //     ],
+            //     numbered: false,
+            // }
         ];
         let doc = Document::new(elements);
         let generated_result = xml::Transformer::generate(&doc);
