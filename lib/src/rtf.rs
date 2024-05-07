@@ -110,7 +110,7 @@ mod test {
     fn test() -> anyhow::Result<()> {
         let document = r#"{\rtf1\ansi\deff0 {\fonttbl {\f0 Times;}}\fs24
         {\pard
-     this is a first paragraph
+     this is a first paragrap
         {\pard
  this is a second paragraph
         \par}
