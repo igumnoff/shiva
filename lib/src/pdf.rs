@@ -247,14 +247,9 @@ impl TransformerTrait for Transformer {
             image_type: &str,
         ) -> anyhow::Result<()> {
             if !bytes.is_empty() {
-                let image_text = format!(
-                    "
-            #figure(
-                image(\"{title}{image_type}\", alt: \"{alt}\"), 
-                caption: [
-                 {title}
-                ],
-              )"
+                let image_text = format!("
+                #image(\"{title}{image_type}\", alt: \"{alt}\")
+                 "
                 );
                 source.push_str(&image_text);
             }
@@ -317,10 +312,10 @@ impl TransformerTrait for Transformer {
                     source.push('\n');
                     Ok(())
                 }
-                _ => {
-                    eprintln!("Should implement element - {:?}", element);
-                    Ok(())
-                }
+                // _ => {
+                //     eprintln!("Should implement element - {:?}", element);
+                //     Ok(())
+                // }
             }
         }
 
@@ -355,6 +350,7 @@ impl TransformerTrait for Transformer {
             process_element(&mut source, &mut img_map, element)?;
         }
 
+        // println!("{}", source);
         let world = ShivaWorld::new(source, img_map);
         let mut tracer = Tracer::default();
 
