@@ -1,4 +1,4 @@
- First header
+# First header
 
 Paragraph  bla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla
 blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla
@@ -23,10 +23,7 @@ blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla
 - List item six
   - List item seven
 
-![Picture alt1](test/data/picture.png "Picture title1")
-
-
-Bla bla bla ![Picture alt2](test/data/picture.png "Picture title2") bla. http://example.com  [Example](http://example.com) [Example](http://example.com "Example tooltip")
+![Picture alt1](image0.png "Picture title1")
 
 
 ## Second header
