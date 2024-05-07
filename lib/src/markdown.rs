@@ -66,10 +66,10 @@ impl TransformerTrait for Transformer {
                         });
                     }
                 }
-            } else if trimmed_line.chars().next().unwrap_or(' ').is_digit(10)
+            } else if trimmed_line.chars().next().unwrap_or(' ').is_ascii_digit()
                 && trimmed_line.chars().nth(1).unwrap_or(' ') == '.'
             {
-                let list_item_text = trimmed_line.splitn(2, '.').nth(1).unwrap_or("").trim();
+                let list_item_text = trimmed_line.split_once('.').map(|x| x.1).unwrap_or("").trim();
                 let list_item = ListItem {
                     element: Text {
                         text: list_item_text.to_string(),
@@ -80,7 +80,7 @@ impl TransformerTrait for Transformer {
                     while current_list_stack.len() <= indent_level {
                         current_list_stack.push(vec![]);
                         current_list_type_stack
-                            .push(trimmed_line.chars().next().unwrap().is_digit(10));
+                            .push(trimmed_line.chars().next().unwrap().is_ascii_digit());
                     }
                 } else {
                     while current_list_stack.len() > indent_level + 1 {
@@ -184,20 +184,20 @@ impl TransformerTrait for Transformer {
                                         current_paragraph_elements,
                                     )?;
                                 }
-                                if markdown.starts_with("h") {
+                                if markdown.starts_with('h') {
                                     current_paragraph_elements.push(Hyperlink {
                                         title: markdown.to_string(),
                                         url: markdown.to_string(),
                                         alt: markdown.to_string(),
                                         size: 8,
                                     });
-                                } else if markdown.starts_with("[") && markdown.ends_with("\")") {
-                                    let start_alt_text = markdown.find("[").unwrap() + 1;
-                                    let end_alt_text = markdown.find("]").unwrap();
-                                    let start_url_path = markdown.find("(").unwrap() + 1;
-                                    let end_url_path = markdown.find(" ").unwrap();
-                                    let start_title = markdown.find("\"").unwrap() + 1;
-                                    let end_title = markdown.rfind("\"").unwrap();
+                                } else if markdown.starts_with('[') && markdown.ends_with("\")") {
+                                    let start_alt_text = markdown.find('[').unwrap() + 1;
+                                    let end_alt_text = markdown.find(']').unwrap();
+                                    let start_url_path = markdown.find('(').unwrap() + 1;
+                                    let end_url_path = markdown.find(' ').unwrap();
+                                    let start_title = markdown.find('"').unwrap() + 1;
+                                    let end_title = markdown.rfind('"').unwrap();
                                     let alt_text = &markdown[start_alt_text..end_alt_text];
                                     let url = &markdown[start_url_path..end_url_path];
                                     let title = &markdown[start_title..end_title];
@@ -208,9 +208,9 @@ impl TransformerTrait for Transformer {
                                         size: 8,
                                     });
                                 } else {
-                                    let start_alt_text = markdown.find("[").unwrap() + 1;
-                                    let end_alt_text = markdown.find("]").unwrap();
-                                    let start_url_path = markdown.find("(").unwrap() + 1;
+                                    let start_alt_text = markdown.find('[').unwrap() + 1;
+                                    let end_alt_text = markdown.find(']').unwrap();
+                                    let start_url_path = markdown.find('(').unwrap() + 1;
                                     let alt_text = &markdown[start_alt_text..end_alt_text];
                                     let url = &markdown[start_url_path..markdown.len() - 1];
                                     current_paragraph_elements.push(Hyperlink {
@@ -227,10 +227,8 @@ impl TransformerTrait for Transformer {
                                     text: text.to_string(),
                                     size: 8,
                                 });
-                            } else {
-                                if start < text.len() {
-                                    parser_text(&text[start..], current_paragraph_elements)?;
-                                }
+                            } else if start < text.len() {
+                                parser_text(&text[start..], current_paragraph_elements)?;
                             }
                             Ok(())
                         }
@@ -243,15 +241,14 @@ impl TransformerTrait for Transformer {
                             let (img_start, img_end) =
                                 (cap.get(0).unwrap().start(), cap.get(0).unwrap().end());
                             let markdown = &line[img_start..img_end];
-                            let start_alt_text = markdown.find("[").unwrap() + 1;
-                            let end_alt_text = markdown.find("]").unwrap();
-                            let start_file_path = markdown.find("(").unwrap() + 1;
-                            let start_title = markdown.find("\"").unwrap() + 1;
-                            let end_title = markdown.rfind("\"").unwrap();
+                            let start_alt_text = markdown.find('[').unwrap() + 1;
+                            let end_alt_text = markdown.find(']').unwrap();
+                            let start_file_path = markdown.find('(').unwrap() + 1;
+                            let start_title = markdown.find('"').unwrap() + 1;
+                            let end_title = markdown.rfind('"').unwrap();
                             let alt_text = &markdown[start_alt_text..end_alt_text];
-                            let file_path = &markdown[start_file_path..end_title - 1];
+                            let file_path = &markdown[start_file_path..start_title - 2];
                             let title = &markdown[start_title..end_title];
-
                             if img_start > start {
                                 parser_text(
                                     &line[start..img_start],
@@ -271,11 +268,9 @@ impl TransformerTrait for Transformer {
                         }
 
                         if captures == 0 {
-                            parser_text(&line, &mut current_paragraph_elements)?;
-                        } else {
-                            if start < line.len() {
-                                parser_text(&line[start..], &mut current_paragraph_elements)?;
-                            }
+                            parser_text(line, &mut current_paragraph_elements)?;
+                        } else if start < line.len() {
+                            parser_text(&line[start..], &mut current_paragraph_elements)?;
                         }
                     } else if !current_paragraph_elements.is_empty() {
                         elements.push(Paragraph {
@@ -284,8 +279,8 @@ impl TransformerTrait for Transformer {
                         current_paragraph_elements.clear();
                     }
                 }
-                while !current_list_stack.is_empty() {
-                    let items = current_list_stack.pop().unwrap();
+                while let Some(items) = current_list_stack.pop() {
+                    
                     let list = List {
                         elements: items,
                         numbered: current_list_type_stack.pop().unwrap(),
@@ -298,8 +293,8 @@ impl TransformerTrait for Transformer {
                 }
             }
         }
-        while !current_list_stack.is_empty() {
-            let items = current_list_stack.pop().unwrap();
+        while let Some(items) = current_list_stack.pop() {
+            
             let list = List {
                 elements: items,
                 numbered: current_list_type_stack.pop().unwrap(),
@@ -385,7 +380,7 @@ impl TransformerTrait for Transformer {
 
             match element {
                 Header { level, text } => {
-                    markdown.push_str(&"#".repeat(level.clone() as usize));
+                    markdown.push_str(&"#".repeat(*level as usize));
                     markdown.push(' ');
                     markdown.push_str(text);
                     markdown.push('\n');
@@ -411,7 +406,7 @@ impl TransformerTrait for Transformer {
                     list_types.push(*numbered);
                     for item in elements {
                         generate_list_item(
-                            &item,
+                            item,
                             markdown,
                             list_depth + 1,
                             list_counters,
@@ -423,7 +418,7 @@ impl TransformerTrait for Transformer {
                     list_counters.pop();
                     list_types.pop();
 
-                    if list_counters.len() == 0 {
+                    if list_counters.is_empty() {
                         markdown.push('\n');
                     }
                 }
@@ -431,20 +426,20 @@ impl TransformerTrait for Transformer {
                     let re = Regex::new(
                         r#"^(\n)*\s+$?"#,
                     )?;
-                    if !re.is_match(&text) {
-                        markdown.push_str("\n");
+                    if !re.is_match(text) {
+                        markdown.push('\n');
                         markdown.push_str(text);
-                        if !text.ends_with(" ") {
-                            markdown.push_str(" ");
+                        if !text.ends_with(' ') {
+                            markdown.push(' ');
                         }
-                        markdown.push_str("\n");
+                        markdown.push('\n');
                     }
                 }
                 Hyperlink {
                     title, url, alt, ..
                 } => {
                     if url == alt && alt == url {
-                        markdown.push_str(&format!("{}", url));
+                        markdown.push_str(&url.to_string());
                     } else {
                         markdown.push_str(&format!("[{}]({} \"{}\")", title, url, alt));
                     }
@@ -492,7 +487,7 @@ impl TransformerTrait for Transformer {
                     markdown.push_str("|\n");
 
                     for max_length in &max_lengths {
-                        markdown.push_str("|");
+                        markdown.push('|');
                         markdown.push_str(&"-".repeat(*max_length + 2));
                     }
                     markdown.push_str("|\n");
@@ -592,7 +587,7 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         // println!("{:?}", document);
         let mut images = HashMap::new();
         let image_bytes = std::fs::read("test/data/picture.png")?;
-        images.insert("test/data/picture.png".to_string(), image_bytes);
+        images.insert("test/data/image0.png".to_string(), image_bytes);
         let parsed = Transformer::parse(&document.as_bytes().into(), &HashMap::new());
         let document_string = std::str::from_utf8(document.as_bytes())?;
         println!("{}", document_string);
