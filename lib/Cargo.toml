@@ -65,5 +65,5 @@ pdf = ["lopdf", "typst", "ttf-parser", "comemo", "time", "typst-pdf"]
 json = ["serde", "serde_json"]
 xml = ["serde", "serde-xml-rs"]
 docx = ["serde","serde-xml-rs"]
-rtf = []
+rtf = ["regex"]
 
