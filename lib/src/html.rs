@@ -1126,17 +1126,53 @@ let expected_markdown_document: &str = r#"| Syntax      | Description |
 fn test_html_image_parse() -> anyhow::Result<()> {
     let test_html_document: &str = r#"<p>Bla bla bla <img src="test/data/image1.png" alt="Picture alt2" title="Picture title2" /> bla. </p>"#;
 
-    let expected_markdown_document: &str = r#"Bla bla bla ![Picture alt2](test/data/image1.png "Picture title2") bla."#;
+    let expected_markdown_document: &str = r#"Bla bla bla ![Picture alt2](test/data/image1.png "Picture title2") bla. "#;
     
     let parsed_html: Result<Document, anyhow::Error> = Transformer::parse(&test_html_document.as_bytes().into(), &HashMap::new());
     assert!(parsed_html.is_ok());
     let parsed_markdown: Result<Document, anyhow::Error> =   markdown::Transformer::parse(&expected_markdown_document.as_bytes().into(), &HashMap::new());
 
     let mut parsed_html: Document = parsed_html?;
-    println!("{:?}", parsed_html);
-    println!("=========================");
     let mut parsed_markdown: Document = parsed_markdown?;
-    println!("{:?}", parsed_markdown);
+
+    let mut footer_elements: Vec<Element> = Vec::new();
+    let mut header_elements: Vec<Element> = Vec::new();
+
+    let header: Element = Text {
+        size: 10,
+        text: std::string::String::from("This is page header text"),
+    };
+    let footer: Element = Text {
+        size: 10,
+        text: std::string::String::from("This is page footer text"),
+    };
+
+    footer_elements.push(footer);
+    header_elements.push(header);
+    parsed_html.page_header = header_elements.clone();
+    parsed_html.page_footer = footer_elements.clone();
+    parsed_markdown.page_header = header_elements.clone();
+    parsed_markdown.page_footer = footer_elements.clone();
+
+
+    assert_eq!(serde_json::to_string(&parsed_html).unwrap() , serde_json::to_string(&parsed_markdown).unwrap());
+
+    Ok(())
+}
+#[test]
+fn test_html_image_generate() -> anyhow::Result<()> {
+    let test_html_document: &str = r#"<p>Bla bla bla <img src="test/data/image1.png" alt="Picture alt2" title="Picture title2" /> bla. </p>"#;
+
+    let expected_markdown_document: &str = r#"Bla bla bla ![Picture alt2](test/data/image1.png "Picture title2") bla. "#;
+    
+    let expected_html_document: &str = "<!DOCTYPE html>\n<html>\n<body>\n<p>This is page header text</p>\n<p>Bla bla bla <img src=\"image0.png\" alt=\"Picture alt2\" title=\"Picture title2\" /> bla. </p>\n<p>This is page footer text</p>\n</body>\n</html>";
+
+    let parsed_html: Result<Document, anyhow::Error> = Transformer::parse(&test_html_document.as_bytes().into(), &HashMap::new());
+    assert!(parsed_html.is_ok());
+    let parsed_markdown: Result<Document, anyhow::Error> =   markdown::Transformer::parse(&expected_markdown_document.as_bytes().into(), &HashMap::new());
+
+    let mut parsed_html: Document = parsed_html?;
+    let mut parsed_markdown: Document = parsed_markdown?;
 
     let mut footer_elements: Vec<Element> = Vec::new();
     let mut header_elements: Vec<Element> = Vec::new();
@@ -1158,49 +1194,6 @@ fn test_html_image_parse() -> anyhow::Result<()> {
     parsed_markdown.page_footer = footer_elements.clone();
 
     assert_eq!(serde_json::to_string(&parsed_html).unwrap() , serde_json::to_string(&parsed_markdown).unwrap());
-
-    Ok(())
-}
-#[test]
-fn test_html_image_generate() -> anyhow::Result<()> {
-let test_html_document: &str = r#"<p>Bla bla bla <img src="test/data/image1.png" alt="Picture alt2" title="Picture title2" /> bla. </p>"#;
-
-let expected_markdown_document: &str = r#"Bla bla bla ![Picture alt2](test/data/image1.png "Picture title2") bla."#;
-    
-    let test_header_string: &str = "<!DOCTYPE html>\n<html>\n<body>\n<p>This is page header text</p>\n";
-    let test_footer_string: &str = "\n<p>This is page footer text</p>\n</body>\n</html>";
-    let expected_html_document: &str = &(test_header_string.to_owned() + test_html_document + test_footer_string);
-
-    let parsed_html: Result<Document, anyhow::Error> = Transformer::parse(&test_html_document.as_bytes().into(), &HashMap::new());
-    assert!(parsed_html.is_ok());
-    let parsed_markdown: Result<Document, anyhow::Error> =   markdown::Transformer::parse(&expected_markdown_document.as_bytes().into(), &HashMap::new());
-
-    let mut parsed_html: Document = parsed_html?;
-    println!("{:?}", parsed_html);
-    println!("=========================");
-    let mut parsed_markdown: Document = parsed_markdown?;
-    println!("{:?}", parsed_markdown);
-
-    let mut footer_elements: Vec<Element> = Vec::new();
-    let mut header_elements: Vec<Element> = Vec::new();
-
-    let header: Element = Text {
-        size: 10,
-        text: std::string::String::from("This is page header text"),
-    };
-    let footer: Element = Text {
-        size: 10,
-        text: std::string::String::from("This is page footer text"),
-    };
-
-    footer_elements.push(footer);
-    header_elements.push(header);
-    parsed_html.page_header = header_elements.clone();
-    parsed_html.page_footer = footer_elements.clone();
-    parsed_markdown.page_header = header_elements.clone();
-    parsed_markdown.page_footer = footer_elements.clone();
-
-    // assert_eq!(serde_json::to_string(&parsed_html).unwrap() , serde_json::to_string(&parsed_markdown).unwrap());
 
     let html_generated_document: Result<(bytes::Bytes, HashMap<String, bytes::Bytes>), anyhow::Error> = crate::html::Transformer::generate(&parsed_markdown);
 
