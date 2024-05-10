@@ -32,8 +32,49 @@ struct ShivaWorld {
 impl ShivaWorld {
     fn new(source: String, img_map: HashMap<String, typst::foundations::Bytes>) -> Self {
         let source = Source::detached(source);
+        
+        let folder = "fonts";
+        
+        // Check if the "fonts" folder exists
+        if !std::path::Path::new(folder).exists() {
+            // Create the "fonts" folder
+            std::fs::create_dir_all(folder).expect("Failed to create folder");
 
-        let fonts = std::fs::read_dir("fonts")
+            // Download fonts
+            let font_info = vec![
+                ("DejaVuSansMono-Bold.ttf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/DejaVuSansMono-Bold.ttf"),
+                ("DejaVuSansMono.ttf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/DejaVuSansMono.ttf"),
+                ("FiraMath-Regular.otf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/FiraMath-Regular.otf"),
+                ("IBMPlexSerif-Regular.ttf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/IBMPlexSerif-Regular.ttf"),
+                ("InriaSerif-BoldItalic.ttf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/InriaSerif-BoldItalic.ttf"),
+                ("InriaSerif-Regular.ttf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/InriaSerif-Regular.ttf"),
+                ("LinLibertine_R.ttf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/LinLibertine_R.ttf"),
+                ("LinLibertine_RB.ttf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/LinLibertine_RB.ttf"),
+                ("LinLibertine_RBI.ttf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/LinLibertine_RBI.ttf"),
+                ("LinLibertine_RI.ttf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/LinLibertine_RI.ttf"),
+                ("Nerd.ttf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/Nerd.ttf"),
+                ("NewCM10-Bold.otf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/NewCM10-Bold.otf"),
+                ("NewCM10-Regular.otf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/NewCM10-Regular.otf"),
+                ("NewCMMath-Book.otf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/NewCMMath-Book.otf"),
+                ("NewCMMath-Regular.otf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/NewCMMath-Regular.otf"),
+                ("NotoColorEmoji.ttf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/NotoColorEmoji.ttf"),
+                ("NotoSansArabic-Regular.ttf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/NotoSansArabic-Regular.ttf"),
+                ("NotoSansSymbols2-Regular.ttf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/NotoSansSymbols2-Regular.ttf"),
+                ("NotoSerifCJKsc-Regular.otf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/NotoSerifCJKsc-Regular.otf"),
+                ("NotoSerifHebrew-Bold.ttf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/NotoSerifHebrew-Bold.ttf"),
+                ("NotoSerifHebrew-Regular.ttf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/NotoSerifHebrew-Regular.ttf"),
+                ("PTSans-Regular.ttf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/PTSans-Regular.ttf"),
+                ("Roboto-Regular.ttf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/Roboto-Regular.ttf"),
+                ("TwitterColorEmoji.ttf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/TwitterColorEmoji.ttf"),
+                ("Ubuntu-Regular.ttf", "https://github.com/igumnoff/shiva/blob/main/lib/fonts/Ubuntu-Regular.ttf"),
+            ];
+
+            for (filename, url) in font_info {
+                download_font(url, folder, filename);
+            }
+        }
+        
+        let fonts = std::fs::read_dir(folder)
             .unwrap()
             .map(Result::unwrap)
             .flat_map(|entry| {
@@ -43,12 +84,12 @@ impl ShivaWorld {
                 let face_count = ttf_parser::fonts_in_collection(&buffer).unwrap_or(1);
                 (0..face_count).map(move |face| {
                     Font::new(buffer.clone(), face).unwrap_or_else(|| {
-                        panic!("failed to load font from {path:?} (face index {face})")
+                        panic!("failed to load font from {path:?} (face index {face})");
                     })
                 })
             })
             .collect::<Vec<Font>>();
-
+        
         Self {
             book: Prehashed::new(FontBook::from_fonts(&fonts)),
             fonts,
@@ -99,6 +140,7 @@ impl World for ShivaWorld {
     }
 }
 
+pub fn font_check()
 pub struct Transformer;
 impl TransformerTrait for Transformer {
     fn parse(document: &Bytes, _images: &HashMap<String, Bytes>) -> anyhow::Result<Document> {
