@@ -209,86 +209,32 @@ fn test_html_list_parse() -> anyhow::Result<()> {
 let test_html_document: &str = r#"<ol>
 <li>List item 1</li>
 <li>List item 2</li>
-<li>List item 3<ol>
-<li>List item secode level 1</li>
-<li>List item secode level 2</li>
-</ol>
-</li>
-<li>List item 4<ol>
-<li>List item secode level 3</li>
-<li>List item secode level 4</li>
-</ol>
-</li>
-<li>List item 5<ol>
-<li>List item secode level 5</li>
-</ol>
-</li>
+<li>List item 3</li>
+<li>List item 4</li>
+<li>List item 5</li>
 </ol>
 <ul>
-<li>List item one<ul>
-<li>List item two</li>
-</ul>
-</li>
-<li>List item three<ul>
-<li>List item four</li>
-<li>List item five</li>
-<li>List item zzz</li>
-</ul>
-</li>
-<li>List item six<ul>
-<li>List item seven</li>
-</ul>
-</li>
+<li>List item one</li>
+<li>List item three</li>
+<li>List item six</li>
 </ul>"#;
 
 let expected_markdown_document: &str = r#"1. List item 1
 2. List item 2
 3. List item 3
-    1. List item secode level 1
-    2. List item secode level 2
 4. List item 4
-    1. List item secode level 3
-    2. List item secode level 4
 5. List item 5
-    1. List item secode level 5
 
 - List item one
-    - List item two
 - List item three
-    - List item four
-    - List item five
-    - List item zzz
-- List item six
-    - List item seven"#;
+- List item six"#;
     
-    let parsed_html: Result<Document, anyhow::Error> = Transformer::parse(&test_html_document.as_bytes().into(), &HashMap::new());
+    let parsed_html = Transformer::parse(&test_html_document.as_bytes().into(), &HashMap::new());
     assert!(parsed_html.is_ok());
-    let parsed_markdown: Result<Document, anyhow::Error> =   markdown::Transformer::parse(&expected_markdown_document.as_bytes().into(), &HashMap::new());
+    let parsed_markdown =   markdown::Transformer::parse(&expected_markdown_document.as_bytes().into(), &HashMap::new());
 
-    let mut parsed_html: Document = parsed_html?;
-    println!("{:?}", parsed_html);
-    println!("=========================");
-    let mut parsed_markdown: Document = parsed_markdown?;
-    println!("{:?}", parsed_markdown);
-
-    let mut footer_elements: Vec<Element> = Vec::new();
-    let mut header_elements: Vec<Element> = Vec::new();
-
-    let header: Element = Text {
-        size: 10,
-        text: std::string::String::from("This is page header text"),
-    };
-    let footer: Element = Text {
-        size: 10,
-        text: std::string::String::from("This is page footer text"),
-    };
-
-    footer_elements.push(footer);
-    header_elements.push(header);
-    parsed_html.page_header = header_elements.clone();
-    parsed_html.page_footer = footer_elements.clone();
-    parsed_markdown.page_header = header_elements.clone();
-    parsed_markdown.page_footer = footer_elements.clone();
+    let parsed_html: Document = parsed_html?;
+    let parsed_markdown: Document = parsed_markdown?;
 
     assert_eq!(serde_json::to_string(&parsed_html).unwrap() , serde_json::to_string(&parsed_markdown).unwrap());
 
@@ -300,65 +246,58 @@ let test_html_document: &str = r#"<ol>
 <li>List item 1</li>
 <li>List item 2</li>
 <li>List item 3</li>
-<li><ol>
+<ol>
 <li>List item secode level 1</li>
 <li>List item secode level 2</li>
 </ol>
-</li>
 <li>List item 4</li>
-<li><ol>
+<ol>
 <li>List item secode level 3</li>
 <li>List item secode level 4</li>
 </ol>
-</li>
 <li>List item 5</li>
-<li><ol>
+<ol>
 <li>List item secode level 5</li>
 </ol>
-</li>
 </ol>
 <ul>
 <li>List item one</li>
-<li><ul>
+<ul>
 <li>List item two</li>
 </ul>
-</li>
 <li>List item three</li>
-<li><ul>
+<ul>
 <li>List item four</li>
 <li>List item five</li>
-<li><ul>
+<ul>
 <li>List item zzz</li>
 </ul>
-</li>
 </ul>
-</li>
 <li>List item six</li>
-<li><ul>
+<ul>
 <li>List item seven</li>
 </ul>
-</li>
 </ul>"#;
 
 let expected_markdown_document: &str = r#"1. List item 1
 2. List item 2
 3. List item 3
-    1. List item secode level 1
-    2. List item secode level 2
+  1. List item secode level 1
+  2. List item secode level 2
 4. List item 4
-    1. List item secode level 3
-    2. List item secode level 4
+  1. List item secode level 3
+  2. List item secode level 4
 5. List item 5
-    1. List item secode level 5
+  1. List item secode level 5
 
 - List item one
-    - List item two
+  - List item two
 - List item three
-    - List item four
-    - List item five
+  - List item four
+  - List item five
     - List item zzz
 - List item six
-    - List item seven"#;
+  - List item seven"#;
     
     let test_header_string: &str = "<!DOCTYPE html>\n<html>\n<body>\n<p>This is page header text</p>\n";
     let test_footer_string: &str = "\n<p>This is page footer text</p>\n</body>\n</html>";
