@@ -14,10 +14,15 @@ mod web;
 #[tokio::main]
 async fn main() -> Result<()> {
 
+    // Настройка логирования
+    env_logger::builder()
+        .filter_level(log::LevelFilter::Trace)
+        .init();
+
     let route_test = Router::new().route("/test_server", get(handler_answer_server));
 
     let route_input_file = Router::new()
-        .route("//upload/:output_format", post(handler_convert_file));
+        .route("/upload/:output_format", post(handler_convert_file));
 
     let routes_all = Router::new()
         .merge(route_test)
