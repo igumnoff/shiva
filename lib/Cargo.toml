@@ -49,8 +49,7 @@ ttf-parser = { version = "0.20.0", optional = true }
 comemo = { version = "0.4.0", optional = true }
 time = { version = "0.3.36", optional = true }
 typst-pdf = { version = "0.11.0", optional = true }
-zip = {version = "1.2.1", optional = false}
-quick-xml = {version = "0.31.0"}
+docx-rs = "0.4.17"
 
 [dev-dependencies]
 env_logger = "0.10.0"
