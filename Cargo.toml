@@ -4,6 +4,6 @@ resolver = "2"
 members = [
     "lib",
     "cli",
-    "rest_api_server"
+    "rest_api_server",
+    "test"
 ]
-
