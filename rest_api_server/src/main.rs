@@ -14,10 +14,12 @@ mod web;
 #[tokio::main]
 async fn main() -> Result<()> {
 
-    // Настройка логирования
+ /*   // Настройка логирования
     env_logger::builder()
         .filter_level(log::LevelFilter::Trace)
         .init();
+
+  */
 
     let route_test = Router::new().route("/test_server", get(handler_answer_server));
 
