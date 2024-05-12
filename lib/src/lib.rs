@@ -27,3 +27,6 @@ pub mod csv;
 
 #[cfg(feature = "docx")]
 pub mod docx;
+
+#[cfg(feature = "latex")]
+mod latex;
