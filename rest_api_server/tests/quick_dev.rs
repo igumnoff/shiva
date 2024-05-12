@@ -1,6 +1,7 @@
-use std::io::{Cursor, Write};
+use std::io::{Cursor, Read, Write};
 use anyhow::{anyhow, Error, Result};
 use reqwest::{Body, multipart};
+use tokio::fs::File;
 
 
 #[tokio::test]
@@ -30,7 +31,7 @@ async fn test_handler_convert_file_md_html_txt() -> Result<(), Error> {
     for input_format in &input_formats {
         for output_format in &output_formats {
             // Creating a temporary file with test data
-            let file_data = "Test file data";
+            let file_data = "# Test file data";
             let file_name = format!("test_file.{}", input_format);
             let mut file = Cursor::new(Vec::new());
             file.write_all(file_data.as_bytes())?;
@@ -61,14 +62,24 @@ async fn test_handler_convert_file_md_html_txt() -> Result<(), Error> {
             println!("sending the test_file.{}", input_format);
 
             // Sending a POST request to the server with the multipart form
-            let response = client
-                .post(&format!("http://localhost:8080/transform/{}", output_format))
+            let mut response = client
+                .post(&format!("http://localhost:8080/upload/{}", output_format))
                 .multipart(form)
                 .send()
                 .await.unwrap();
 
             // Checking the server response
             assert_eq!(response.status(), reqwest::StatusCode::OK);
+
+            if response.status().is_success() {
+                let file_name_2 = format!("test_file.{}", output_format);
+                let mut file = File::create(file_name_2).await?;
+                use tokio::io::AsyncWriteExt;
+
+                while let Some(chunk) = response.chunk().await? {
+                    file.write_all(&chunk).await?;
+                }
+            }
 
             println!("the file has been successfully converted to the format {}", output_format)
         }
@@ -111,7 +122,7 @@ async fn test_handler_convert_file_pdf() -> Result<(), Box<dyn std::error::Error
 
     // Sending a POST request to the server with the multipart form
     let response = client
-        .post("http://localhost:8080/transform/pdf")
+        .post("http://localhost:8080/upload/pdf")
         .multipart(form)
         .send()
         .await?;
@@ -149,7 +160,7 @@ async fn test_handler_convert_file_pdf() -> Result<(), Box<dyn std::error::Error
 
         // Sending a POST request to the server with the multipart form
         let response = client
-            .post(&format!("http://localhost:8080/transform/{}", output_format))
+            .post(&format!("http://localhost:8080/upload/{}", output_format))
             .multipart(form)
             .send()
             .await?;
@@ -192,7 +203,7 @@ async fn test_handler_convert_file_json() -> Result<(), Box<dyn std::error::Erro
     let client = reqwest::Client::new();
 
     let response = client
-        .post("http://localhost:8080/transform/json")
+        .post("http://localhost:8080/upload/json")
         .multipart(form)
         .send()
         .await?;
@@ -220,7 +231,7 @@ async fn test_handler_convert_file_json() -> Result<(), Box<dyn std::error::Erro
         println!("sending the test_file.json");
 
         let response = client
-            .post(&format!("http://localhost:8080/transform/{}", output_format))
+            .post(&format!("http://localhost:8080/upload/{}", output_format))
             .multipart(form)
             .send()
             .await?;
