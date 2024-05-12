@@ -1,11 +1,10 @@
-use std::fs::File;
 use std::io::{Cursor, Read, Write};
 use anyhow::{anyhow, Error, Result};
 use reqwest::{Body, multipart};
 
 
 #[tokio::test]
-async fn quick_dev() -> Result<()> {
+async fn test_server() -> Result<()> {
     let hc = httpc_test::new_client("http://localhost:8080")?;
 
     hc.do_get("/test_server").await?.print().await?;
@@ -15,32 +14,31 @@ async fn quick_dev() -> Result<()> {
 
 
 #[tokio::test]
-async fn test_handler_convert_file_1() -> Result<(), Error> {
+async fn test_handler_convert_file_md_html_txt() -> Result<(), Error> {
 /*
-    // Настройка логирования
+    //Logging Settings
     env_logger::builder()
         .filter_level(log::LevelFilter::Trace)
         .init();
-
  */
 
-    // Формируем все комбинации входящих и исходящих форматов
+    //We form all combinations of incoming and outgoing file formats
     let input_formats = vec!["md", "html", "txt"];
     let output_formats = vec!["md", "html", "txt", "pdf", "json"];
 
-    //Проходим по всем комбинациям
+    // We go through all the combinations
     for input_format in &input_formats {
         for output_format in &output_formats {
-            // Создаем временный файл с тестовыми данными
+            // Creating a temporary file with test data
             let file_data = "Test file data";
             let file_name = format!("test_file.{}", input_format);
             let mut file = Cursor::new(Vec::new());
             file.write_all(file_data.as_bytes())?;
 
-            // Создаем тело запроса из содержимого файла
+            // Creating the request body from the contents of the file
             let body = Body::from(file.get_ref().to_vec());
 
-            // Создаем часть multipart с файлом
+            // Creating a multipart part with a file
             let part = multipart::Part::stream(body)
                 .file_name(file_name)
                 .mime_str(match output_format {
@@ -52,28 +50,27 @@ async fn test_handler_convert_file_1() -> Result<(), Error> {
                     _ => return Err(anyhow!("Invalid output format: {}", output_format)),
                 })?;
 
-            // Создаем multipart/form-data с файлом и дополнительными данными
+            // Creating a multipart/form-data with a file and additional data
             let form = multipart::Form::new()
                 .part("file", part)
-                .text("output_format", "txt"); // Здесь указываем желаемый формат конвертации
+                .text("output_format", output_format.to_string());
 
-            // Создаем HTTP-клиента
+            // Creating HTTP-client
             let client = reqwest::Client::new();
 
-            // Отправляем POST-запрос на сервер с формой multipart
+            println!("sending the test_file.{}", input_format);
 
-            println!("отправляем test_file.{}", input_format);
-
+            // Sending a POST request to the server with the multipart form
             let response = client
-                .post(&format!("http://localhost:8080/upload/{}", output_format)) // Здесь указываем желаемый формат вывода (например, md)
+                .post(&format!("http://localhost:8080/upload/{}", output_format))
                 .multipart(form)
                 .send()
                 .await.unwrap();
 
-            // Проверяем ответ сервера
+            // Checking the server response
             assert_eq!(response.status(), reqwest::StatusCode::OK);
 
-            println!("файл успешно конвертирован в формат {}", output_format)
+            println!("the file has been successfully converted to the format {}", output_format)
         }
     }
 
@@ -81,61 +78,158 @@ async fn test_handler_convert_file_1() -> Result<(), Error> {
 }
 
 
-
-/*
 #[tokio::test]
-async fn test_handler_convert_file_2() -> Result<(), Box<dyn std::error::Error>> {
-
-    // Настройка логирования
+async fn test_handler_convert_file_pdf() -> Result<(), Box<dyn std::error::Error>> {
+/*
+    //Logging Settings
     env_logger::builder()
         .filter_level(log::LevelFilter::Trace)
         .init();
+  */
 
-    // Создаем PDF
-    let (doc, page1, layer1) = PdfDocument::new("test file", Mm(297.0), Mm(210.0), "Layer 1");
-    let current_layer = doc.get_page(page1).get_layer(layer1);
-    let font = doc.add_builtin_font(BuiltinFont::Helvetica).unwrap();
-    current_layer.use_text("Test file data", 12.0, Mm(100.0), Mm(100.0), &font);
+    // Creating a temporary file with test data
+    let file_data = "Test file data";
+    let file_name = "test_file.md";
+    let mut file = Cursor::new(Vec::new());
+    file.write_all(file_data.as_bytes())?;
 
-    // Записываем PDF в файл
-    let file_name = "test_file.pdf";
-    let file = File::create(file_name)?;
-    let mut writer = BufWriter::new(file);
-    doc.save(&mut writer)?;
+    // Creating the request body from the contents of the file
+    let body = Body::from(file.get_ref().to_vec());
 
-
-    // Читаем содержимое файла в память
-    let mut file = File::open(file_name)?;
-    let mut file_content = Vec::new();
-    file.read_to_end(&mut file_content)?;
-
-    // Создаем тело запроса из содержимого файла
-    let body = Body::from(file_content);
-
-    // Создаем часть multipart с файлом
+    // Creating a multipart part with a file
     let part = multipart::Part::stream(body)
         .file_name(file_name)
-        .mime_str("application/pdf")?;
+        .mime_str("application/md")?;
 
-    // Создаем multipart/form-data с файлом и дополнительными данными
+    // Creating a multipart/form-data with a file and additional data
     let form = multipart::Form::new()
         .part("file", part)
-        .text("output_format", "txt"); // Здесь указываем желаемый формат конвертации
+        .text("output_format", "pdf");
 
-    // Создаем HTTP-клиента
+    // Creating HTTP-client
     let client = reqwest::Client::new();
 
-    // Отправляем POST-запрос на сервер с формой multipart
+    // Sending a POST request to the server with the multipart form
     let response = client
-        .post("http://localhost:8080/upload/txt") // Здесь указываем желаемый формат вывода (например, md)
+        .post("http://localhost:8080/upload/pdf")
         .multipart(form)
         .send()
         .await?;
 
-    // Проверяем ответ сервера
+    // Checking the server response
     assert_eq!(response.status(), reqwest::StatusCode::OK);
+
+    // We get the contents of the response in the form bytes
+    let pdf_content = response.bytes().await?;
+
+    // We form all combinations of outgoing formats
+    let output_formats = vec!["md", "html", "txt", "pdf", "json"];
+
+    // We go through all the combinations
+    for output_format in &output_formats {
+
+        // Creating the request body from the contents of the file
+        let body = Body::from(pdf_content.clone());
+
+        // Creating a multipart part with a file
+        let part = multipart::Part::stream(body)
+            .file_name(".pdf")
+            .mime_str("application/pdf")?;
+
+        // Creating a multipart/form-data with a file and additional data
+        let form = multipart::Form::new()
+            .part("file", part)
+            .text("output_format", output_format.to_string());
+
+        // Creating HTTP-client
+        let client = reqwest::Client::new();
+
+        println!("sending the test_file.pdf");
+
+
+        // Sending a POST request to the server with the multipart form
+        let response = client
+            .post(&format!("http://localhost:8080/upload/{}", output_format))
+            .multipart(form)
+            .send()
+            .await?;
+
+        // Checking the server response
+        assert_eq!(response.status(), reqwest::StatusCode::OK);
+
+        println!("the file has been successfully converted to the format {}", output_format)
+
+    }
 
     Ok(())
 }
 
- */
+
+#[tokio::test]
+async fn test_handler_convert_file_json() -> Result<(), Box<dyn std::error::Error>> {
+   /*
+    env_logger::builder()
+        .filter_level(log::LevelFilter::Trace)
+        .init();
+
+    */
+
+    let file_data = "Test file data";
+    let file_name = "test_file.md";
+    let mut file = Cursor::new(Vec::new());
+    file.write_all(file_data.as_bytes())?;
+
+    let body = Body::from(file.get_ref().to_vec());
+
+    let part = multipart::Part::stream(body)
+        .file_name(file_name)
+        .mime_str("application/md")?;
+
+    let form = multipart::Form::new()
+        .part("file", part)
+        .text("output_format", "json");
+
+    let client = reqwest::Client::new();
+
+    let response = client
+        .post("http://localhost:8080/upload/json")
+        .multipart(form)
+        .send()
+        .await?;
+
+    assert_eq!(response.status(), reqwest::StatusCode::OK);
+
+    let pdf_content = response.bytes().await?;
+
+    let output_formats = vec!["md", "html", "txt", "pdf", "json"];
+
+    for output_format in &output_formats {
+
+        let body = Body::from(pdf_content.clone());
+
+        let part = multipart::Part::stream(body)
+            .file_name(".json")
+            .mime_str("application/json")?;
+
+        let form = multipart::Form::new()
+            .part("file", part)
+            .text("output_format", output_format.to_string());
+
+        let client = reqwest::Client::new();
+
+        println!("sending the test_file.json");
+
+        let response = client
+            .post(&format!("http://localhost:8080/upload/{}", output_format))
+            .multipart(form)
+            .send()
+            .await?;
+
+        assert_eq!(response.status(), reqwest::StatusCode::OK);
+
+        println!("the file has been successfully converted to the format {}", output_format)
+
+    }
+
+    Ok(())
+}
