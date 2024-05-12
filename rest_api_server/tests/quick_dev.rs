@@ -1,4 +1,4 @@
-use std::io::{Cursor, Read, Write};
+use std::io::{Cursor, Write};
 use anyhow::{anyhow, Error, Result};
 use reqwest::{Body, multipart};
 
@@ -62,7 +62,7 @@ async fn test_handler_convert_file_md_html_txt() -> Result<(), Error> {
 
             // Sending a POST request to the server with the multipart form
             let response = client
-                .post(&format!("http://localhost:8080/upload/{}", output_format))
+                .post(&format!("http://localhost:8080/transform/{}", output_format))
                 .multipart(form)
                 .send()
                 .await.unwrap();
@@ -111,7 +111,7 @@ async fn test_handler_convert_file_pdf() -> Result<(), Box<dyn std::error::Error
 
     // Sending a POST request to the server with the multipart form
     let response = client
-        .post("http://localhost:8080/upload/pdf")
+        .post("http://localhost:8080/transform/pdf")
         .multipart(form)
         .send()
         .await?;
@@ -149,7 +149,7 @@ async fn test_handler_convert_file_pdf() -> Result<(), Box<dyn std::error::Error
 
         // Sending a POST request to the server with the multipart form
         let response = client
-            .post(&format!("http://localhost:8080/upload/{}", output_format))
+            .post(&format!("http://localhost:8080/transform/{}", output_format))
             .multipart(form)
             .send()
             .await?;
@@ -192,7 +192,7 @@ async fn test_handler_convert_file_json() -> Result<(), Box<dyn std::error::Erro
     let client = reqwest::Client::new();
 
     let response = client
-        .post("http://localhost:8080/upload/json")
+        .post("http://localhost:8080/transform/json")
         .multipart(form)
         .send()
         .await?;
@@ -220,7 +220,7 @@ async fn test_handler_convert_file_json() -> Result<(), Box<dyn std::error::Erro
         println!("sending the test_file.json");
 
         let response = client
-            .post(&format!("http://localhost:8080/upload/{}", output_format))
+            .post(&format!("http://localhost:8080/transform/{}", output_format))
             .multipart(form)
             .send()
             .await?;
