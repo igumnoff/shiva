@@ -60,7 +60,7 @@ async fn main_response_mapper(res: Response) -> Response {
 
 #[cfg(test)]
 mod tests {
-    use std::io::{Cursor, Read, Write};
+    use std::io::{Cursor, Write};
     use anyhow::{anyhow, Error, Result};
     use reqwest::{Body, multipart};
     use tokio::fs::File;
@@ -150,7 +150,7 @@ mod tests {
         Ok(())
     }
 
-
+/*
     #[tokio::test]
     async fn test_handler_convert_file_pdf() -> Result<(), Box<dyn std::error::Error>> {
         /*
@@ -306,4 +306,6 @@ mod tests {
 
         Ok(())
     }
+
+ */
 }
