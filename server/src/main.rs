@@ -3,6 +3,7 @@ use crate::web::routes_files::{handler_convert_file};
 use axum::response::{Html, IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{middleware, Router};
+use clap::{Arg, Command};
 use tokio::net::TcpListener;
 
 mod error;
@@ -13,13 +14,33 @@ mod web;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-
- /*   // Настройка логирования
+/*
+    //Logging Settings
     env_logger::builder()
         .filter_level(log::LevelFilter::Trace)
         .init();
-
   */
+
+    // Defining command line arguments
+    let matches = Command::new("Server")
+        .arg(Arg::new("host")
+            .long("host")
+            .value_name("HOST")
+            .help("Sets the host address")
+            .require_equals(true)
+            .default_value("127.0.0.1")
+        )
+        .arg(Arg::new("port")
+            .long("port")
+            .value_name("PORT")
+            .help("Sets the port number")
+            .require_equals(true)
+            .default_value("8080"))
+        .get_matches();
+
+    // Extracting argument values
+  let host = matches.get_one::<String>("host").unwrap();
+  let port = matches.get_one::<String>("port").unwrap();
 
     let route_test = Router::new().route("/test_server", get(handler_answer_server));
 
@@ -33,7 +54,8 @@ async fn main() -> Result<()> {
 
     // region:    ---Start Server
 
-    let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
+    let listener = TcpListener::bind(
+        format!("{}:{}", host, port)).await.unwrap();
 
     println!("-->>LISTENING on {:?}", listener.local_addr().unwrap());
 
@@ -150,7 +172,7 @@ mod tests {
         Ok(())
     }
 
-/*
+
     #[tokio::test]
     async fn test_handler_convert_file_pdf() -> Result<(), Box<dyn std::error::Error>> {
         /*
@@ -306,6 +328,4 @@ mod tests {
 
         Ok(())
     }
-
- */
 }
