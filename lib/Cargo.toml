@@ -1,6 +1,6 @@
 [package]
 name = "shiva"
-version = "0.3.3"
+version = "0.3.4"
 edition = "2021"
 
 authors = ["Evgeny Igumnov <igumnovnsk@gmail.com>"]
@@ -64,4 +64,4 @@ html = ["scraper", "ego-tree"]
 pdf = ["lopdf", "typst", "ttf-parser", "comemo", "time", "typst-pdf"]
 json = ["serde", "serde_json"]
 xml = ["serde", "serde-xml-rs"]
-docx = ["serde","serde-xml-rs"]
+docx = ["serde", "serde-xml-rs"]

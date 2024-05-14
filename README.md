@@ -19,6 +19,7 @@
 | PDF           | +     | +        |
 | JSON          | +     | +        |
 | XML           | +     | +        |
+| CSV           | +     | +        |
 | RTF           | -     | -        |
 | DOCX          | -     | -        |
 | XLS           | -     | -        |
@@ -35,6 +36,7 @@
 | PDF           | -      | +         | +    | -     | -     | -         | -          | -          |
 | JSON          | +      | +         | +    | +     | -     | +         | +          | +          |
 | XML           | +      | +         | -    | -     | -     | +         | +          | +          |
+| CSV           | -      | -         | -    | +     | -     | -         | -          | -          |
 
 ## Generate document features
 
@@ -46,13 +48,14 @@
 | PDF           | +      | +         | +    | +     | +     | +         | +          | +          |
 | JSON          | +      | +         | +    | +     | -     | +         | +          | +          |
 | XML           | +      | +         | -    | -     | -     | +         | +          | +          |
+| CSV           | -      | -         | -    | +     | -     | -         | -          | -          |
 
 ## Usage Shiva library
 
 Cargo.toml
 ```toml
 [dependencies]
-shiva = {  version = "0.3.1", features = ["html", "markdown", "text", "pdf", "json"] }
+shiva = {  version = "0.3.4", features = ["html", "markdown", "text", "pdf", "json", "csv"] }
 ```
 
 main.rs
@@ -90,11 +93,12 @@ cd ./target/release/
 
 ## Contributing
 I would love to see contributions from the community. If you experience bugs, feel free to open an issue. If you would like to implement a new feature or bug fix, please follow the steps:
-1. Contact with me via telegram @ievkz or discord @igumnovnsk
-2. Confirm e-mail invitation in repository
-3. Do "git clone"
-4. Create branch with your assigned issue
-5. Create pull request to main branch
+1. Read "[Contributor License Agreement (CLA)](https://github.com/igumnoff/shiva/blob/main/CLA)"
+2. Contact with me via telegram @ievkz or discord @igumnovnsk
+3. Confirm e-mail invitation in repository
+4. Do "git clone"
+5. Create branch with your assigned issue
+6. Create pull request to main branch
 
 ## Who uses Shiva
 - [Metatron library: Implementation in Rust of a report generation](https://github.com/igumnoff/metatron)
