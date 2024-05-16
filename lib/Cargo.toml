@@ -50,8 +50,7 @@ ttf-parser = { version = "0.20.0", optional = true }
 comemo = { version = "0.4.0", optional = true }
 time = { version = "0.3.36", optional = true }
 typst-pdf = { version = "0.11.0", optional = true }
-docx-rs =  { version = "0.4.17", optional = true }
-
+reqwest = { version = "0.12.4", optional = true , features = ["blocking"]}
 
 [dev-dependencies]
 env_logger = "0.10.0"
@@ -63,7 +62,7 @@ text = []
 csv = ["dep:csv"]
 markdown = ["regex"]
 html = ["scraper", "ego-tree"]
-pdf = ["lopdf", "typst", "ttf-parser", "comemo", "time", "typst-pdf"]
+pdf = ["lopdf", "typst", "ttf-parser", "comemo", "time", "typst-pdf", "reqwest"]
 json = ["serde", "serde_json"]
 xml = ["serde", "serde-xml-rs"]
-docx = ["docx-rs"]
+docx = ["serde", "serde-xml-rs"]
