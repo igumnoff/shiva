@@ -2,6 +2,10 @@ use crate::core::Element::{Header, Hyperlink, Image, List, Paragraph, Table, Tex
 use crate::core::{
     Document, Element, ImageType, ListItem, ParserError, TableHeader, TableRow, TransformerTrait,
 };
+use std::fs::File;
+use std::io::{copy, Cursor};
+use std::path::Path;
+use reqwest::blocking::get;
 
 use comemo::Prehashed;
 
@@ -32,8 +36,49 @@ struct ShivaWorld {
 impl ShivaWorld {
     fn new(source: String, img_map: HashMap<String, typst::foundations::Bytes>) -> Self {
         let source = Source::detached(source);
+        
+        let folder = "fonts";
+        
+        // Check if the "fonts" folder exists
+        if !std::path::Path::new(folder).exists() {
+            // Create the "fonts" folder
+            std::fs::create_dir_all(folder).expect("Failed to create folder");
 
-        let fonts = std::fs::read_dir("fonts")
+            // Download fonts
+            let font_info = vec![
+                ("DejaVuSansMono-Bold.ttf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/DejaVuSansMono-Bold.ttf"),
+                ("DejaVuSansMono.ttf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/DejaVuSansMono.ttf"),
+                ("FiraMath-Regular.otf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/FiraMath-Regular.otf"),
+                ("IBMPlexSerif-Regular.ttf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/IBMPlexSerif-Regular.ttf"),
+                ("InriaSerif-BoldItalic.ttf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/InriaSerif-BoldItalic.ttf"),
+                ("InriaSerif-Regular.ttf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/InriaSerif-Regular.ttf"),
+                ("LinLibertine_R.ttf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/LinLibertine_R.ttf"),
+                ("LinLibertine_RB.ttf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/LinLibertine_RB.ttf"),
+                ("LinLibertine_RBI.ttf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/LinLibertine_RBI.ttf"),
+                ("LinLibertine_RI.ttf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/LinLibertine_RI.ttf"),
+                ("Nerd.ttf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/Nerd.ttf"),
+                ("NewCM10-Bold.otf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/NewCM10-Bold.otf"),
+                ("NewCM10-Regular.otf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/NewCM10-Regular.otf"),
+                ("NewCMMath-Book.otf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/NewCMMath-Book.otf"),
+                ("NewCMMath-Regular.otf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/NewCMMath-Regular.otf"),
+                ("NotoColorEmoji.ttf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/NotoColorEmoji.ttf"),
+                ("NotoSansArabic-Regular.ttf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/NotoSansArabic-Regular.ttf"),
+                ("NotoSansSymbols2-Regular.ttf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/NotoSansSymbols2-Regular.ttf"),
+                ("NotoSerifCJKsc-Regular.otf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/NotoSerifCJKsc-Regular.otf"),
+                ("NotoSerifHebrew-Bold.ttf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/NotoSerifHebrew-Bold.ttf"),
+                ("NotoSerifHebrew-Regular.ttf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/NotoSerifHebrew-Regular.ttf"),
+                ("PTSans-Regular.ttf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/PTSans-Regular.ttf"),
+                ("Roboto-Regular.ttf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/Roboto-Regular.ttf"),
+                ("TwitterColorEmoji.ttf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/TwitterColorEmoji.ttf"),
+                ("Ubuntu-Regular.ttf", "https://github.com/igumnoff/shiva/raw/main/lib/fonts/Ubuntu-Regular.ttf"),
+            ];
+
+            for (filename, url) in font_info {
+                download_font(url, folder, filename);
+            }
+        }
+        
+        let fonts = std::fs::read_dir(folder)
             .unwrap()
             .map(Result::unwrap)
             .flat_map(|entry| {
@@ -43,12 +88,12 @@ impl ShivaWorld {
                 let face_count = ttf_parser::fonts_in_collection(&buffer).unwrap_or(1);
                 (0..face_count).map(move |face| {
                     Font::new(buffer.clone(), face).unwrap_or_else(|| {
-                        panic!("failed to load font from {path:?} (face index {face})")
+                        panic!("failed to load font from {path:?} (face index {face})");
                     })
                 })
             })
             .collect::<Vec<Font>>();
-
+        
         Self {
             book: Prehashed::new(FontBook::from_fonts(&fonts)),
             fonts,
@@ -58,6 +103,21 @@ impl ShivaWorld {
         }
     }
 }
+
+fn download_font(url: &str, folder: &str, filename: &str) {
+    let response = get(url).expect("Failed to download font file");
+    let font_path = Path::new(folder).join(filename);
+    let mut file = File::create(&font_path).expect("Failed to create font file");
+    let content_u8 = response.bytes().expect("Failed to read response");
+    let mut content_cursor = Cursor::new(content_u8);
+    println!("Downloading font file {}...", font_path.display());
+    copy(&mut content_cursor, &mut file).expect("Failed to write font file");
+
+    println!("Font file {} downloaded successfully!", font_path.display());
+}
+
+
+
 
 impl World for ShivaWorld {
     fn book(&self) -> &Prehashed<FontBook> {
