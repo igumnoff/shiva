@@ -253,7 +253,7 @@ impl TransformerTrait for Transformer {
 #[cfg(test)]
 mod tests {
     use crate::core::TransformerTrait;
-    use crate::docx;
+    use crate::{docx, html};
     use bytes::Bytes;
     use std::collections::HashMap;
 
@@ -266,9 +266,13 @@ mod tests {
         let parsed = docx::Transformer::parse(&bytes, &images);
         assert!(parsed.is_ok());
         println!(
-            "--------------------------------------------\n parsed - {:?}",
+            "--------------------------------------------\n parsed - {:#?}",
             parsed
         );
+
+        let result = html::Transformer::generate(&parsed?)?;
+        //write to file
+        std::fs::write("test/data/document_from_docx.html", result.0)?;
 
         Ok(())
     }
