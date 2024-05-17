@@ -1,6 +1,7 @@
 use crate::core::Element::{Header, Hyperlink, Image, List, Paragraph, Table, Text};
 use crate::core::*;
 use bytes::Bytes;
+use pulldown_cmark::{Event, HeadingLevel, Options, Parser, Tag, TagEnd, TextMergeStream};
 use regex::Regex;
 use std::collections::HashMap;
 
@@ -10,316 +11,510 @@ impl TransformerTrait for Transformer {
     where
         Self: Sized,
     {
+        fn process_element_creation(
+            current_element: &mut Option<Element>,
+            el: Element,
+            list_depth: i32,
+        ) {
+            println!("current_element - {:?}", current_element);
+            println!("el - {:?}", el);
+
+            match current_element {
+                Some(element) => match element {
+                    Element::List { elements, numbered } => {
+                        let mut li_vec_to_insert = elements;
+                        println!("list_depth - {}", list_depth);
+                        for _ in 1..list_depth {
+                            let last_index = li_vec_to_insert.len() - 1;
+                            if let Element::List {
+                                elements: ref mut inner_els,
+                                numbered,
+                            } = li_vec_to_insert[last_index].element
+                            {
+                                li_vec_to_insert = inner_els;
+                            } else {
+                                panic!("Expected a nested list structure at the specified depth");
+                            }
+                        }
+
+                        let li = ListItem { element: el };
+                        li_vec_to_insert.push(li);
+                    }
+                    _ => {}
+                },
+                None => {
+                    *current_element = Some(el);
+                }
+            }
+        }
+
         let document_str = std::str::from_utf8(document)?;
         let mut elements: Vec<Element> = Vec::new();
-        let lines = document_str.lines();
-        let mut current_paragraph_elements: Vec<Element> = Vec::new();
-        let mut in_table = false;
-        let mut table_rows: Vec<TableRow> = Vec::new();
-        let mut table_headers: Vec<TableHeader> = Vec::new();
-        let mut current_list_stack: Vec<Vec<ListItem>> = Vec::new();
-        let mut current_list_type_stack: Vec<bool> = Vec::new();
-        let img_regex = Regex::new("!\\[.*?\\]\\(.*? \".*?\"\\)").unwrap();
-        for line in lines {
-            let indent_level = line.chars().take_while(|c| c.is_whitespace()).count() / 2;
-            let trimmed_line = line.trim_start();
-            if trimmed_line.starts_with('-')
-                || trimmed_line.starts_with('+')
-                || trimmed_line.starts_with('*')
-            {
-                let list_item_text = trimmed_line[1..].trim();
-                let list_item = ListItem {
-                    element: Text {
-                        text: list_item_text.to_string(),
-                        size: 8,
-                    },
-                };
-                if current_list_stack.len() <= indent_level {
-                    while current_list_stack.len() <= indent_level {
-                        current_list_stack.push(vec![]);
-                        current_list_type_stack.push(false);
-                    }
-                } else {
-                    while current_list_stack.len() > indent_level + 1 {
-                        let nested_items = current_list_stack.pop().unwrap();
-                        let nested_list = List {
-                            elements: nested_items,
-                            numbered: current_list_type_stack.pop().unwrap(),
-                        };
-                        if let Some(parent_list) = current_list_stack.last_mut() {
-                            parent_list.push(ListItem {
-                                element: nested_list,
-                            });
-                        }
-                    }
-                }
-                current_list_stack[indent_level].push(list_item);
-                while current_list_stack.len() > indent_level + 1 {
-                    let nested_items = current_list_stack.pop().unwrap();
-                    let nested_list = List {
-                        elements: nested_items,
-                        numbered: current_list_type_stack.pop().unwrap(),
-                    };
-                    if let Some(parent_list) = current_list_stack.last_mut() {
-                        parent_list.push(ListItem {
-                            element: nested_list,
-                        });
-                    }
-                }
-            } else if trimmed_line.chars().next().unwrap_or(' ').is_ascii_digit()
-                && trimmed_line.chars().nth(1).unwrap_or(' ') == '.'
-            {
-                let list_item_text = trimmed_line.split_once('.').map(|x| x.1).unwrap_or("").trim();
-                let list_item = ListItem {
-                    element: Text {
-                        text: list_item_text.to_string(),
-                        size: 8,
-                    },
-                };
-                if current_list_stack.len() <= indent_level {
-                    while current_list_stack.len() <= indent_level {
-                        current_list_stack.push(vec![]);
-                        current_list_type_stack
-                            .push(trimmed_line.chars().next().unwrap().is_ascii_digit());
-                    }
-                } else {
-                    while current_list_stack.len() > indent_level + 1 {
-                        let nested_items = current_list_stack.pop().unwrap();
-                        let nested_list = List {
-                            elements: nested_items,
-                            numbered: current_list_type_stack.pop().unwrap(),
-                        };
-                        if let Some(parent_list) = current_list_stack.last_mut() {
-                            parent_list.push(ListItem {
-                                element: nested_list,
-                            });
-                        }
-                    }
-                }
-                current_list_stack[indent_level].push(list_item);
-                while current_list_stack.len() > indent_level + 1 {
-                    let nested_items = current_list_stack.pop().unwrap();
-                    let nested_list = List {
-                        elements: nested_items,
-                        numbered: current_list_type_stack.pop().unwrap(),
-                    };
-                    if let Some(parent_list) = current_list_stack.last_mut() {
-                        parent_list.push(ListItem {
-                            element: nested_list,
-                        });
-                    }
-                }
-            } else {
-                if line.starts_with('|') && line.ends_with('|') {
-                    if !in_table {
-                        // Start a new table
-                        in_table = true;
-                        table_headers = line
-                            .split('|')
-                            .filter(|x| !x.trim().is_empty() && !x.contains('-'))
-                            .map(|header| TableHeader {
-                                element: Text {
-                                    text: header.trim().to_string(),
-                                    size: 8,
-                                },
-                                width: 10.0,
-                            })
-                            .collect();
-                    } else if line.contains("---") {
-                        continue;
-                    } else if line.starts_with('|') && in_table {
-                        let cells = line
-                            .split('|')
-                            .filter(|x| !x.trim().is_empty())
-                            .map(|cell| TableCell {
-                                element: Text {
-                                    text: cell.trim().to_string(),
-                                    size: 8,
-                                },
-                            })
-                            .collect();
-                        table_rows.push(TableRow { cells });
-                    }
-                } else {
-                    if in_table {
-                        elements.push(Table {
-                            headers: table_headers.clone(),
-                            rows: table_rows.clone(),
-                        });
-                        table_rows.clear();
-                        table_headers.clear();
-                        in_table = false;
-                    }
 
-                    if line.starts_with('#') {
-                        let level = line.chars().take_while(|&c| c == '#').count() as u8;
-                        let text = line.trim_start_matches('#').trim();
-                        let header = Header {
-                            text: text.to_string(),
+        let mut options = Options::empty();
+        options.insert(Options::ENABLE_TABLES);
+        options.insert(Options::ENABLE_STRIKETHROUGH);
+        options.insert(Options::ENABLE_SMART_PUNCTUATION);
+        options.insert(Options::ENABLE_MATH);
+        options.insert(Options::ENABLE_GFM);
+
+        let parser = Parser::new_ext(document_str, options);
+        let md_iterator = TextMergeStream::new(parser);
+
+        let mut list_depth = 0;
+        let mut current_element: Option<Element> = None;
+        for event in md_iterator {
+            println!("event - {:#?}", event);
+
+            match event {
+                Event::Start(tag) => {
+                    // println!("tag - {:#?}", tag);
+
+                    match tag {
+                        Tag::Paragraph => {
+                            process_element_creation(
+                                &mut current_element,
+                                Element::Paragraph { elements: vec![] },
+                                list_depth,
+                            );
+                        }
+                        Tag::Heading {
                             level,
-                        };
-                        if !current_paragraph_elements.is_empty() {
-                            elements.push(Paragraph {
-                                elements: current_paragraph_elements.clone(),
-                            });
-                            current_paragraph_elements.clear();
+                            id,
+                            classes,
+                            attrs,
+                        } => {
+                            let level = match level {
+                                HeadingLevel::H1 => 1,
+                                HeadingLevel::H2 => 2,
+                                HeadingLevel::H3 => 3,
+                                HeadingLevel::H4 => 4,
+                                HeadingLevel::H5 => 5,
+                                HeadingLevel::H6 => 6,
+                            };
+                            process_element_creation(
+                                &mut current_element,
+                                Element::Header {
+                                    level,
+                                    text: "".to_string(),
+                                },
+                                list_depth,
+                            );
                         }
-                        elements.push(header);
-                    } else if !line.trim().is_empty() {
-                        fn parser_text(
-                            text: &str,
-                            current_paragraph_elements: &mut Vec<Element>,
-                        ) -> anyhow::Result<()> {
-                            let mut start = 0;
-                            let mut captures = 0;
-                            let hyperlink_regex = Regex::new("(?:\\[([^\\]]+)\\])?(?:\\(|)(http[s]?:\\/\\/[^\\s\\)]+)(?:\\s\"([^\"]+)\")?\\)?").unwrap();
-                            for cap in hyperlink_regex.captures_iter(text) {
-                                captures += 1;
-                                let (hyperlink_start, end) =
-                                    (cap.get(0).unwrap().start(), cap.get(0).unwrap().end());
-                                let markdown = &text[hyperlink_start..end];
-                                if hyperlink_start > start {
-                                    parser_text(
-                                        &text[start..hyperlink_start],
-                                        current_paragraph_elements,
-                                    )?;
-                                }
-                                if markdown.starts_with('h') {
-                                    current_paragraph_elements.push(Hyperlink {
-                                        title: markdown.to_string(),
-                                        url: markdown.to_string(),
-                                        alt: markdown.to_string(),
-                                        size: 8,
-                                    });
-                                } else if markdown.starts_with('[') && markdown.ends_with("\")") {
-                                    let start_alt_text = markdown.find('[').unwrap() + 1;
-                                    let end_alt_text = markdown.find(']').unwrap();
-                                    let start_url_path = markdown.find('(').unwrap() + 1;
-                                    let end_url_path = markdown.find(' ').unwrap();
-                                    let start_title = markdown.find('"').unwrap() + 1;
-                                    let end_title = markdown.rfind('"').unwrap();
-                                    let alt_text = &markdown[start_alt_text..end_alt_text];
-                                    let url = &markdown[start_url_path..end_url_path];
-                                    let title = &markdown[start_title..end_title];
-                                    current_paragraph_elements.push(Hyperlink {
-                                        title: alt_text.to_string(),
-                                        url: url.to_string(),
-                                        alt: title.to_string(),
-                                        size: 8,
-                                    });
-                                } else {
-                                    let start_alt_text = markdown.find('[').unwrap() + 1;
-                                    let end_alt_text = markdown.find(']').unwrap();
-                                    let start_url_path = markdown.find('(').unwrap() + 1;
-                                    let alt_text = &markdown[start_alt_text..end_alt_text];
-                                    let url = &markdown[start_url_path..markdown.len() - 1];
-                                    current_paragraph_elements.push(Hyperlink {
-                                        title: alt_text.to_string(),
-                                        url: url.to_string(),
-                                        alt: alt_text.to_string(),
-                                        size: 8,
-                                    });
-                                }
-                                start = end;
-                            }
-                            if captures == 0 {
-                                current_paragraph_elements.push(Text {
+                        Tag::List(numbered) => {
+                            let numbered = match numbered {
+                                Some(_) => true,
+                                None => false,
+                            };
+
+                            let list_el = List {
+                                elements: vec![],
+                                numbered,
+                            };
+
+                            process_element_creation(&mut current_element, list_el, list_depth);
+                            list_depth += 1;
+                        }
+                        Tag::Item => {
+                            let list_li = Text {
+                                text: "".to_string(),
+                                size: 14,
+                            };
+
+                            process_element_creation(&mut current_element, list_li, list_depth);
+                        }
+                        _ => {}
+                    }
+                }
+                Event::Text(text) => {
+                    if let Some(curr_el) = current_element.as_mut() {
+                        match curr_el {
+                            Element::Paragraph { ref mut elements } => {
+                                elements.push(Element::Text {
                                     text: text.to_string(),
-                                    size: 8,
-                                });
-                            } else if start < text.len() {
-                                parser_text(&text[start..], current_paragraph_elements)?;
+                                    size: 14,
+                                })
                             }
-                            Ok(())
-                        }
-
-                        let mut captures = 0;
-                        let mut start = 0;
-
-                        for cap in img_regex.captures_iter(line) {
-                            captures += 1;
-                            let (img_start, img_end) =
-                                (cap.get(0).unwrap().start(), cap.get(0).unwrap().end());
-                            let markdown = &line[img_start..img_end];
-                            let start_alt_text = markdown.find('[').unwrap() + 1;
-                            let end_alt_text = markdown.find(']').unwrap();
-                            let start_file_path = markdown.find('(').unwrap() + 1;
-                            let start_title = markdown.find('"').unwrap() + 1;
-                            let end_title = markdown.rfind('"').unwrap();
-                            let alt_text = &markdown[start_alt_text..end_alt_text];
-                            let file_path = &markdown[start_file_path..start_title - 2];
-                            let title = &markdown[start_title..end_title];
-                            if img_start > start {
-                                parser_text(
-                                    &line[start..img_start],
-                                    &mut current_paragraph_elements,
-                                )?;
+                            Element::Header {
+                                level,
+                                text: el_text,
+                            } => {
+                                el_text.push_str(&text);
                             }
-                            let image_empty = Bytes::new();
-                            let image_bytes = images.get(file_path).map_or(&image_empty, |x| x);
-                            current_paragraph_elements.push(Image {
-                                bytes: image_bytes.clone(),
-                                title: title.to_string(),
-                                alt: alt_text.to_string(),
-                                image_type: ImageType::Png,
-                            });
+                            Element::List { elements, numbered } => {
+                                let mut li_vec_to_insert = elements;
 
-                            start = img_end;
+                                for _ in 1..list_depth {
+                                    let last_index = li_vec_to_insert.len() - 1;
+                                    if let Element::List {
+                                        elements: ref mut inner_els,
+                                        numbered,
+                                    } = li_vec_to_insert[last_index].element
+                                    {
+                                        li_vec_to_insert = inner_els;
+                                    } else {
+                                        panic!("Expected a nested list structure at the specified depth");
+                                    }
+                                }
+
+                                let li = li_vec_to_insert.last_mut().unwrap();
+                                if let Text {
+                                    text: ref mut element_text,
+                                    size,
+                                } = li.element
+                                {
+                                    element_text.push_str(&text);
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    // println!("text - {}", text)},
+                }
+                Event::End(tag) => {
+                    match tag {
+                        TagEnd::Paragraph | TagEnd::Heading(_) => {
+                            let curr_el = current_element.take();
+                            if let Some(curr_el) = curr_el {
+                                elements.push(curr_el);
+                            }
+                        }
+                        TagEnd::List(_) => {
+                            list_depth -= 1;
                         }
 
-                        if captures == 0 {
-                            parser_text(line, &mut current_paragraph_elements)?;
-                        } else if start < line.len() {
-                            parser_text(&line[start..], &mut current_paragraph_elements)?;
-                        }
-                    } else if !current_paragraph_elements.is_empty() {
-                        elements.push(Paragraph {
-                            elements: current_paragraph_elements.clone(),
-                        });
-                        current_paragraph_elements.clear();
+                        _ => {}
                     }
+
+                    // let curr_el = current_element.take();
+                    // if let Some(curr_el) = curr_el {
+                    //     match tag {
+                    //         TagEnd::Paragraph | TagEnd::Heading(_) => {
+                    //             elements.push(curr_el);
+                    //         }
+                    //         TagEnd::List(_) => {
+                    //             list_depth -= 1;
+                    //         }
+
+                    //         _ => {}
+                    //     }
+                    // }
                 }
-                while let Some(items) = current_list_stack.pop() {
-                    
-                    let list = List {
-                        elements: items,
-                        numbered: current_list_type_stack.pop().unwrap(),
-                    };
-                    if let Some(parent_list) = current_list_stack.last_mut() {
-                        parent_list.push(ListItem { element: list });
-                    } else {
-                        elements.push(list);
-                    }
-                }
-            }
-        }
-        while let Some(items) = current_list_stack.pop() {
-            
-            let list = List {
-                elements: items,
-                numbered: current_list_type_stack.pop().unwrap(),
-            };
-            if let Some(parent_list) = current_list_stack.last_mut() {
-                parent_list.push(ListItem { element: list });
-            } else {
-                elements.push(list);
+
+                _ => {}
             }
         }
 
-        if !current_paragraph_elements.is_empty() {
-            elements.push(Paragraph {
-                elements: current_paragraph_elements,
-            });
-        }
+        println!("elements - {:#?}", elements);
+        todo!()
+        // let mut current_paragraph_elements: Vec<Element> = Vec::new();
+        // let mut in_table = false;
+        // let mut table_rows: Vec<TableRow> = Vec::new();
+        // let mut table_headers: Vec<TableHeader> = Vec::new();
+        // let mut current_list_stack: Vec<Vec<ListItem>> = Vec::new();
+        // let mut current_list_type_stack: Vec<bool> = Vec::new();
+        // let img_regex = Regex::new("!\\[.*?\\]\\(.*? \".*?\"\\)").unwrap();
+        // for line in lines {
+        //     let indent_level = line.chars().take_while(|c| c.is_whitespace()).count() / 2;
+        //     let trimmed_line = line.trim_start();
+        //     if trimmed_line.starts_with('-')
+        //         || trimmed_line.starts_with('+')
+        //         || trimmed_line.starts_with('*')
+        //     {
+        //         let list_item_text = trimmed_line[1..].trim();
+        //         let list_item = ListItem {
+        //             element: Text {
+        //                 text: list_item_text.to_string(),
+        //                 size: 8,
+        //             },
+        //         };
+        //         if current_list_stack.len() <= indent_level {
+        //             while current_list_stack.len() <= indent_level {
+        //                 current_list_stack.push(vec![]);
+        //                 current_list_type_stack.push(false);
+        //             }
+        //         } else {
+        //             while current_list_stack.len() > indent_level + 1 {
+        //                 let nested_items = current_list_stack.pop().unwrap();
+        //                 let nested_list = List {
+        //                     elements: nested_items,
+        //                     numbered: current_list_type_stack.pop().unwrap(),
+        //                 };
+        //                 if let Some(parent_list) = current_list_stack.last_mut() {
+        //                     parent_list.push(ListItem {
+        //                         element: nested_list,
+        //                     });
+        //                 }
+        //             }
+        //         }
+        //         current_list_stack[indent_level].push(list_item);
+        //         while current_list_stack.len() > indent_level + 1 {
+        //             let nested_items = current_list_stack.pop().unwrap();
+        //             let nested_list = List {
+        //                 elements: nested_items,
+        //                 numbered: current_list_type_stack.pop().unwrap(),
+        //             };
+        //             if let Some(parent_list) = current_list_stack.last_mut() {
+        //                 parent_list.push(ListItem {
+        //                     element: nested_list,
+        //                 });
+        //             }
+        //         }
+        //     } else if trimmed_line.chars().next().unwrap_or(' ').is_ascii_digit()
+        //         && trimmed_line.chars().nth(1).unwrap_or(' ') == '.'
+        //     {
+        //         let list_item_text = trimmed_line.split_once('.').map(|x| x.1).unwrap_or("").trim();
+        //         let list_item = ListItem {
+        //             element: Text {
+        //                 text: list_item_text.to_string(),
+        //                 size: 8,
+        //             },
+        //         };
+        //         if current_list_stack.len() <= indent_level {
+        //             while current_list_stack.len() <= indent_level {
+        //                 current_list_stack.push(vec![]);
+        //                 current_list_type_stack
+        //                     .push(trimmed_line.chars().next().unwrap().is_ascii_digit());
+        //             }
+        //         } else {
+        //             while current_list_stack.len() > indent_level + 1 {
+        //                 let nested_items = current_list_stack.pop().unwrap();
+        //                 let nested_list = List {
+        //                     elements: nested_items,
+        //                     numbered: current_list_type_stack.pop().unwrap(),
+        //                 };
+        //                 if let Some(parent_list) = current_list_stack.last_mut() {
+        //                     parent_list.push(ListItem {
+        //                         element: nested_list,
+        //                     });
+        //                 }
+        //             }
+        //         }
+        //         current_list_stack[indent_level].push(list_item);
+        //         while current_list_stack.len() > indent_level + 1 {
+        //             let nested_items = current_list_stack.pop().unwrap();
+        //             let nested_list = List {
+        //                 elements: nested_items,
+        //                 numbered: current_list_type_stack.pop().unwrap(),
+        //             };
+        //             if let Some(parent_list) = current_list_stack.last_mut() {
+        //                 parent_list.push(ListItem {
+        //                     element: nested_list,
+        //                 });
+        //             }
+        //         }
+        //     } else {
+        //         if line.starts_with('|') && line.ends_with('|') {
+        //             if !in_table {
+        //                 // Start a new table
+        //                 in_table = true;
+        //                 table_headers = line
+        //                     .split('|')
+        //                     .filter(|x| !x.trim().is_empty() && !x.contains('-'))
+        //                     .map(|header| TableHeader {
+        //                         element: Text {
+        //                             text: header.trim().to_string(),
+        //                             size: 8,
+        //                         },
+        //                         width: 10.0,
+        //                     })
+        //                     .collect();
+        //             } else if line.contains("---") {
+        //                 continue;
+        //             } else if line.starts_with('|') && in_table {
+        //                 let cells = line
+        //                     .split('|')
+        //                     .filter(|x| !x.trim().is_empty())
+        //                     .map(|cell| TableCell {
+        //                         element: Text {
+        //                             text: cell.trim().to_string(),
+        //                             size: 8,
+        //                         },
+        //                     })
+        //                     .collect();
+        //                 table_rows.push(TableRow { cells });
+        //             }
+        //         } else {
+        //             if in_table {
+        //                 elements.push(Table {
+        //                     headers: table_headers.clone(),
+        //                     rows: table_rows.clone(),
+        //                 });
+        //                 table_rows.clear();
+        //                 table_headers.clear();
+        //                 in_table = false;
+        //             }
 
-        if in_table {
-            elements.push(Table {
-                headers: table_headers,
-                rows: table_rows,
-            });
-        }
+        //             if line.starts_with('#') {
+        //                 let level = line.chars().take_while(|&c| c == '#').count() as u8;
+        //                 let text = line.trim_start_matches('#').trim();
+        //                 let header = Header {
+        //                     text: text.to_string(),
+        //                     level,
+        //                 };
+        //                 if !current_paragraph_elements.is_empty() {
+        //                     elements.push(Paragraph {
+        //                         elements: current_paragraph_elements.clone(),
+        //                     });
+        //                     current_paragraph_elements.clear();
+        //                 }
+        //                 elements.push(header);
+        //             } else if !line.trim().is_empty() {
+        //                 fn parser_text(
+        //                     text: &str,
+        //                     current_paragraph_elements: &mut Vec<Element>,
+        //                 ) -> anyhow::Result<()> {
+        //                     let mut start = 0;
+        //                     let mut captures = 0;
+        //                     let hyperlink_regex = Regex::new("(?:\\[([^\\]]+)\\])?(?:\\(|)(http[s]?:\\/\\/[^\\s\\)]+)(?:\\s\"([^\"]+)\")?\\)?").unwrap();
+        //                     for cap in hyperlink_regex.captures_iter(text) {
+        //                         captures += 1;
+        //                         let (hyperlink_start, end) =
+        //                             (cap.get(0).unwrap().start(), cap.get(0).unwrap().end());
+        //                         let markdown = &text[hyperlink_start..end];
+        //                         if hyperlink_start > start {
+        //                             parser_text(
+        //                                 &text[start..hyperlink_start],
+        //                                 current_paragraph_elements,
+        //                             )?;
+        //                         }
+        //                         if markdown.starts_with('h') {
+        //                             current_paragraph_elements.push(Hyperlink {
+        //                                 title: markdown.to_string(),
+        //                                 url: markdown.to_string(),
+        //                                 alt: markdown.to_string(),
+        //                                 size: 8,
+        //                             });
+        //                         } else if markdown.starts_with('[') && markdown.ends_with("\")") {
+        //                             let start_alt_text = markdown.find('[').unwrap() + 1;
+        //                             let end_alt_text = markdown.find(']').unwrap();
+        //                             let start_url_path = markdown.find('(').unwrap() + 1;
+        //                             let end_url_path = markdown.find(' ').unwrap();
+        //                             let start_title = markdown.find('"').unwrap() + 1;
+        //                             let end_title = markdown.rfind('"').unwrap();
+        //                             let alt_text = &markdown[start_alt_text..end_alt_text];
+        //                             let url = &markdown[start_url_path..end_url_path];
+        //                             let title = &markdown[start_title..end_title];
+        //                             current_paragraph_elements.push(Hyperlink {
+        //                                 title: alt_text.to_string(),
+        //                                 url: url.to_string(),
+        //                                 alt: title.to_string(),
+        //                                 size: 8,
+        //                             });
+        //                         } else {
+        //                             let start_alt_text = markdown.find('[').unwrap() + 1;
+        //                             let end_alt_text = markdown.find(']').unwrap();
+        //                             let start_url_path = markdown.find('(').unwrap() + 1;
+        //                             let alt_text = &markdown[start_alt_text..end_alt_text];
+        //                             let url = &markdown[start_url_path..markdown.len() - 1];
+        //                             current_paragraph_elements.push(Hyperlink {
+        //                                 title: alt_text.to_string(),
+        //                                 url: url.to_string(),
+        //                                 alt: alt_text.to_string(),
+        //                                 size: 8,
+        //                             });
+        //                         }
+        //                         start = end;
+        //                     }
+        //                     if captures == 0 {
+        //                         current_paragraph_elements.push(Text {
+        //                             text: text.to_string(),
+        //                             size: 8,
+        //                         });
+        //                     } else if start < text.len() {
+        //                         parser_text(&text[start..], current_paragraph_elements)?;
+        //                     }
+        //                     Ok(())
+        //                 }
 
-        Ok(Document::new(elements))
+        //                 let mut captures = 0;
+        //                 let mut start = 0;
+
+        //                 for cap in img_regex.captures_iter(line) {
+        //                     captures += 1;
+        //                     let (img_start, img_end) =
+        //                         (cap.get(0).unwrap().start(), cap.get(0).unwrap().end());
+        //                     let markdown = &line[img_start..img_end];
+        //                     let start_alt_text = markdown.find('[').unwrap() + 1;
+        //                     let end_alt_text = markdown.find(']').unwrap();
+        //                     let start_file_path = markdown.find('(').unwrap() + 1;
+        //                     let start_title = markdown.find('"').unwrap() + 1;
+        //                     let end_title = markdown.rfind('"').unwrap();
+        //                     let alt_text = &markdown[start_alt_text..end_alt_text];
+        //                     let file_path = &markdown[start_file_path..start_title - 2];
+        //                     let title = &markdown[start_title..end_title];
+        //                     if img_start > start {
+        //                         parser_text(
+        //                             &line[start..img_start],
+        //                             &mut current_paragraph_elements,
+        //                         )?;
+        //                     }
+        //                     let image_empty = Bytes::new();
+        //                     let image_bytes = images.get(file_path).map_or(&image_empty, |x| x);
+        //                     current_paragraph_elements.push(Image {
+        //                         bytes: image_bytes.clone(),
+        //                         title: title.to_string(),
+        //                         alt: alt_text.to_string(),
+        //                         image_type: ImageType::Png,
+        //                     });
+
+        //                     start = img_end;
+        //                 }
+
+        //                 if captures == 0 {
+        //                     parser_text(line, &mut current_paragraph_elements)?;
+        //                 } else if start < line.len() {
+        //                     parser_text(&line[start..], &mut current_paragraph_elements)?;
+        //                 }
+        //             } else if !current_paragraph_elements.is_empty() {
+        //                 elements.push(Paragraph {
+        //                     elements: current_paragraph_elements.clone(),
+        //                 });
+        //                 current_paragraph_elements.clear();
+        //             }
+        //         }
+        //         while let Some(items) = current_list_stack.pop() {
+
+        //             let list = List {
+        //                 elements: items,
+        //                 numbered: current_list_type_stack.pop().unwrap(),
+        //             };
+        //             if let Some(parent_list) = current_list_stack.last_mut() {
+        //                 parent_list.push(ListItem { element: list });
+        //             } else {
+        //                 elements.push(list);
+        //             }
+        //         }
+        //     }
+        // }
+        // while let Some(items) = current_list_stack.pop() {
+
+        //     let list = List {
+        //         elements: items,
+        //         numbered: current_list_type_stack.pop().unwrap(),
+        //     };
+        //     if let Some(parent_list) = current_list_stack.last_mut() {
+        //         parent_list.push(ListItem { element: list });
+        //     } else {
+        //         elements.push(list);
+        //     }
+        // }
+
+        // if !current_paragraph_elements.is_empty() {
+        //     elements.push(Paragraph {
+        //         elements: current_paragraph_elements,
+        //     });
+        // }
+
+        // if in_table {
+        //     elements.push(Table {
+        //         headers: table_headers,
+        //         rows: table_rows,
+        //     });
+        // }
+
+        // Ok(Document::new(elements))
     }
 
     fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)>
@@ -423,9 +618,7 @@ impl TransformerTrait for Transformer {
                     }
                 }
                 Text { text, size: _ } => {
-                    let re = Regex::new(
-                        r#"^(\n)*\s+$?"#,
-                    )?;
+                    let re = Regex::new(r#"^(\n)*\s+$?"#)?;
                     if !re.is_match(text) {
                         markdown.push('\n');
                         markdown.push_str(text);
