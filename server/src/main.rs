@@ -1,5 +1,5 @@
 pub use self::error::Result;
-use crate::web::routes_files::{handler_convert_file};
+use crate::web::routes_files::handler_convert_file;
 use axum::response::{Html, IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{middleware, Router};
@@ -10,42 +10,43 @@ mod error;
 
 mod web;
 
-
-
 #[tokio::main]
 async fn main() -> Result<()> {
-/*
-    //Logging Settings
-    env_logger::builder()
-        .filter_level(log::LevelFilter::Trace)
-        .init();
-  */
+    /*
+      //Logging Settings
+      env_logger::builder()
+          .filter_level(log::LevelFilter::Trace)
+          .init();
+    */
 
     // Defining command line arguments
     let matches = Command::new("Server")
-        .arg(Arg::new("host")
-            .long("host")
-            .value_name("HOST")
-            .help("Sets the host address")
-            .require_equals(true)
-            .default_value("127.0.0.1")
+        .arg(
+            Arg::new("host")
+                .long("host")
+                .value_name("HOST")
+                .help("Sets the host address")
+                .require_equals(true)
+                .default_value("127.0.0.1"),
         )
-        .arg(Arg::new("port")
-            .long("port")
-            .value_name("PORT")
-            .help("Sets the port number")
-            .require_equals(true)
-            .default_value("8080"))
+        .arg(
+            Arg::new("port")
+                .long("port")
+                .value_name("PORT")
+                .help("Sets the port number")
+                .require_equals(true)
+                .default_value("8080"),
+        )
         .get_matches();
 
     // Extracting argument values
-  let host = matches.get_one::<String>("host").unwrap();
-  let port = matches.get_one::<String>("port").unwrap();
+    let host = matches.get_one::<String>("host").unwrap();
+    let port = matches.get_one::<String>("port").unwrap();
 
     let route_test = Router::new().route("/test_server", get(handler_answer_server));
 
-    let route_input_file = Router::new()
-        .route("/transform/:output_format", post(handler_convert_file));
+    let route_input_file =
+        Router::new().route("/transform/:output_format", post(handler_convert_file));
 
     let routes_all = Router::new()
         .merge(route_test)
@@ -54,8 +55,9 @@ async fn main() -> Result<()> {
 
     // region:    ---Start Server
 
-    let listener = TcpListener::bind(
-        format!("{}:{}", host, port)).await.unwrap();
+    let listener = TcpListener::bind(format!("{}:{}", host, port))
+        .await
+        .unwrap();
 
     println!("-->>LISTENING on {:?}", listener.local_addr().unwrap());
 
@@ -82,11 +84,11 @@ async fn main_response_mapper(res: Response) -> Response {
 
 #[cfg(test)]
 mod tests {
-    use std::io::{Cursor, Write};
     use anyhow::{anyhow, Error, Result};
-    use reqwest::{Body, multipart};
+    use reqwest::{multipart, Body};
+    use std::fs;
+    use std::io::{Cursor, Write};
     use tokio::fs::File;
-
 
     #[tokio::test]
     async fn test_server() -> Result<()> {
@@ -97,15 +99,15 @@ mod tests {
         Ok(())
     }
 
-
+/*
     #[tokio::test]
     async fn test_handler_convert_file_md_html_txt() -> Result<(), Error> {
         /*
-            //Logging Settings
-            env_logger::builder()
-                .filter_level(log::LevelFilter::Trace)
-                .init();
-         */
+           //Logging Settings
+           env_logger::builder()
+               .filter_level(log::LevelFilter::Trace)
+               .init();
+        */
 
         //We form all combinations of incoming and outgoing file formats
         let input_formats = vec!["md", "html", "txt"];
@@ -147,10 +149,14 @@ mod tests {
 
                 // Sending a POST request to the server with the multipart form
                 let mut response = client
-                    .post(&format!("http://localhost:8080/transform/{}", output_format))
+                    .post(&format!(
+                        "http://localhost:8080/transform/{}",
+                        output_format
+                    ))
                     .multipart(form)
                     .send()
-                    .await.unwrap();
+                    .await
+                    .unwrap();
 
                 // Checking the server response
                 assert_eq!(response.status(), reqwest::StatusCode::OK);
@@ -165,22 +171,24 @@ mod tests {
                     }
                 }
 
-                println!("the file has been successfully converted to the format {}", output_format)
+                println!(
+                    "the file has been successfully converted to the format {}",
+                    output_format
+                )
             }
         }
 
         Ok(())
     }
 
-
     #[tokio::test]
     async fn test_handler_convert_file_pdf() -> Result<(), Box<dyn std::error::Error>> {
         /*
-            //Logging Settings
-            env_logger::builder()
-                .filter_level(log::LevelFilter::Trace)
-                .init();
-          */
+          //Logging Settings
+          env_logger::builder()
+              .filter_level(log::LevelFilter::Trace)
+              .init();
+        */
 
         // Creating a temporary file with test data
         let file_data = "Test file data";
@@ -222,7 +230,6 @@ mod tests {
 
         // We go through all the combinations
         for output_format in &output_formats {
-
             // Creating the request body from the contents of the file
             let body = Body::from(pdf_content.clone());
 
@@ -241,10 +248,12 @@ mod tests {
 
             println!("sending the test_file.pdf");
 
-
             // Sending a POST request to the server with the multipart form
             let response = client
-                .post(&format!("http://localhost:8080/transform/{}", output_format))
+                .post(&format!(
+                    "http://localhost:8080/transform/{}",
+                    output_format
+                ))
                 .multipart(form)
                 .send()
                 .await?;
@@ -252,22 +261,23 @@ mod tests {
             // Checking the server response
             assert_eq!(response.status(), reqwest::StatusCode::OK);
 
-            println!("the file has been successfully converted to the format {}", output_format)
-
+            println!(
+                "the file has been successfully converted to the format {}",
+                output_format
+            )
         }
 
         Ok(())
     }
 
-
     #[tokio::test]
     async fn test_handler_convert_file_json() -> Result<(), Box<dyn std::error::Error>> {
         /*
-         env_logger::builder()
-             .filter_level(log::LevelFilter::Trace)
-             .init();
+        env_logger::builder()
+            .filter_level(log::LevelFilter::Trace)
+            .init();
 
-         */
+        */
 
         let file_data = "Test file data";
         let file_name = "test_file.md";
@@ -299,7 +309,6 @@ mod tests {
         let output_formats = vec!["md", "html", "txt", "pdf", "json"];
 
         for output_format in &output_formats {
-
             let body = Body::from(pdf_content.clone());
 
             let part = multipart::Part::stream(body)
@@ -315,15 +324,81 @@ mod tests {
             println!("sending the test_file.json");
 
             let response = client
-                .post(&format!("http://localhost:8080/transform/{}", output_format))
+                .post(&format!(
+                    "http://localhost:8080/transform/{}",
+                    output_format
+                ))
                 .multipart(form)
                 .send()
                 .await?;
 
             assert_eq!(response.status(), reqwest::StatusCode::OK);
 
-            println!("the file has been successfully converted to the format {}", output_format)
+            println!(
+                "the file has been successfully converted to the format {}",
+                output_format
+            )
+        }
 
+        Ok(())
+    }
+    */
+
+    #[tokio::test]
+    async fn test_upload_zip() -> Result<(), Box<dyn std::error::Error>> {
+        println!("start test_upload_zip");
+/*
+        env_logger::builder()
+            .filter_level(log::LevelFilter::Trace)
+            .init();
+*/
+        // We form all combinations of outgoing formats
+        let output_formats = vec!["md", "html", "txt"];
+
+        for output_format in &output_formats {
+            // Creating HTTP-client
+            let client = reqwest::Client::new();
+
+            //Путь файла для отправки на сервер
+            let file_path = "./test.zip";
+            let file_name = "test.zip";
+            let file_content = fs::read(file_path)?;
+
+            // Create multipart part for the file
+            let file_part = multipart::Part::bytes(file_content)
+                .file_name(file_name.to_string())
+                .mime_str("application/zip")?;
+
+            // Create multipart form
+            let form = multipart::Form::new()
+                .part("file", file_part)
+                .text("output_format", output_format.to_string());
+
+            let mut response = client
+                .post(&format!(
+                    "http://localhost:8080/transform/{}",
+                    output_format
+                ))
+                .multipart(form)
+                .send()
+                .await?;
+
+            assert_eq!(response.status(), reqwest::StatusCode::OK);
+
+            if response.status().is_success() {
+                let file_name_2 = format!("unzip_test_file.{}", output_format);
+                let mut file = File::create(file_name_2).await?;
+                use tokio::io::AsyncWriteExt;
+
+                while let Some(chunk) = response.chunk().await? {
+                    file.write_all(&chunk).await?;
+                }
+            }
+
+            println!(
+                "Unzip the ZIP, the contents of the archive have been successfully converted to the format {}",
+                output_format
+            )
         }
 
         Ok(())

@@ -3,19 +3,18 @@ use axum::response::{IntoResponse, Response};
 use serde::Serialize;
 use strum_macros::AsRefStr;
 
-
 pub type Result<T> = core::result::Result<T, Error>;
-
 
 #[derive(Debug, Clone, AsRefStr, Serialize)]
 #[serde(tag = "type", content = "data")]
 pub enum Error {
-    ExtensionMissing, //отсутствует расширение файла
-    FailBytes, //ошибка преобразования в двоичный файл
-    UnsupportedFormat, //неподдерживаемый формат
-    FailParseDocument, //ошибка парсинга документа
-    FailConvertFile, //ошибка конвертации файла
-    FailHeader, //ошибка создания заголовка конвертированного файла
+    ExtensionMissing,      //отсутствует расширение файла
+    FailBytes,             //ошибка преобразования в двоичный файл
+    UnsupportedFormat,     //неподдерживаемый формат
+    FailParseDocument,     //ошибка парсинга документа
+    FailConvertFile,       //ошибка конвертации файла
+    FailHeader,            //ошибка создания заголовка конвертированного файла
+    NoFilesToConvertInZip, //нет файлов для конвертации в zip-архиве
 }
 
 impl IntoResponse for Error {
