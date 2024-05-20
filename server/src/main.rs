@@ -99,7 +99,7 @@ mod tests {
         Ok(())
     }
 
-/*
+
     #[tokio::test]
     async fn test_handler_convert_file_md_html_txt() -> Result<(), Error> {
         /*
@@ -342,7 +342,7 @@ mod tests {
 
         Ok(())
     }
-    */
+
 
     #[tokio::test]
     async fn test_upload_zip() -> Result<(), Box<dyn std::error::Error>> {
@@ -353,7 +353,7 @@ mod tests {
             .init();
 */
         // We form all combinations of outgoing formats
-        let output_formats = vec!["md", "html", "txt"];
+        let output_formats = vec!["md", "html", "txt", "pdf", "json"];
 
         for output_format in &output_formats {
             // Creating HTTP-client
