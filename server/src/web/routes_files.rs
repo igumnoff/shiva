@@ -52,46 +52,47 @@ impl IntoResponse for DownloadFile {
 pub async fn handler_convert_file(
     Path(output_format): Path<String>,
     multipart: Multipart,
-) -> impl IntoResponse {
-    Ok(match upload_file(multipart).await {
+) -> Result<impl IntoResponse> {
+    match upload_file(multipart).await {
         //depending on the returned structure, we execute the code
         Ok(data_upload_file) => match data_upload_file {
-            StructUploadFile::UploadFile(UploadFileInfo) => {
-                let input_extension = UploadFileInfo.upload_file_extension.clone();
+            StructUploadFile::UploadFile(upload_file_info) => {
+                let input_extension = upload_file_info.upload_file_extension.clone();
                 println!("-->> {:<12} - handler_convert_file input_extension_{input_extension}- output_extension_{output_format}", "HANDLER");
 
                 let build_response_file = convert_file(
-                    UploadFileInfo.upload_file_name,
-                    UploadFileInfo.upload_file_extension,
-                    UploadFileInfo.upload_file_data,
+                    upload_file_info.upload_file_name,
+                    upload_file_info.upload_file_extension,
+                    upload_file_info.upload_file_data,
                     output_format,
                 )
                 .await
-                .unwrap();
+                .map_err(|_| Error::FailConvertFile)?;
 
-                build_response_file
+                Ok(build_response_file)
             }
-            StructUploadFile::UploadZip(UploadFileZip) => {
+            StructUploadFile::UploadZip(upload_file_zip) => {
                 println!("-->> {:<12} - handler_convert_file input ZIP archive - output_extension_{output_format}", "HANDLER");
 
                 let build_response_file = convert_file_zip(
-                    UploadFileZip.file_name,
-                    UploadFileZip.file_data,
-                    UploadFileZip.file_extension,
-                    UploadFileZip.images,
+                    upload_file_zip.file_name,
+                    upload_file_zip.file_data,
+                    upload_file_zip.file_extension,
+                    upload_file_zip.images,
                     output_format,
                 )
                 .await
-                .unwrap();
+                .map_err(|_| Error::FailConvertFile)?;
 
-                build_response_file
+                Ok(build_response_file)
             }
         },
 
-        _ => {
-            return Err(Error::UnsupportedFormat); //нужно разобраться с правильным возвратом ошибки
+        Err(e) => {
+            println!("Возникла ошибка: {:?}", e);
+            Err(e)
         }
-    })
+    }
 }
 
 async fn convert_file_zip(
@@ -137,7 +138,7 @@ async fn convert_file_zip(
 //checking the supported formats in the archive
 fn supported_extensions_in_archive(file_extension: &str) -> bool {
     match file_extension {
-        "md" | "html" | "htm" | "png" | "jpg" => true,
+        "md" | "html" | "htm" | "png" => true,
 
         _ => false,
     }
@@ -149,6 +150,7 @@ async fn unpacking(mut field: Field<'_>) -> Result<StructUploadFile> {
    // Creating variables to store archive file data
     let mut file_name = None;
     let mut file_data = None;
+    let mut file_extension = None;
     let mut images = HashMap::new();
     let mut found_supported_file = false;
 
@@ -177,7 +179,7 @@ async fn unpacking(mut field: Field<'_>) -> Result<StructUploadFile> {
             .map(String::from);
 
         //we define the extension of each file
-        let mut file_extension = file
+        let file_extension_in_archive = file
             .name()
             .split(".")
             .last()
@@ -188,17 +190,18 @@ async fn unpacking(mut field: Field<'_>) -> Result<StructUploadFile> {
        // println!("in ZIP {}.{}", file_name_in_archive.clone().unwrap(),file_extension.clone().unwrap());
 
         //checking the supported format
-        if let Some(ext) = file_extension {
+        if let Some(ref ext) = file_extension_in_archive {
             if supported_extensions_in_archive(&ext) {
                 found_supported_file = true;
                 let mut file_data_buf = Vec::new();
                 file.read_to_end(&mut file_data_buf).unwrap();
                 match ext.as_str() {
-                    "html" | "htm" => {
+                    "html" | "htm" | "md" => {
                         file_name = file_name_in_archive;
                         file_data = Some(Bytes::from(file_data_buf));
+                        file_extension = file_extension_in_archive.clone();
                     }
-                    "png" | "jpg" => {
+                    "png" => {
                         images.insert(file.name().to_string(), Bytes::from(file_data_buf));
                     }
                     _ => {
@@ -218,10 +221,9 @@ async fn unpacking(mut field: Field<'_>) -> Result<StructUploadFile> {
     let upload_file_zip = UploadFileZip {
         file_name: file_name.unwrap_or("Shiva_convert".to_string()),
         file_data: file_data.ok_or_else(|| Error::FailBytes)?,
-        file_extension: "html".to_string(),
+        file_extension: file_extension.ok_or_else(||Error::ExtensionMissing)?,
         images,
     };
-
     Ok(StructUploadFile::UploadZip(upload_file_zip))
 }
 
@@ -260,8 +262,7 @@ async fn upload_file(mut multipart: Multipart) -> Result<StructUploadFile> {
 
             //matching the file extension
             if let Some(ref ext) = file_extension {
-                let ext = ext.as_str();
-                match ext {
+                match ext.as_str() {
                     "zip" => {
                         return unpacking(field).await; //if _zip, start unpacking
                     }
@@ -271,10 +272,12 @@ async fn upload_file(mut multipart: Multipart) -> Result<StructUploadFile> {
                             if supported_format(ext).await {
                                 file_data = field.bytes().await.unwrap();
                             } else {
-                                return Err(Error::FailBytes);
+                                return Err(Error::UnsupportedFormat);
                             }
                     }
                 }
+            } else {
+                return Err(Error::ExtensionMissing);
             }
         }
     }
