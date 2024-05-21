@@ -9,7 +9,7 @@ impl TransformerTrait for Transformer {
     fn parse(document: &Bytes, _images: &HashMap<String, Bytes>) -> anyhow::Result<Document> {
         let doc_string = String::from_utf8(document.to_vec())?;
         let doc: Document = from_str(&doc_string)?;
-        return Ok(doc);
+        Ok(doc)
     }
     fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)> {
         let result = to_string(document)?;
