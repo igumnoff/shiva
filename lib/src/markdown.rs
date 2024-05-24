@@ -579,6 +579,7 @@ blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla
 - List item six
 - List item seven
 
+![Picture alt1](test/data/picture.png "Picture title1")
 
 ## Second header
 
@@ -592,8 +593,9 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         // println!("{:?}", document);
         let mut images = HashMap::new();
         let image_bytes = std::fs::read("test/data/picture.png")?;
-        images.insert("test/data/image0.png".to_string(), image_bytes);
-        let parsed = Transformer::parse(&document.as_bytes().into(), &HashMap::new());
+        let bytes = Bytes::from(image_bytes);
+        images.insert("test/data/picture.png".to_string(), bytes);
+        let parsed = Transformer::parse(&document.as_bytes().into(), &images);
         let document_string = std::str::from_utf8(document.as_bytes())?;
         println!("{}", document_string);
         assert!(parsed.is_ok());
