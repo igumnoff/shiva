@@ -1,4 +1,9 @@
 
 [workspace]
 resolver = "2"
-members = ["lib", "cli", "test"]
+members = [
+    "lib",
+    "cli",
+    "server",
+    "test"
+]
