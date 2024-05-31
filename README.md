@@ -72,15 +72,7 @@ fn main() {
 ```
 
 
-## Shiva CLI
-### Install Rust for Linux/MacOS
-```bash 
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
-### Install Rust for Windows
-```bash
-https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe
-```
+## Shiva CLI & Server
 ### Build executable Shiva CLI and Shiva Server
 ```bash
 git clone https://github.com/igumnoff/shiva.git
