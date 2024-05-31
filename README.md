@@ -81,7 +81,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```bash
 https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe
 ```
-### Build executable Shiva
+### Build executable Shiva CLI and Shiva Server
 ```bash
 git clone https://github.com/igumnoff/shiva.git
 cd shiva/cli
@@ -96,7 +96,7 @@ cd ./target/release/
 ### Run Shiva Server
 ```bash
 cd ./target/release/
-./shiva --input-format=markdown --output-format=html --input-file=README.md --output-file=README.html
+./shiva-server --port=8080 --host=127.0.0.1
 ```
 
 
