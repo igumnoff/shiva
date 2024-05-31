@@ -20,8 +20,8 @@
 | JSON          | +     | +        |
 | XML           | +     | +        |
 | CSV           | +     | +        |
-| RTF           | -     | -        |
-| DOCX          | -     | -        |
+| RTF           | +     | -        |
+| DOCX          | +     | -        |
 | XLS           | -     | -        |
 | Typst         | -     | -        |
 
@@ -34,6 +34,8 @@
 | Markdown      | +      | +         | +    | +     | +     | +         | -          | -          |
 | HTML          | +      | +         | +    | +     | +     | +         | -          | -          |
 | PDF           | -      | +         | +    | -     | -     | -         | -          | -          |
+| DOCX          | +      | +         | +    | +     | -     | +         | +          | +          |
+| RTF           | +      | +         | +    | +     | -     | +         | +          | +          |
 | JSON          | +      | +         | +    | +     | -     | +         | +          | +          |
 | XML           | +      | +         | -    | -     | -     | +         | +          | +          |
 | CSV           | -      | -         | -    | +     | -     | -         | -          | -          |
@@ -55,7 +57,7 @@
 Cargo.toml
 ```toml
 [dependencies]
-shiva = {  version = "0.3.4", features = ["html", "markdown", "text", "pdf", "json", "csv"] }
+shiva = {  version = "0.4.0", features = ["html", "markdown", "text", "pdf", "json", "csv", "rtf", "docx", "xml"] }
 ```
 
 main.rs
@@ -90,6 +92,13 @@ cargo build --release
 cd ./target/release/
 ./shiva --input-format=markdown --output-format=html --input-file=README.md --output-file=README.html
 ```
+
+### Run Shiva Server
+```bash
+cd ./target/release/
+./shiva --input-format=markdown --output-format=html --input-file=README.md --output-file=README.html
+```
+
 
 ## Contributing
 I would love to see contributions from the community. If you experience bugs, feel free to open an issue. If you would like to implement a new feature or bug fix, please follow the steps:

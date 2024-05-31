@@ -1,8 +1,7 @@
-use crate::core::Element;
 use crate::core::{
     Document,
-    Element::{Header, Hyperlink, Image, List, Paragraph, Table, Text},
-    TableCell, TableHeader, TableRow, TransformerTrait,
+    Element::{Header,  Paragraph,  Text},
+    TransformerTrait,
 };
 
 use rtf_parser::lexer::Lexer;
@@ -15,7 +14,7 @@ pub struct Transformer;
 impl TransformerTrait for Transformer {
     fn parse(
         document: &bytes::Bytes,
-        imagesizes: &std::collections::HashMap<String, bytes::Bytes>,
+        _images: &std::collections::HashMap<String, bytes::Bytes>,
     ) -> anyhow::Result<Document> {
         let data_str = std::str::from_utf8(document).unwrap();
         let tokens = Lexer::scan(&data_str).unwrap();
@@ -46,7 +45,7 @@ impl TransformerTrait for Transformer {
     Ok(document)
     }
     fn generate(
-        document: &Document,
+        _document: &Document,
     ) -> anyhow::Result<(
         bytes::Bytes,
         std::collections::HashMap<String, bytes::Bytes>,
