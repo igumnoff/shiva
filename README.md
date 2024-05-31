@@ -87,7 +87,7 @@ git clone https://github.com/igumnoff/shiva.git
 cd shiva/cli
 cargo build --release
 ```
-### Run executable shiva
+### Run executable Shiva CLI
 ```bash
 cd ./target/release/
 ./shiva --input-format=markdown --output-format=html --input-file=README.md --output-file=README.html
