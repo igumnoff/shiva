@@ -1,0 +1,57 @@
+document page_width=210.0 page_height=297.0 left_page_indent=10.0 right_page_indent=10.0 top_page_indent=10.0 bottom_page_indent=10.0 {
+    elements {
+        header level=1 "Employee Report"
+        image src="data/logo.png" title="Some title" alt="Some alt"
+        paragraph {
+            text size=8 "blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla"
+            text size=8 "other text"
+        }
+        list numbered=true {
+            text size=8 "First item"
+            text size=8 "Second item"
+            list numbered=true {
+                text size=8 "3rd item"
+                text size=8 "4th item"
+            }
+        }
+        header level=2 "Second header"
+        table {
+            table_header width=150 {
+                text size=8 "Name"
+            }
+            table_header width=50 {
+                text size=8 "Salary"
+            }
+            row {
+                cel {
+                    text size=8 "John"
+                }
+                cel {
+                    text size=8 "1000"
+                }
+            }
+            row {
+                cel {
+                    text size=8 "Tommi"
+                }
+                cel {
+                    text size=8 "3000"
+                }
+            }
+        }
+        paragraph {
+            text size=8 "Some link: "
+            link title="http://example.com" url="http://example.com" alt="http://example.com" size=8
+        }
+    }
+    page_header: {
+        paragraph {
+            text size=8 "Page header"
+        }
+    }
+    page_footer: {
+        paragraph {
+            text size=8 "Page footer"
+        }
+    }
+}
