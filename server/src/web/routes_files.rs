@@ -87,9 +87,7 @@ pub async fn handler_convert_file(
                 Ok(build_response_file)
             }
         },
-
         Err(e) => {
-            println!("Возникла ошибка: {:?}", e);
             Err(e)
         }
     }
@@ -105,6 +103,11 @@ async fn convert_file_zip(
     //println!("upload file name: {}", file_name);
     //println!("upload file format: {}", file_extension);
     //println!("download file format: {}", output_format);
+
+    println!("файлы изображений из архива");
+    for image_name in images.keys() {
+        println!("- {}", image_name);
+    }
 
     let document = match file_extension.as_str() {
         "md" => Document::from(
@@ -146,7 +149,6 @@ fn supported_extensions_in_archive(file_extension: &str) -> bool {
 
 //unpacking the archive
 async fn unpacking(mut field: Field<'_>) -> Result<StructUploadFile> {
-
    // Creating variables to store archive file data
     let mut file_name = None;
     let mut file_data = None;
@@ -157,8 +159,15 @@ async fn unpacking(mut field: Field<'_>) -> Result<StructUploadFile> {
     //reading the contents of the archive
     let mut file_content = Vec::new();
     while let Some(chunk) = field.next().await {
-        let data = chunk.unwrap();
-        file_content.extend_from_slice(&data);
+        match chunk {
+            Ok(data) => {
+                file_content.extend_from_slice(&data);
+            },
+            Err(e) => {
+                println!("Error reading chunk: {:?}", e);
+                return Err(Error::FailBytes);
+            },
+        }
     }
 
     //creating a cursor to read the archive
@@ -187,7 +196,7 @@ async fn unpacking(mut field: Field<'_>) -> Result<StructUploadFile> {
             .filter(|ext| !ext.trim().is_empty())
             .map(String::from);
 
-       // println!("in ZIP {}.{}", file_name_in_archive.clone().unwrap(),file_extension.clone().unwrap());
+        println!("in ZIP {}.{}", file_name_in_archive.clone().unwrap(), file_extension_in_archive.clone().unwrap());
 
         //checking the supported format
         if let Some(ref ext) = file_extension_in_archive {
@@ -202,7 +211,10 @@ async fn unpacking(mut field: Field<'_>) -> Result<StructUploadFile> {
                         file_extension = file_extension_in_archive.clone();
                     }
                     "png" => {
-                        images.insert(file.name().to_string(), Bytes::from(file_data_buf));
+                        let image_name = file.name().to_string();
+
+                        images.insert(image_name, Bytes::from(file_data_buf));
+
                     }
                     _ => {
                         return Err(Error::NoFilesToConvertInZip);
@@ -224,6 +236,7 @@ async fn unpacking(mut field: Field<'_>) -> Result<StructUploadFile> {
         file_extension: file_extension.ok_or_else(||Error::ExtensionMissing)?,
         images,
     };
+
     Ok(StructUploadFile::UploadZip(upload_file_zip))
 }
 
