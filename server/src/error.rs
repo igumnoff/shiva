@@ -8,13 +8,13 @@ pub type Result<T> = core::result::Result<T, Error>;
 #[derive(Debug, Clone, AsRefStr, Serialize)]
 #[serde(tag = "type", content = "data")]
 pub enum Error {
-    ExtensionMissing,      //отсутствует расширение файла
-    FailBytes,             //ошибка преобразования в двоичный файл
-    UnsupportedFormat,     //неподдерживаемый формат
-    FailParseDocument,     //ошибка парсинга документа
-    FailConvertFile,       //ошибка конвертации файла
-    FailHeader,            //ошибка создания заголовка конвертированного файла
-    NoFilesToConvertInZip, //нет файлов для конвертации в zip-архиве
+    ExtensionMissing,      //the file extension is missing
+    FailBytes,             //binary conversion error
+    UnsupportedFormat,     //unsupported format
+    FailParseDocument,     //document parsing error
+    FailConvertFile,       //file conversion error
+    FailHeader,            //error creating the header of the converted file
+    NoFilesToConvertInZip, //there are no files to convert in the zip archive
 }
 
 impl IntoResponse for Error {
