@@ -8,7 +8,8 @@ axum = {version =  "0.7.5", features = ["multipart"] }
 tokio = { version = "1.37.0", features = ["rt", "rt-multi-thread", "macros"] }
 serde = { version = "1.0.199", features = ["derive"] }
 futures-util = "0.3.30"
-shiva = "0.3.4"
+#shiva = "0.4.0"
+shiva = { path = "../lib" }
 clap = { version = "4.5.3", features = ["derive"] }
 strum_macros = "0.26.2"
 tracing = "0.1.40"

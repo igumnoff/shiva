@@ -51,7 +51,7 @@ comemo = { version = "0.4.0", optional = true }
 time = { version = "0.3.36", optional = true }
 typst-pdf = { version = "0.11.0", optional = true }
 rtf-parser = { version = "0.3.0", optional = true }
-reqwest = { version = "0.12.4", optional = true , features = ["blocking"]}
+ureq = { version =  "2.9.7", optional = true}
 docx-rs =  { version = "0.4.17", optional = true }
 pulldown-cmark = { version = "0.11.0", optional = true }
 
@@ -65,7 +65,7 @@ text = []
 csv = ["dep:csv"]
 markdown = ["regex", "pulldown-cmark"]
 html = ["scraper", "ego-tree"]
-pdf = ["lopdf", "typst", "ttf-parser", "comemo", "time", "typst-pdf", "reqwest"]
+pdf = ["lopdf", "typst", "ttf-parser", "comemo", "time", "typst-pdf", "ureq"]
 json = ["serde", "serde_json"]
 xml = ["serde", "serde-xml-rs"]
 rtf = ["rtf-parser"]
