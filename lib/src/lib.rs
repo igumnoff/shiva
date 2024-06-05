@@ -1,5 +1,5 @@
 //!
-//#![doc = include_str!("../README.md")]
+#![doc = include_str!("../README.md")]
 //!
 
 pub mod core;
@@ -27,3 +27,6 @@ pub mod csv;
 
 #[cfg(feature = "docx")]
 pub mod docx;
+
+#[cfg(feature = "rtf")]
+pub mod rtf;

@@ -14,7 +14,7 @@ impl TransformerTrait for Transformer {
             for c in &doc_element.children {
                 match c {
                     docx_rs::ParagraphChild::Run(run) => {
-                        if run.children.len() == 0 {
+                        if run.children.is_empty() {
                             return "".to_string();
                         }
                         if let RunChild::Text(t) = &run.children[0] {
@@ -24,11 +24,11 @@ impl TransformerTrait for Transformer {
                     _ => {}
                 }
             }
-            return "".to_string();
+            "".to_string()
         }
 
   
-        let docx = read_docx(&document)?;
+        let docx = read_docx(document)?;
         const HEADING1: &str = "Heading1";
         const HEADING2: &str = "Heading2";
         const NORMAL: &str = "Normal";
@@ -107,7 +107,7 @@ impl TransformerTrait for Transformer {
                                     let text = extract_text(&par);
                                     let element = Element::Header {
                                         level: 1,
-                                        text: text,
+                                        text,
                                     };
 
                                     result.push(element);
@@ -116,7 +116,7 @@ impl TransformerTrait for Transformer {
                                     let text = extract_text(&par);
                                     let element = Element::Header {
                                         level: 2,
-                                        text: text,
+                                        text,
                                     };
 
                                     result.push(element);
@@ -156,7 +156,7 @@ impl TransformerTrait for Transformer {
                                 let text = extract_text(&par);
                                 let element = Element::Header {
                                     level: 1,
-                                    text: text,
+                                    text,
                                 };
 
                                 result.push(element);
@@ -165,7 +165,7 @@ impl TransformerTrait for Transformer {
                                 let text = extract_text(&par);
                                 let element = Element::Header {
                                     level: 2,
-                                    text: text,
+                                    text,
                                 };
 
                                 result.push(element);
@@ -211,7 +211,7 @@ impl TransformerTrait for Transformer {
                                 for ch in &tc.children {
                                     match ch {
                                         docx_rs::TableCellContent::Paragraph(par) => {
-                                            let text = extract_text(&par);
+                                            let text = extract_text(par);
                                             cells.cells.push(TableCell {
                                                 element: Element::Text { text, size: 16 },
                                             });

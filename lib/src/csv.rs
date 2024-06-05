@@ -151,8 +151,8 @@ fn deserialize_csv(data: &Vec<Vec<String>>) -> anyhow::Result<Bytes> {
 mod tests {
     use crate::core::TransformerTrait;
     use crate::csv::{self, deserialize_csv, serialize_csv};
-    use std::collections::HashMap;
     use crate::markdown;
+    use std::collections::HashMap;
 
     #[test]
     fn test() -> anyhow::Result<()> {
@@ -170,7 +170,6 @@ mod tests {
             let (generated, _) = markdown::Transformer::generate(&parsed)?;
             let generated_string = std::str::from_utf8(&generated)?;
             println!("{}", generated_string);
-
         }
 
         let (generated, _) = csv::Transformer::generate(&parsed)?;

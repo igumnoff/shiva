@@ -20,8 +20,8 @@
 | JSON          | +     | +        |
 | XML           | +     | +        |
 | CSV           | +     | +        |
-| RTF           | -     | -        |
-| DOCX          | -     | -        |
+| RTF           | +     | -        |
+| DOCX          | +     | -        |
 | XLS           | -     | -        |
 | Typst         | -     | -        |
 
@@ -34,6 +34,8 @@
 | Markdown      | +      | +         | +    | +     | +     | +         | -          | -          |
 | HTML          | +      | +         | +    | +     | +     | +         | -          | -          |
 | PDF           | -      | +         | +    | -     | -     | -         | -          | -          |
+| DOCX          | +      | +         | +    | +     | -     | +         | +          | +          |
+| RTF           | +      | +         | +    | +     | -     | +         | +          | +          |
 | JSON          | +      | +         | +    | +     | -     | +         | +          | +          |
 | XML           | +      | +         | -    | -     | -     | +         | +          | +          |
 | CSV           | -      | -         | -    | +     | -     | -         | -          | -          |
@@ -55,7 +57,7 @@
 Cargo.toml
 ```toml
 [dependencies]
-shiva = {  version = "0.3.4", features = ["html", "markdown", "text", "pdf", "json", "csv"] }
+shiva = {  version = "0.4.0", features = ["html", "markdown", "text", "pdf", "json", "csv", "rtf", "docx", "xml"] }
 ```
 
 main.rs
@@ -70,26 +72,25 @@ fn main() {
 ```
 
 
-## Shiva CLI
-### Install Rust for Linux/MacOS
-```bash 
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
-### Install Rust for Windows
-```bash
-https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe
-```
-### Build executable Shiva
+## Shiva CLI & Server
+### Build executable Shiva CLI and Shiva Server
 ```bash
 git clone https://github.com/igumnoff/shiva.git
 cd shiva/cli
 cargo build --release
 ```
-### Run executable shiva
+### Run executable Shiva CLI
 ```bash
 cd ./target/release/
 ./shiva --input-format=markdown --output-format=html --input-file=README.md --output-file=README.html
 ```
+
+### Run Shiva Server
+```bash
+cd ./target/release/
+./shiva-server --port=8080 --host=127.0.0.1
+```
+
 
 ## Contributing
 I would love to see contributions from the community. If you experience bugs, feel free to open an issue. If you would like to implement a new feature or bug fix, please follow the steps:
