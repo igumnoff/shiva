@@ -2,10 +2,7 @@ use crate::core::Element::{Header, Hyperlink, Image, List, Paragraph, Table, Tex
 use crate::core::{
     Document, Element, ImageType, ListItem, ParserError, TableHeader, TableRow, TransformerTrait,
 };
-use std::fs::File;
-use std::io::{copy, Cursor};
 use std::path::Path;
-use reqwest::blocking::get;
 
 use comemo::Prehashed;
 
@@ -105,13 +102,20 @@ impl ShivaWorld {
 }
 
 fn download_font(url: &str, folder: &str, filename: &str) {
-    let response = get(url).expect("Failed to download font file");
     let font_path = Path::new(folder).join(filename);
-    let mut file = File::create(&font_path).expect("Failed to create font file");
-    let content_u8 = response.bytes().expect("Failed to read response");
-    let mut content_cursor = Cursor::new(content_u8);
+
     println!("Downloading font file {}...", font_path.display());
-    copy(&mut content_cursor, &mut file).expect("Failed to write font file");
+
+    let mut reader = ureq::get(url)
+        .call().unwrap()
+        .into_reader();
+
+    let f = std::fs::File::create(&font_path).unwrap();
+    let mut writer = std::io::BufWriter::new(f);
+
+    let _bytes_io_count =
+        std::io::copy(&mut reader, &mut writer).unwrap();
+
 
     println!("Font file {} downloaded successfully!", font_path.display());
 }
