@@ -103,7 +103,7 @@ mod tests {
         Ok(())
     }
 
-/*
+
     #[tokio::test]
     async fn test_handler_convert_file_md_html_txt() -> Result<(), Error> {
         /*
@@ -346,7 +346,7 @@ mod tests {
 
         Ok(())
     }
-*/
+
 
     #[tokio::test]
     async fn test_upload_zip() -> Result<(), Box<dyn std::error::Error>> {
@@ -363,7 +363,7 @@ mod tests {
             // Creating HTTP-client
             let client = reqwest::Client::new();
 
-            //Путь файла для отправки на сервер
+            // The path of the test file to send to the server
             let file_path = "./test.zip";
             let file_name = "test.zip";
             let file_content = fs::read(file_path)?;
@@ -398,11 +398,6 @@ mod tests {
                     file.write_all(&chunk).await?;
                 }
             }
-
-            println!(
-                "Unzip the ZIP, the contents of the archive have been successfully converted to the format {}",
-                output_format
-            )
         }
 
         Ok(())

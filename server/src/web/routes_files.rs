@@ -100,14 +100,15 @@ async fn convert_file_zip(
     images: HashMap<String, Bytes>,
     output_format: String,
 ) -> Result<DownloadFile> {
-    //println!("upload file name: {}", file_name);
-    //println!("upload file format: {}", file_extension);
-    //println!("download file format: {}", output_format);
-
-    println!("файлы изображений из архива");
+    /*
+    println!("upload file name: {}", file_name);
+    println!("upload file format: {}", file_extension);
+    println!("download file format: {}", output_format);
+    println!("Image files from the archive");
     for image_name in images.keys() {
-        println!("- {}", image_name);
+        println!("- {:#?}", image_name);
     }
+     */
 
     let document = match file_extension.as_str() {
         "md" => Document::from(
@@ -119,7 +120,6 @@ async fn convert_file_zip(
         _ => return Err(Error::FailParseDocument),
     };
 
-    //println!("shiva created document");
 
     let output_bytes = match output_format.as_str() {
         "md" => shiva::markdown::Transformer::generate(&document).unwrap(),
@@ -129,8 +129,6 @@ async fn convert_file_zip(
         "json" => shiva::json::Transformer::generate(&document).unwrap(),
         _ => return Err(Error::FailConvertFile),
     };
-
-    //println!("shiva converted document");
 
     Ok(DownloadFile {
         file_name,
@@ -196,7 +194,7 @@ async fn unpacking(mut field: Field<'_>) -> Result<StructUploadFile> {
             .filter(|ext| !ext.trim().is_empty())
             .map(String::from);
 
-        println!("in ZIP {}.{}", file_name_in_archive.clone().unwrap(), file_extension_in_archive.clone().unwrap());
+        //println!("in ZIP {}.{}", file_name_in_archive.clone().unwrap(), file_extension_in_archive.clone().unwrap());
 
         //checking the supported format
         if let Some(ref ext) = file_extension_in_archive {
@@ -214,7 +212,6 @@ async fn unpacking(mut field: Field<'_>) -> Result<StructUploadFile> {
                         let image_name = file.name().to_string();
 
                         images.insert(image_name, Bytes::from(file_data_buf));
-
                     }
                     _ => {
                         return Err(Error::NoFilesToConvertInZip);
@@ -241,7 +238,6 @@ async fn unpacking(mut field: Field<'_>) -> Result<StructUploadFile> {
 }
 
 async fn upload_file(mut multipart: Multipart) -> Result<StructUploadFile> {
-    //println!("start upload_file");
 
     //create variables in which we will then write the name, file extension and the file itself in binary form
     let mut file_name = None;
@@ -337,7 +333,6 @@ async fn convert_file(
         _ => return Err(Error::FailParseDocument),
     };
 
-    //println!("shiva created document");
 
     let output_bytes = match output_format.as_str() {
         "md" => shiva::markdown::Transformer::generate(&document).unwrap(),
@@ -347,8 +342,6 @@ async fn convert_file(
         "json" => shiva::json::Transformer::generate(&document).unwrap(),
         _ => return Err(Error::FailConvertFile),
     };
-
-    //println!("shiva converted document");
 
     Ok(DownloadFile {
         file_name,
