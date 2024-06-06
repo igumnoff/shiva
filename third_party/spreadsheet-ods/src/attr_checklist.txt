@@ -1,0 +1,709 @@
+// Cell attributes
+
+ok fo:background-color 20.182,
+ok fo:border 20.183.2,
+ok fo:border-bottom 20.183.3,
+ok fo:border-left 20.183.4,
+ok fo:border-right 20.183.5,
+ok fo:border-top 20.183.6,
+ok fo:padding 20.217,
+ok fo:padding-bottom 20.218,
+ok fo:padding-left 20.219,
+ok fo:padding-right 20.220,
+ok fo:padding-top 20.221,
+ok fo:wrap-option 20.230,
+ok style:border-line-width 20.248,
+ok style:border-line-width-bottom 20.249,
+ok style:border-line-width-left 20.250,
+ok style:border-line-width-right 20.251,
+ok style:border-line-width-top 20.252,
+ok style:cell-protect 20.253,
+ok style:decimal-places 20.258,
+ok style:diagonal-bl-tr 20.259,
+ok style:diagonal-bl-tr-widths 20.260,
+ok style:diagonal-tl-br 20.261,
+ok style:diagonal-tl-br-widths 20.262,
+ok style:direction 20.263,
+ok style:glyph-orientation-vertical 20.297,
+ok style:print-content 20.331,
+ok style:repeat-content 20.342,
+ok style:rotation-align 20.346,
+ok style:rotation-angle 20.347,
+ok style:shadow 20.359,
+ok style:shrink_to-fit 20.360,
+ok style:text-align-source 20.364,
+ok style:vertical-align 20.396
+ok style:writing-mode 20.404.
+
+
+// Column attributes.
+
+ok fo:break-after 20.184,
+ok fo:break-before 20.185,
+ok style:column-width 20.254,
+ok style:rel-column-width 20.338
+ok style:use-optimal-column-width 20.393
+
+    style_column_width!(colstyle_mut);
+    style_rel_column_width!(colstyle_mut);
+    style_use_optimal_column_width!(colstyle_mut);
+
+// Row attributes
+
+ok fo:background-color 20.182,
+ok fo:break-after 20.184,
+ok fo:break-before 20.185,
+ok fo:keep-together 20.200,
+ok style:min-row-height 20.320,
+ok style:row-height 20.348
+ok style:use-optimal-row-height 20.394.
+
+// Table attributes
+
+ok fo:background-color 20.182,
+ok fo:break-after 20.184,
+ok fo:break-before 20.185,
+ok fo:keep-with-next 20.201,
+ok fo:margin 20.205,
+ok fo:margin-bottom 20.206,
+ok fo:margin-left 20.207,
+ok fo:margin-right 20.208,
+ok fo:margin-top 20.209,
+ok style:may-break-between-rows 20.319,
+ok style:page-number 20.328,
+ok style:rel-width 20.340,
+ok style:shadow 20.359,
+ok style:width 20.399,
+ok style:writing-mode 20.404,
+ok table:align 20.414,
+ok table:border-model 20.415,
+ok table:display 20.416
+ok table:tab-color 19.731.
+
+// Text attributes.
+
+ok fo:background-color 20.182,
+ok fo:color 20.187,
+
+** Kind of switch for the group of attributes used. I don't understand what
+** this is for, ignored for now.
+ignore style:script-type 20.358,
+
+ok fo:country 20.188,
+ok fo:language 20.202,
+ok fo:script 20.222,
+obsolete style:font-charset 20.268,
+obsolete fo:font-family 20.189,
+obsolete style:font-family-generic 20.273,
+ok style:font-name 20.277,
+obsolete style:fontpitch 20.280,
+ok fo:fontsize 20.190,
+ok style:font-size-rel 20.286,
+ok fo:font-style 20.191,
+obsolete style:font-style-name 20.291,
+ok fo:font-weight 20.193,
+obsolete style:rfc-language-tag 20.343,
+ok fo:font-variant 20.192,
+ok style:country-asian 20.256,
+ok style:language-asian 20.302,
+ok style:script-asian 20.356,
+obsolete style:font-charset-asian 20.269,
+obsolete style:font-family-asian 20.271,
+obsolete style:font-family-generic-asian 20.274,
+ok style:font-name-asian 20.278,
+obsolete style:font-pitch-asian 20.281,
+ok style:font-size-asian 20.284,
+ok style:font-size-rel-asian 20.287,
+ok style:font-style-asian 20.289,
+obsolete style:fontstyle-name-asian 20.292,
+ok style:fontweight-asian 20.294,
+obsolete style:rfc-language-tag-asian 20.344,
+ok style:country-complex 20.257,
+ok style:language-complex 20.303,
+ok style:script-complex 20.357,
+obsolete style:font-charset-complex 20.270,
+obsolete style:font-family-complex 20.272,
+obsolete style:font-family-generic-complex 20.275,
+ok style:font-name-complex 20.279,
+obsolete style:font-pitch-complex 20.282,
+ok style:font-size-complex 20.285,
+ok style:font-size-rel-complex 20.288,
+ok style:font-style-complex 20.290,
+obsolete style:font-style-name-complex 20.293,
+ok style:font-weight-complex 20.295,
+obsolete style:rfclanguage-tag-complex 20.345,
+ok fo:hyphenate 20.195,
+ok fo:hyphenation-push-char-count 20.198,
+ok fo:hyphenation-remain-char-count 20.199,
+ok fo:letter-spacing 20.203,
+ok fo:text-shadow 20.226,
+ok fo:text-transform 20.227,
+ok style:font-relief 20.283,
+ok style:letter-kerning 20.316,
+never style:text-blinking 20.366,
+ok style:text-combine 20.367,
+ok style:text-combine-end-char 20.369,
+ok style:text-combine-start-char 20.368,
+ok style:text-emphasize 20.370,
+ok style:text-line-through-color 20.371,
+ok style:text-line-through-mode 20.372,
+ok style:text-line-through-style 20.373,
+ok style:text-line-through-text 20.374,
+ok style:text-line-through-text-style 20.375,
+ok style:text-line-through-type 20.376,
+ok style:text-line-through-width 20.377,
+ok style:text-outline 20.378,
+ok style:text-overline-color 20.379,
+ok style:text-overline-mode 20.380,
+ok style:text-overline-style 20.381,
+ok style:text-overline-type 20.382,
+ok style:text-overline-width 20.383,
+ok style:text-position 20.384,
+ok style:text-rotation-angle 20.385,
+ok style:text-rotation-scale 20.386,
+ok style:text-scale 20.387,
+ok style:text-underline-color 20.388,
+ok style:text-underline-mode 20.389,
+ok style:text-underline-style 20.390,
+ok style:text-underline-type 20.391,
+ok style:text-underline-width 20.392,
+ok style:use-window-font-color 20.395,
+ok text:condition 20.426,
+ok text:display 20.427.
+
+    fo_background_color!(textstyle_mut);
+    fo_color!(textstyle_mut);
+    fo_locale!(textstyle_mut);
+    style_font_name!(textstyle_mut);
+    fo_font_size!(textstyle_mut);
+    fo_font_size_rel!(textstyle_mut);
+    fo_font_style!(textstyle_mut);
+    fo_font_weight!(textstyle_mut);
+    fo_font_variant!(textstyle_mut);
+    fo_font_attr!(textstyle_mut);
+    style_locale_asian!(textstyle_mut);
+    style_font_name_asian!(textstyle_mut);
+    style_font_size_asian!(textstyle_mut);
+    style_font_size_rel_asian!(textstyle_mut);
+    style_font_style_asian!(textstyle_mut);
+    style_font_weight_asian!(textstyle_mut);
+    style_font_attr_asian!(textstyle_mut);
+    style_locale_complex!(textstyle_mut);
+    style_font_name_complex!(textstyle_mut);
+    style_font_size_complex!(textstyle_mut);
+    style_font_size_rel_complex!(textstyle_mut);
+    style_font_style_complex!(textstyle_mut);
+    style_font_weight_complex!(textstyle_mut);
+    style_font_attr_complex!(textstyle_mut);
+    fo_hyphenate!(textstyle_mut);
+    fo_hyphenation_push_char_count!(textstyle_mut);
+    fo_hyphenation_remain_char_count!(textstyle_mut);
+    fo_letter_spacing!(textstyle_mut);
+    fo_text_shadow!(textstyle_mut);
+    fo_text_transform!(textstyle_mut);
+    style_font_relief!(textstyle_mut);
+    style_text_position!(textstyle_mut);
+    style_rotation_angle!(textstyle_mut);
+    style_rotation_scale!(textstyle_mut);
+    style_letter_kerning!(textstyle_mut);
+    style_text_combine!(textstyle_mut);
+    style_text_combine_start_char!(textstyle_mut);
+    style_text_combine_end_char!(textstyle_mut);
+    style_text_emphasize!(textstyle_mut);
+    style_text_line_through!(textstyle_mut);
+    style_text_outline!(textstyle_mut);
+    style_text_overline!(textstyle_mut);
+    style_text_underline!(textstyle_mut);
+    style_use_window_font_color!(textstyle_mut);
+    text_condition!(textstyle_mut);
+    text_display!(textstyle_mut);
+
+
+
+// Paragraph attributes.
+
+ok fo:background-color 20.182,
+ok fo:border 20.183.2,
+ok fo:border-bottom 20.183.3,
+ok fo:border-left 20.183.4,
+ok fo:border-right 20.183.5,
+ok fo:border-top 20.183.6,
+ok fo:break-after 20.184,
+ok fo:break-before 20.185,
+ok fo:hyphenation-keep 20.196,
+ok fo:hyphenation-ladder-count 20.197,
+ok fo:keep-together 20.200,
+ok fo:keep-withnext 20.201,
+ok fo:line-height 20.204,
+ok fo:margin 20.205,
+ok fo:margin-bottom 20.206,
+ok fo:margin-left 20.207,
+ok fo:margin-right 20.208,
+ok fo:margin-top 20.209,
+ok fo:orphans 20.214,
+ok fo:padding 20.217,
+ok fo:padding-bottom 20.218,
+ok fo:padding-left 20.219,
+ok fo:padding-right 20.220,
+ok fo:padding-top 20.221,
+ok fo:text-align 20.223,
+ok fo:text-align-last 20.224,
+ok fo:text-indent 20.225,
+ok fo:widows 20.228,
+ok style:auto-text-indent 20.246,
+ok style:background-transparency 20.247,
+ok style:border-line-width 20.248,
+ok style:border-line-width-bottom 20.249,
+ok style:border-line-width-left 20.250,
+ok style:border-line-width-right 20.251,
+ok style:border-line-width-top 20.252,
+ok style:contextual-spacing 20.255,
+ok style:font-independent-line-spacing 20.276,
+ok style:join-border 20.300,
+ok style:justify-single-word 20.301,
+ok style:line-break 20.315,
+ok style:line-height-at-least 20.317,
+ok style:line-spacing 20.318,
+ok style:page-number 20.328,
+ok style:punctuation-wrap 20.335,
+ok style:register-true 20.336,
+ok style:shadow 20.359,
+ok style:snap-to-layout-grid 20.361,
+ok style:tab-stop-distance 20.362,
+ok style:text-autospace 20.365,
+ok style:vertical-align 20.396,
+ok style:writing-mode 20.404,
+ok style:writing-mode-automatic 20.405,
+ok text:line-number 20.430
+ok text:number-lines 20.434.
+
+    fo_background_color!(paragraphstyle_mut);
+    fo_border!(paragraphstyle_mut);
+    fo_break!(paragraphstyle_mut);
+    fo_hyphenation!(paragraphstyle_mut);
+    fo_keep_together!(paragraphstyle_mut);
+    fo_keep_with_next!(paragraphstyle_mut);
+    fo_line_height!(paragraphstyle_mut);
+    fo_margin!(paragraphstyle_mut);
+    fo_orphans!(paragraphstyle_mut);
+    fo_padding!(paragraphstyle_mut);
+    fo_text_align!(paragraphstyle_mut);
+    fo_text_align_last!(paragraphstyle_mut);
+    fo_text_indent!(paragraphstyle_mut);
+    fo_widows!(paragraphstyle_mut);
+    style_auto_text_indent!(paragraphstyle_mut);
+    style_background_transparency!(paragraphstyle_mut);
+    fo_border_line_width!(paragraphstyle_mut);
+    style_contextual_spacing!(paragraphstyle_mut);
+    style_font_independent_line_spacing!(paragraphstyle_mut);
+    style_join_border!(paragraphstyle_mut);
+    style_justify_single_word!(paragraphstyle_mut);
+    style_line_break!(paragraphstyle_mut);
+    style_line_height_at_least!(paragraphstyle_mut);
+    style_line_spacing!(paragraphstyle_mut);
+    style_page_number!(paragraphstyle_mut);
+    style_punctuation_wrap!(paragraphstyle_mut);
+    style_register_true!(paragraphstyle_mut);
+    style_shadow!(paragraphstyle_mut);
+    style_snap_to_layout_grid!(paragraphstyle_mut);
+    style_tab_stop_distance!(paragraphstyle_mut);
+    style_text_autospace!(paragraphstyle_mut);
+    style_vertical_align_para!(paragraphstyle_mut);
+    style_writing_mode!(paragraphstyle_mut);
+    style_writing_mode_automatic!(paragraphstyle_mut);
+    style_line_number!(paragraphstyle_mut);
+    style_number_lines!(paragraphstyle_mut);
+
+// graphic-style attributes
+
+// TODO: this stuff
+ignore dr3d:ambientcolor 20.74,
+ignore dr3d:back-scale 20.75,
+ignore dr3d:backface-culling 20.76,
+ignore dr3d:closeback 20.77,
+ignore dr3d:close-front 20.78,
+ignore dr3d:depth 20.79,
+ignore dr3d:diffuse-color 20.80,
+ignore dr3d:edge-rounding 20.81,
+ignore dr3d:edge-rounding-mode 20.82,
+ignore dr3d:emissive-color 20.83,
+ignore dr3d:end-angle 20.84,
+ignore dr3d:horizontal-segments 20.85,
+ignore dr3d:lightingmode 20.86,
+ignore dr3d:normals-direction 20.87,
+ignore dr3d:normals-kind 20.88,
+ignore dr3d:shadow 20.89,
+ignore dr3d:shininess 20.90,
+ignore dr3d:specular-color 20.91,
+ignore dr3d:texture-filter 20.92,
+ignore dr3d:texture-generation-mode-x 20.95,
+ignore dr3d:texture-generation-mode-y 20.96,
+ignore dr3d:texture-kind 20.93,
+ignore dr3d:texture-mode 20.94,
+ignore dr3d:verticalsegments 20.97,
+draw:auto-grow-height 20.98,
+draw:auto-grow-width 20.99,
+draw:blue 20.101,
+draw:caption-angle 20.102,
+draw:caption-angle-type 20.103,
+draw:caption-escape 20.104,
+draw:caption-escape-direction 20.105,
+draw:caption-fit-line-length 20.106,
+draw:caption-gap 20.107,
+draw:captionline-length 20.108,
+draw:caption-type 20.109,
+draw:color-inversion 20.110,
+draw:color-mode 20.111,
+draw:contrast 20.112,
+draw:decimal-places 20.113,
+draw:draw-aspect 20.114,
+draw:end-guide 20.115,
+draw:end-line-spacinghorizontal 20.116,
+draw:end-line-spacing-vertical 20.117,
+draw:fill 20.118,
+draw:fill-color 20.119,
+draw:fill-gradient-name 20.120,
+draw:fill-hatch-name 20.121,
+draw:fill-hatch-solid 20.122,
+draw:fill-image-height 20.123,
+draw:fill-image-name 20.124,
+draw:fill-image-ref-point 20.125,
+draw:fillimage-ref-point-x 20.126,
+draw:fill-image-ref-point-y 20.127,
+draw:fillimage-width 20.128,
+draw:fit-to-contour 20.129,
+draw:fit-to-size 20.130,
+draw:frame-display-border 20.131,
+draw:frame-display-scrollbar 20.133,
+draw:frame-margin-horizontal 20.132,
+draw:frame-margin-vertical 20.134,
+draw:gamma 20.135,
+draw:gradient-step-count 20.137,
+draw:green 20.136,
+draw:guide-distance 20.138,
+draw:guide-overhang 20.139,
+draw:image-opacity 20.140,
+draw:line-distance 20.141,
+draw:luminance 20.142,
+draw:marker-end 20.143,
+draw:marker-end-center 20.144,
+draw:marker-end-width 20.145,
+draw:marker-start 20.146,
+draw:marker-start-center 20.147,
+draw:markerstart-width 20.148,
+draw:measure-align 20.149,
+draw:measure-vertical-align 20.150,
+draw:ole-draw-aspect 20.151,
+draw:opacity 20.152,
+draw:opacity-name 20.153,
+draw:parallel 20.154,
+draw:placing 20.155,
+draw:red 20.15
+
+
+// TabStop attributes
+
+ok style:char 19.469,
+ok style:leader-color 19.488,
+ok style:leader-style 19.489,
+ok style:leader-text 19.490,
+ok style:leader-text-style 19.491,
+ok style:leader-type 19.492,
+ok style:leader-width 19.493,
+ok style:position 19.512,
+ok style:type 19.519.
+
+
+
+// PageStyle attributes
+
+ok fo:background-color 20.175,
+ok fo:border 20.176.2,
+ok fo:border-bottom 20.176.3,
+ok fo:border-left 20.176.4,
+ok fo:border-right 20.176.5,
+ok fo:border-top 20.176.6,
+ok fo:margin 20.198,
+ok fo:margin-bottom 20.199,
+ok fo:margin-left 20.200,
+ok fo:margin-right 20.201,
+ok fo:margin-top 20.202,
+ok fo:padding 20.210,
+ok fo:padding-bottom 20.211,
+ok fo:padding-left 20.212,
+ok fo:padding-right 20.213,
+ok fo:padding-top 20.214,
+ok fo:page-height 20.208,
+ok fo:page-width 20.209,
+ok style:border-line-width 20.241,
+ok style:border-line-width-bottom 20.242,
+ok style:border-line-width-left 20.243,
+ok style:border-line-width-right 20.244,
+ok style:border-line-width-top 20.245,
+ok style:first-page-number 20.258,
+ok style:footnote-max-height 20.288,
+ignore style:layout-grid-base-height 20.296,
+ignore style:layout-grid-base-width 20.297,
+ignore style:layout-grid-color 20.298,
+ignore style:layout-grid-display 20.299,
+ignore style:layout-grid-lines 20.300,
+ignore style:layout-grid-mode 20.301,
+ignore style:layout-grid-print 20.302,
+ignore style:layout-grid-ruby-below 20.303,
+ignore style:layout-grid-ruby-height 20.304,
+ignore style:layout-grid-snap-to 20.305,
+ignore style:layout-grid-standard-mode 20.306,
+ok style:num-format 20.314,
+ok style:num-letter-sync 20.315,
+ok style:num-prefix 20.316,
+ok style:num-suffix 20.317,
+ok style:paper-tray-name 20.321,
+ok style:print 20.322,
+ok style:print-orientation 20.325,
+ok style:print-page-order 20.324,
+??? style:register-truth-ref-style-name 20.329,
+ok style:scale-to 20.344,
+ok style:scale-to-pages 20.345,
+ok style:shadow 20.349,
+ok style:table-centering 20.353
+style:writing-mode 20.394.3
+
+
+// HeaderFooterStyle attributes
+
+ok fo:background-color 20.175,
+ok fo:border 20.176.2,
+ok fo:border-bottom 20.176.3,
+ok fo:border-left 20.176.4,
+ok fo:border-right 20.176.5,
+ok fo:border-top 20.176.6,
+ok fo:margin 20.198,
+ok fo:margin-bottom 20.199,
+ok fo:margin-left 20.200,
+ok fo:marginright 20.201,
+ok fo:margin-top 20.202,
+ok fo:min-height 20.205.2,
+ok fo:padding 20.210,
+ok fo:padding-bottom 20.211,
+ok fo:padding-left 20.212,
+ok fo:padding-right 20.213,
+ok fo:padding-top 20.214,
+ok style:border-line-width 20.241,
+ok style:border-line-width-bottom 20.242,
+ok style:border-line-width-left 20.243,
+ok style:border-line-width-right 20.244,
+ok style:border-line-width-top 20.245,
+ok style:dynamic-spacing 20.256,
+ok style:shadow 20.349
+ok svg:height 20.397.2.
+
+// FontFaceDecl attributes
+
+obsolete style:font-adornments 19.482,
+obsolete style:font-charset 19.483,
+ok style:font-family-generic 19.484,
+ok style:font-pitch 19.485,
+ok style:name 19.502,
+ignore svg:accent-height 19.523,
+ignore svg:alphabetic 19.524,
+ignore svg:ascent 19.525,
+ignore svg:bbox 19.526,
+ignore svg:cap-height 19.527,
+ignore svg:descent 19.531,
+ok svg:font-family 19.532,
+ignore svg:font-size 19.533,
+ok svg:font-stretch 19.534,
+ok svg:font-style 19.535,
+ok svg:font-variant 19.536,
+ok svg:font-weight 19.537,
+ignore svg:hanging 19.542,
+ignore svg:ideographic 19.544,
+ignore svg:mathematical 19.545,
+ignore svg:overline-position 19.549,
+ignore svg:overline-thickness 19.550,
+ignore svg:panose-1 19.551,
+ignore svg:slope 19.556,
+ignore svg:stemh 19.558,
+ignore svg:stemv 19.559,
+ignore svg:strikethrough-position 19.562,
+ignore svg:strikethrough-thickness 19.563,
+ignore svg:underline-position 19.566,
+ignore svg:underline-thickness 19.567,
+ignore svg:unicode-range 19.568,
+ignore svg:unitsper-em 19.569,
+ignore svg:v-alphabetic 19.570,
+ignore svg:v-hanging 19.571,
+ignore svg:v-ideographic 19.572,
+ignore svg:v-mathematical 19.573,
+ignore svg:widths 19.576
+ignore svg:x-height 19.580.
+
+// office:annotation
+
+ok draw:caption-point-x 19.116,
+ok draw:caption-point-y 19.117,
+ok draw:class-names 19.120,
+ok draw:corner-radius 19.127,
+ok draw:id 19.187,
+ok draw:layer 19.189,
+ok draw:name 19.197,
+ok draw:stylename 19.219,
+ok draw:text-style-name 19.227,
+ok draw:transform 19.228,
+ok draw:z-index 19.231,
+ok office:display 19.378,
+ok office:name 19.380,
+ignore presentation:class-names 19.394,
+ignore presentation:style-name 19.426,
+ok svg:height 19.543,
+ok svg:width 19.575,
+ok svg:x 19.577,
+ok svg:y 19.581,
+ok table:end-cell-address 19.631,
+ok table:end-x 19.636,
+ok table:end-y 19.637,
+ok table:table-background 19.733,
+ignore text:anchor-page-number 19.758,
+ignore text:anchor-type 19.759 and
+ok xml:id 19.920.
+
+child elements:
+
+ok <dc:creator> 4.3.2.7,
+ok <dc:date> 4.3.2.10,
+ignore <meta:creator-initials> 14.4,
+ignore <meta:date-string> 14.3,
+ok <text:list> 5.3.1 and
+ok <text:p> 5.1.3.
+
+// table:table-cell
+
+child elements:
+
+ignore <draw:a> 10.4.12,
+ignore <draw:caption> 10.3.11,
+ignore <draw:circle> 10.3.8,
+ignore <draw:connector> 10.3.10,
+ignore <draw:control> 10.3.13,
+ignore <draw:custom-shape> 10.6.1,
+ignore <draw:ellipse> 10.3.9,
+ok <draw:frame> 10.4.2,
+ignore <draw:g> 10.3.15,
+ignore <draw:line> 10.3.3,
+ignore <draw:measure> 10.3.12,
+ignore <draw:page-thumbnail> 10.3.14,
+ignore <draw:path> 10.3.7,
+ignore <draw:polygon> 10.3.5,
+ignore <draw:polyline> 10.3.4,
+ignore <draw:rect> 10.3.2,
+ignore <draw:regular-polygon> 10.3.6,
+ok <office:annotation> 14.1,
+
+<draw:layer-set> 10.2.2,
+
+// draw:rect
+
+draw:name 19.197,
+ok draw:caption-id 19.115,
+ok draw:class-names 19.120,
+ok draw:corner-radius 19.127,
+ok draw:id 19.187,
+ok draw:layer 19.189,
+ok draw:style-name 19.219,
+ok draw:text-style-name 19.227,
+ok draw:transform 19.228,
+ok draw:z-index 19.231,
+
+xx presentation:class-names 19.394,
+xx presentation:style-name 19.426,
+
+ok svg:height 19.543,
+ok svg:width 19.575,
+ok svg:rx 19.554,
+ok svg:ry 19.555,
+ok svg:x 19.577,
+ok svg:y 19.581,
+
+ok table:end-cell-address 19.631,
+ok table:end-x 19.636,
+ok table:end-y 19.637,
+ok table:table-background 19.733,
+
+xx text:anchor-page-number 19.758,
+xx text:anchor-type 19.759
+
+xml:id 19.920
+
+child elements:
+
+<draw:glue-point> 10.3.16,
+<office:event-listeners> 10.3.19,
+<svg:desc> 10.3.18,
+<svg:title> 10.3.17,
+<text:list> 5.3.1 and
+<text:p> 5.1.3.
+
+
+// draw:frame
+
+ok draw:caption-id 19.115,
+ok draw:class-names 19.120,
+ok draw:copy-of 19.126,
+ok draw:id 19.187,
+ok draw:layer 19.189,
+ok draw:name 19.197,
+ok draw:style-name 19.219,
+ok draw:text-style-name 19.227,
+ok draw:transform 19.228,
+ok draw:z-index 19.231,
+ignore presentation:class 19.393,
+ignore presentation:class-names 19.394,
+ignore presentation:placeholder 19.411,
+ignore presentation:style-name 19.426,
+ignore presentation:user-transformed 19.431,
+ok style:rel-height 19.513,
+ok style:rel-width 19.514,
+ok svg:height 19.543,
+ok svg:width 19.575,
+ok svg:x 19.577,
+ok svg:y 19.581,
+ok table:end-cell-address 19.631,
+ok table:end-x 19.636,
+ok table:end-y 19.637,
+ok table:table-background 19.733,
+ignore text:anchor-pagenumber 19.758,
+ignore text:anchor-type 19.759 and
+xml:id 19.920.
+
+child elements:
+
+ignore <draw:applet> 10.4.7,
+ignore <draw:contour-path> 10.4.11.3,
+ignore <draw:contour-polygon> 10.4.11.2,
+ignore <draw:floating-frame> 10.4.10,
+ignore <draw:glue-point> 10.3.16,
+<draw:image> 10.4.4,
+ignore <draw:image-map> 10.4.13.2,
+ignore <draw:object> 10.4.6.2,
+ignore <draw:object-ole> 10.4.6.3,
+ignore <draw:plugin> 10.4.8,
+ignore <draw:text-box> 10.4.3,
+ok <office:event-listeners> 10.3.19,
+ok <svg:desc> 10.3.18,
+ok <svg:title> 10.3.17
+ignore <table:table> 9.1.2.
+
+// draw:image
+
+ok draw:filter-name 19.170,
+ok draw:mime-type 19.191,
+ok xlink:actuate 19.915,
+ok xlink:href 19.916,
+ok xlink:show 19.917,
+ok xlink:type 19.919
+ok xml:id 19.920.
+
+child elements:
+ok <office:binary-data> 10.4.5,
+ok <text:list> 5.3.1
+ok <text:p> 5.1.3.

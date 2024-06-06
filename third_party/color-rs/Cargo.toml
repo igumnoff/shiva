@@ -1,0 +1,28 @@
+[package]
+name = "color-rs"
+version = "0.8.0"
+authors = ["Arturo Castro", "Brendan Zabarauskas <bjzaba@yahoo.com.au>", "Luqman Aden"]
+description = "A library that provides types and conversions for working with various color formats. Forked from the unmuntained crate color"
+license-file="LICENSE"
+repository="https://github.com/arturoc/color-rs"
+
+[lib]
+name="color"
+
+[dependencies]
+num-traits = "0.2"
+angle = "0.5"
+half = "1.6.0"
+serde={version = "1"}
+serde_derive={version = "1"}
+kmeans_colors = { version = "0.5", default-features=false, optional = true }
+rand = { version = "0.8", optional = true }
+bytemuck = {version = "1.13.1", optional = true }
+
+[features]
+kmeans = ["kmeans_colors", "rand"]
+default = []
+
+# [patch.crates-io]
+# angle = {path = "../rinlibs/angle-rs"}
+# angle = {git = "ssh://github.com/arturoc/angle-rs", rev = "a69823c061ba227dc1e363c62c0cb38c7144c76c"}

@@ -1,0 +1,88 @@
+
+// Basic datatypes
+
+angle
+length
+nonNegativeLength
+    Can't be expressed nicely. Will be a runtime check where needed.
+percent
+positiveLength
+
+// Attributes with specific value types.
+
+19.348 number:format-source
+19.368 number:transliteration-style
+19.484 style:font-family-generic
+19.485 style:font-pitch
+19.509 style:page-usage
+19.519 style:type
+19.534 svg:font-stretch
+
+20.183.2 fo:border
+20.184 style:break-after
+20.185 style:break-before
+20.190 fo:font-size
+20.191 fo:font-style
+20.192 fo:font-variant
+20.193 fo:font-weight
+20.196 fo:hyphenation-keep
+20.197 fo:hyphenation-ladder-count
+20.200 fo:keep-together
+    20.201 fo:keep-with-next
+20.203 fo:letter-spacing
+20.204 fo:line-height
+20.205 fo:margin
+    20.206 fo:margin-bottom
+    20.207 fo:margin-left
+    20.208 fo:margin-right
+    20.209 fo:margin-top
+20.223 fo:text-align
+20.224 fo:text-align-last
+20.225 fo:text-indent
+20.227 fo:text-transform
+20.230 fo:wrap-option
+20.253 style:cell-protect
+20.263 style:direction
+20.283 style:font-relief
+20.297 style:glyph-orientation-vertical
+
+20.315 style:line-break
+20.322 style:num-format
+20.328 style:page-number
+20.330 style:print
+20.332 style:print-page-order
+20.333 style:print-orientation
+20.335 style:punctuation-wrap
+20.340 style:rel-width
+20.346 style:rotation-align
+20.363 style:table-centering
+20.364 style:text-align-source
+20.365 style:text-autospace
+20.367 style:text-combine
+20.370 style:text-emphasize
+20.372 style:text-line-through-mode
+20.373 style:text-line-through-style
+20.376 style:text-line-through-type
+20.377 style:text-line-through-width
+    20.380 style:text-overline-mode
+    20.381 style:text-overline-style
+    20.382 style:text-overline-type
+    20.383 style:text-overline-width
+20.384 style:text-position
+20.386 style:text-rotation-scale
+    20.389 style:text-underline-mode
+    20.390 style:text-underline-style
+    20.391 style:text-underline-type
+    20.392 style:text-underline-width
+20.396 style:vertical-align
+
+20.404 style:writing-mode
+20.414 table:align
+20.415 table:border-model
+20.426 text:condition
+20.427 text:display
+
+
+
+
+

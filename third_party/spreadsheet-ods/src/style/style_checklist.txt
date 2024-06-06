@@ -1,0 +1,16 @@
+
+General style:style attributes
+
+ok: style:auto-update 19.467,
+ok: style:class 19.470,
+only for table-cell: style:data-style-name 19.473,
+only for paragraph: style:default-outlinelevel 19.474,
+ok: style:display-name 19.476,
+mapped as separate XxxStyle structs: style:family 19.480,
+not used: style:list-level 19.499,
+not used: style:list-style-name 19.500,
+only for table and paragraph: style:master-page-name 19.501,
+ok: style:name 19.502,
+only for paragraph: style:next-style-name 19.503,
+ok: style:parent-style-name 19.510 and
+ignore, only for chart: style:percentage-data-style-name 19.511

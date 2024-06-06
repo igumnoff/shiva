@@ -1,0 +1,87 @@
+[package]
+name = "spreadsheet-ods"
+version = "0.22.2"
+authors = ["thomasscharler <thscharler@gmail.com>"]
+edition = "2021"
+description = "Read and write ODS files"
+license = "MIT/Apache-2.0"
+repository = "https://github.com/thscharler/spreadsheet-ods"
+readme = "README.md"
+keywords = ["ODS", "spreadsheet", "OpenOffice", "LibreOffice"]
+categories = ["parser-implementations"]
+exclude = [".idea/*", ".gitignore"]
+
+[lints.rust]
+absolute_paths_not_starting_with_crate = "warn"
+# box_pointers = "warn"
+elided_lifetimes_in_paths = "warn"
+explicit_outlives_requirements = "warn"
+keyword_idents = "warn"
+macro_use_extern_crate = "warn"
+meta_variable_misuse = "warn"
+missing_abi = "warn"
+# NOT_ACCURATE: missing_copy_implementations = "warn"
+missing_debug_implementations = "warn"
+missing_docs = "warn"
+non_ascii_idents = "warn"
+noop_method_call = "warn"
+# NO: or_patterns_back_compat = "warn"
+pointer_structural_match = "warn"
+semicolon_in_expressions_from_macros = "warn"
+# NOT_ACCURATE: single_use_lifetimes = "warn"
+trivial_casts = "warn"
+trivial_numeric_casts = "warn"
+unreachable_pub = "warn"
+# unsafe_code: = "warn"
+unsafe_op_in_unsafe_fn = "warn"
+unstable_features = "warn"
+# NO: unused_crate_dependencies = "warn"
+# NO: unused_extern_crates = "warn"
+unused_import_braces = "warn"
+unused_lifetimes = "warn"
+unused_qualifications = "warn"
+# NO: unused_results = "warn"
+variant_size_differences = "warn"
+
+[features]
+default = ["use_decimal", "all_locales"]
+# Add conversions from rust_decimal.
+use_decimal = []
+# Check the xml output for wellformedness.
+check_xml = []
+
+all_locales = ["locale_de_AT", "locale_en_US"]
+locale_de_AT = []
+locale_en_US = []
+
+# Debug: dump all xml
+dump_xml = []
+# Debug: dump unused tags/attributes
+dump_unused = []
+
+[dependencies]
+rust_decimal = "1.34"
+rust_decimal_macros = "1.34"
+#color-rs = "0.8"
+color-rs = {path = "../color-rs"}
+string_cache = "0.8"
+time = "0.3"
+nom = "7.1"
+nom_locate = "4.2"
+icu_locid = "1.4"
+lazy_static = "1.4"
+unicode-ident = "1.0"
+kparse = "3.0.5"
+base64 = "0.22"
+quick-xml = { version = "0.31.0" }
+zip = { version = "2.0.0", default-features = false, features = ["deflate", "time"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "alloc"] }
+get-size = "0.1.4"
+get-size-derive = "0.1.3"
+
+[dev-dependencies]
+criterion = { version = "0.5.1", features = ["html_reports"] }
+
+[[bench]]
+name = "bench"
+harness = false
