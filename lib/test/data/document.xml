@@ -1,139 +1,141 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Document>
-    <Header>
-        <level>1</level>
-        <text>123</text>
-    </Header>
-    <Paragraph>
-        <elements>
-            <Text>
-                <text>Hello, world!</text>
-                <size>12</size>
-            </Text>
-            <Image>
-                <title>Some title</title>
-                <alt>Some alt</alt>
-                <bytes>base64==</bytes>
-                <image_type>
-                    <Png/>
-                </image_type>
-            </Image>
-            <Hyperlink>
-                <url>http://example.com</url>
-                <title>Example</title>
-                <alt>Example alt</alt>
-                <size>12</size>
-            </Hyperlink>
-        </elements>
-    </Paragraph>
-    <List>
-        <elements>
-            <ListItem>
-                <elements>
-                    <Text>
-                        <text>Item 1</text>
-                        <size>12</size>
-                    </Text>
-                </elements>
-            </ListItem>
-            <ListItem>
-                <elements>
-                    <Text>
-                        <text>Item 2</text>
-                        <size>12</size>
-                    </Text>
-                </elements>
-            </ListItem>
-            <ListItem>
-                <List>
+    <elements>
+        <Header>
+            <level>1</level>
+            <text>123</text>
+        </Header>
+        <Paragraph>
+            <elements>
+                <Text>
+                    <text>Hello, world!</text>
+                    <size>12</size>
+                </Text>
+                <Image>
+                    <title>Some title</title>
+                    <alt>Some alt</alt>
+                    <bytes>base64==</bytes>
+                    <image_type>
+                        <Png/>
+                    </image_type>
+                </Image>
+                <Hyperlink>
+                    <url>http://example.com</url>
+                    <title>Example</title>
+                    <alt>Example alt</alt>
+                    <size>12</size>
+                </Hyperlink>
+            </elements>
+        </Paragraph>
+        <List>
+            <elements>
+                <ListItem>
                     <elements>
-                        <ListItem>
-                            <elements>
-                                <Text>
-                                    <text>Item 2.1</text>
-                                    <size>12</size>
-                                </Text>
-                            </elements>
-                        </ListItem>
-                        <ListItem>
-                            <elements>
-                                <Text>
-                                    <text>Item 2.2</text>
-                                    <size>12</size>
-                                </Text>
-                            </elements>
-                        </ListItem>
+                        <Text>
+                            <text>Item 1</text>
+                            <size>12</size>
+                        </Text>
                     </elements>
-                    <numbered>false</numbered>
-                </List>
-            </ListItem>
-        </elements>
-        <numbered>true</numbered>
-    </List>
-    <Table>
-        <headers>
-            <TableHeader>
-                <element>
-                    <Text>
-                        <text>Name</text>
-                        <size>12</size>
-                    </Text>
-                    <width>100</width>
-                </element>
-            </TableHeader>
-            <TableHeader>
-                <element>
-                    <Text>
-                        <text>Salary</text>
-                        <size>12</size>
-                    </Text>
-                    <width>50</width>
-                </element>
-            </TableHeader>
-        </headers>
-        <rows>
-            <TableRow>
-                <cells>
-                    <TableCell>
-                        <element>
-                            <Text>
-                                <text>John Doe</text>
-                                <size>12</size>
-                            </Text>
-                        </element>
-                    </TableCell>
-                    <TableCell>
-                        <element>
-                            <Text>
-                                <text>2000$</text>
-                                <size>12</size>
-                            </Text>
-                        </element>
-                    </TableCell>
-                </cells>
-            </TableRow>
-            <TableRow>
-                <cells>
-                    <TableCell>
-                        <element>
-                            <Text>
-                                <text>Marry Doe</text>
-                                <size>12</size>
-                            </Text>
-                        </element>
-                    </TableCell>
-                    <TableCell>
-                        <element>
-                            <Text>
-                                <text>1000$</text>
-                                <size>12</size>
-                            </Text>
-                        </element>
-                    </TableCell>
-                </cells>
-            </TableRow>
-        </rows>
-    </Table>
+                </ListItem>
+                <ListItem>
+                    <elements>
+                        <Text>
+                            <text>Item 2</text>
+                            <size>12</size>
+                        </Text>
+                    </elements>
+                </ListItem>
+                <ListItem>
+                    <List>
+                        <elements>
+                            <ListItem>
+                                <elements>
+                                    <Text>
+                                        <text>Item 2.1</text>
+                                        <size>12</size>
+                                    </Text>
+                                </elements>
+                            </ListItem>
+                            <ListItem>
+                                <elements>
+                                    <Text>
+                                        <text>Item 2.2</text>
+                                        <size>12</size>
+                                    </Text>
+                                </elements>
+                            </ListItem>
+                        </elements>
+                        <numbered>false</numbered>
+                    </List>
+                </ListItem>
+            </elements>
+            <numbered>true</numbered>
+        </List>
+        <Table>
+            <headers>
+                <TableHeader>
+                    <element>
+                        <Text>
+                            <text>Name</text>
+                            <size>12</size>
+                        </Text>
+                        <width>100</width>
+                    </element>
+                </TableHeader>
+                <TableHeader>
+                    <element>
+                        <Text>
+                            <text>Salary</text>
+                            <size>12</size>
+                        </Text>
+                        <width>50</width>
+                    </element>
+                </TableHeader>
+            </headers>
+            <rows>
+                <TableRow>
+                    <cells>
+                        <TableCell>
+                            <element>
+                                <Text>
+                                    <text>John Doe</text>
+                                    <size>12</size>
+                                </Text>
+                            </element>
+                        </TableCell>
+                        <TableCell>
+                            <element>
+                                <Text>
+                                    <text>2000$</text>
+                                    <size>12</size>
+                                </Text>
+                            </element>
+                        </TableCell>
+                    </cells>
+                </TableRow>
+                <TableRow>
+                    <cells>
+                        <TableCell>
+                            <element>
+                                <Text>
+                                    <text>Marry Doe</text>
+                                    <size>12</size>
+                                </Text>
+                            </element>
+                        </TableCell>
+                        <TableCell>
+                            <element>
+                                <Text>
+                                    <text>1000$</text>
+                                    <size>12</size>
+                                </Text>
+                            </element>
+                        </TableCell>
+                    </cells>
+                </TableRow>
+            </rows>
+        </Table>
+    </elements>
     <page_width>210</page_width>
     <page_height>297</page_height>
     <left_page_indent>10</left_page_indent>
