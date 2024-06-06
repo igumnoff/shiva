@@ -1,0 +1,84 @@
+Document {
+    elements: [
+        Text {
+            text: "Gambardella, Matthew",
+            size: 12,
+        },
+        Text {
+            text: "XML Developer's Guide",
+            size: 12,
+        },
+        Text {
+            text: "Computer",
+            size: 12,
+        },
+        Text {
+            text: "44.95",
+            size: 12,
+        },
+        Text {
+            text: "2000-10-01",
+            size: 12,
+        },
+        Text {
+            text: "An in-depth look at creating applications \r\n      with XML.",
+            size: 12,
+        },
+        Text {
+            text: "Ralls, Kim",
+            size: 12,
+        },
+        Text {
+            text: "Midnight Rain",
+            size: 12,
+        },
+        Text {
+            text: "Fantasy",
+            size: 12,
+        },
+        Text {
+            text: "5.95",
+            size: 12,
+        },
+        Text {
+            text: "2000-12-16",
+            size: 12,
+        },
+        Text {
+            text: "A former architect battles corporate zombies, \r\n      an evil sorceress, and her own childhood to become queen \r\n      of the world.",
+            size: 12,
+        },
+        Text {
+            text: "Corets, Eva",
+            size: 12,
+        },
+        Text {
+            text: "Maeve Ascendant",
+            size: 12,
+        },
+        Text {
+            text: "Fantasy",
+            size: 12,
+        },
+        Text {
+            text: "5.95",
+            size: 12,
+        },
+        Text {
+            text: "2000-11-17",
+            size: 12,
+        },
+        Text {
+            text: "After the collapse of a nanotechnology \r\n      society in England, the young survivors lay the \r\n      foundation for a new society.",
+            size: 12,
+        },
+    ],
+    page_width: 210.0,
+    page_height: 297.0,
+    left_page_indent: 10.0,
+    right_page_indent: 10.0,
+    top_page_indent: 10.0,
+    bottom_page_indent: 10.0,
+    page_header: [],
+    page_footer: [],
+}

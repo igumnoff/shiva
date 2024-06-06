@@ -18,6 +18,7 @@ impl TransformerTrait for Transformer {
         let xml_data = from_utf8(document)?;
         let mut reader = Reader::from_str(xml_data);
         reader.trim_text(true);
+        println!("{:?}", reader);
 
         let mut buf = Vec::new();
         let mut elements = Vec::new();
@@ -36,7 +37,6 @@ impl TransformerTrait for Transformer {
                 Event::Start(ref e) => {
                     let tag_name = e.name();
                     let QName(name) = tag_name;
-
                     match name {
                         b"paragraph" => {
                             stack.push(Element::Paragraph {
@@ -298,11 +298,13 @@ impl TransformerTrait for Transformer {
 }
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::fs::File;
+    use std::io::Read;
     use crate::core::{
-        Document, Element, ImageType, ListItem, TableCell, TableHeader, TableRow, TransformerTrait,
+        Document, Element, ImageType, ListItem, TableCell, TableHeader, TableRow
     };
     use bytes::Bytes;
+    use crate::xml::*;
 
     #[test]
     fn test_serialize_parse_round_trip() {
@@ -403,10 +405,28 @@ mod tests {
         };
 
         let (bytes, _images) = Transformer::generate(&document).unwrap();
-        println!("{:}", std::str::from_utf8(&bytes).unwrap());
+        println!("{:#}", std::str::from_utf8(&bytes).unwrap());
 
         let parsed_document = Transformer::parse(&bytes, &_images).unwrap();
 
         assert_eq!(elements, parsed_document.elements);
+    }
+
+    #[test]
+    fn test_parse() -> anyhow::Result<()> {
+        let path = "test/data/document_xml.xml";
+        let mut file = File::open(path).expect("Cannot open xml file");
+
+        let mut buffer = Vec::new();
+        file.read_to_end(&mut buffer)?;
+        let bytes = Bytes::from(buffer);
+        let images = HashMap::new();
+
+        println!("{:#?}", bytes);
+        let parsed = Transformer::parse(&bytes, &images)?;
+        println!("{:#?}", parsed);
+
+        Ok(())
+
     }
 }

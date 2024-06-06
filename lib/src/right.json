@@ -1,0 +1,12 @@
+[
+    Text { text: "Hello, world!", size: 12}, 
+    Text { text: "123", size: 12}, Header { level: 1, text: ""}, 
+    Paragraph { elements: [Text { text: "Hello, world!", size: 12}]}, 
+    Text { text: "Syntax", size: 12 },  
+    Text { text: "Description", size: 12 },  
+    Text { text: "Header", size: 12 },  
+    Text { text: "Title", size: 12 },  
+    Text { text: "Paragraph", size: 12 },  
+    Text { text: "Text", size: 12 }, 
+    Text { text: "List item 1", size: 12}
+]
