@@ -94,6 +94,11 @@ mod tests {
     use reqwest::{multipart};
     use std::fs;
     use tokio::fs::File;
+    use anyhow::anyhow;
+    use anyhow::Error;
+    use std::io::Cursor;
+    use reqwest::Body;
+    use std::io::Write;
 
     #[tokio::test]
     async fn test_server() -> Result<()> {
