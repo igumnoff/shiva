@@ -1,0 +1,173 @@
+
+16.29.24 <number:boolean-style>
+
+ok number:country 19.342,
+ok number:language 19.351,
+ignore number:rfc-language-tag 19.360,
+ok number:script19.361,
+ok number:title 19.364,
+ok number:transliteration-country 19.365,
+ok number:transliteration-format 19.366,
+ok number:transliteration-language 19.367,
+ok number:transliteration-style 19.368,
+ok style:display-name 19.476,
+ok style:name 19.502
+ok style:volatile 19.521.
+
+Elements
+
+ok <number:boolean> 16.29.25,
+ok <number:text> 16.29.27,
+
+
+16.29.2 <number:number-style>
+
+ok number:country 19.342,
+ok number:language 19.351,
+ignore number:rfc-language-tag 19.360,
+ok number:script19.361,
+ok number:title 19.364,
+ok number:transliteration-country 19.365,
+ok number:transliteration-format 19.366,
+ok number:transliteration-language 19.367,
+ok number:transliteration-style 19.368,
+ok style:display-name 19.476,
+ok style:name 19.502
+ok style:volatile 19.521.
+
+Elements
+
+<number:fillcharacter> 16.29.5,
+<number:fraction> 16.29.7,
+<number:number> 16.29.3,
+<number:scientific-number> 16.29.6,
+<number:text> 16.29.27,
+
+
+16.29.10 <number:percentage-style>
+
+ok number:country 19.342,
+ok number:language 19.351,
+ignore number:rfc-language-tag 19.360,
+ok number:script19.361,
+ok number:title 19.364,
+ok number:transliteration-country 19.365,
+ok number:transliteration-format 19.366,
+ok number:transliteration-language 19.367,
+ok number:transliteration-style 19.368,
+ok style:display-name 19.476,
+ok style:name 19.502
+ok style:volatile 19.521.
+
+Elements
+
+<number:fill-character> 16.29.5,
+<number:number> 16.29.3,
+<number:text> 16.29.27,
+
+
+16.29.8 <number:currency-style>
+
+extra number:automatic-order 19.340,
+ok number:country 19.342,
+ok number:language 19.351,
+ignore number:rfc-language-tag 19.360,
+ok number:script19.361,
+ok number:title 19.364,
+ok number:transliteration-country 19.365,
+ok number:transliteration-format 19.366,
+ok number:transliteration-language 19.367,
+ok number:transliteration-style 19.368,
+ok style:display-name 19.476,
+ok style:name 19.502
+ok style:volatile 19.521.
+
+
+Elements
+<number:currency-symbol> 16.29.9,
+<number:fill-character> 16.29.5,
+<number:number> 16.29.3,
+<number:text> 16.29.27,
+
+
+16.29.26 <number:text-style>
+
+ok number:country 19.342,
+ok number:language 19.351,
+ignore number:rfc-language-tag 19.360,
+ok number:script19.361,
+ok number:title 19.364,
+ok number:transliteration-country 19.365,
+ok number:transliteration-format 19.366,
+ok number:transliteration-language 19.367,
+ok number:transliteration-style 19.368,
+ok style:display-name 19.476,
+ok style:name 19.502
+ok style:volatile 19.521.
+
+Elements
+
+<number:fillcharacter> 16.29.5,
+<number:text> 16.29.27,
+<number:text-content> 16.29.28,
+
+
+16.29.11 <number:date-style>
+
+extra number:automaticorder 19.340,
+extra number:format-source 19.348,
+ok number:country 19.342,
+ok number:language 19.351,
+ignore number:rfc-language-tag 19.360,
+ok number:script19.361,
+ok number:title 19.364,
+ok number:transliteration-country 19.365,
+ok number:transliteration-format 19.366,
+ok number:transliteration-language 19.367,
+ok number:transliteration-style 19.368,
+ok style:display-name 19.476,
+ok style:name 19.502
+ok style:volatile 19.521.
+
+Elements
+
+<number:am-pm> 16.29.23,
+<number:day> 16.29.12,
+<number:day-of-week> 16.29.16,
+<number:era> 16.29.15,
+<number:fill-character> 16.29.5,
+<number:hours> 16.29.20,
+<number:minutes> 16.29.21,
+<number:month> 16.29.13,
+<number:quarter> 16.29.18,
+<number:seconds> 16.29.22,
+<number:text> 16.29.27,
+<number:week-of-year> 16.29.17,
+<number:year> 16.29.14,
+
+
+16.29.19 <number:time-style>
+
+extra number:truncate-on-overflow 19.369,
+extra number:format-source 19.348,
+ok number:country 19.342,
+ok number:language 19.351,
+ignore number:rfc-language-tag 19.360,
+ok number:script19.361,
+ok number:title 19.364,
+ok number:transliteration-country 19.365,
+ok number:transliteration-format 19.366,
+ok number:transliteration-language 19.367,
+ok number:transliteration-style 19.368,
+ok style:display-name 19.476,
+ok style:name 19.502
+ok style:volatile 19.521.
+
+Elements
+
+<number:am-pm> 16.29.23,
+<number:fill-character> 16.29.5,
+<number:hours> 16.29.20,
+<number:minutes> 16.29.21,
+<number:seconds> 16.29.22,
+<number:text> 16.29.27,
