@@ -1,6 +1,6 @@
 [package]
-name = "spreadsheet-ods"
-version = "0.22.2"
+name = "shiva-spreadsheet-ods"
+version = "0.0.2"
 authors = ["thomasscharler <thscharler@gmail.com>"]
 edition = "2021"
 description = "Read and write ODS files"
@@ -10,6 +10,10 @@ readme = "README.md"
 keywords = ["ODS", "spreadsheet", "OpenOffice", "LibreOffice"]
 categories = ["parser-implementations"]
 exclude = [".idea/*", ".gitignore"]
+
+[lib]
+name="spreadsheet_ods"
+
 
 [lints.rust]
 absolute_paths_not_starting_with_crate = "warn"
@@ -62,8 +66,7 @@ dump_unused = []
 [dependencies]
 rust_decimal = "1.34"
 rust_decimal_macros = "1.34"
-#color-rs = "0.8"
-color-rs = {path = "../color-rs"}
+shiva-color-rs = "0.0.1"
 string_cache = "0.8"
 time = "0.3"
 nom = "7.1"

@@ -1,6 +1,6 @@
 [package]
 name = "shiva"
-version = "0.4.1"
+version = "0.5.0"
 edition = "2021"
 
 authors = ["Evgeny Igumnov <igumnovnsk@gmail.com>"]
@@ -57,8 +57,7 @@ docx-rs =  { version = "0.4.17", optional = true }
 pulldown-cmark = { version = "0.11.0", optional = true }
 calamine = { version = "0.24.0", optional = true }
 rust_xlsxwriter = { version = "0.64.2", optional = true }
-#spreadsheet-ods = { version = "0.22.1", optional = true }
-spreadsheet-ods = { path = "../third_party/spreadsheet-ods", optional = true }
+shiva-spreadsheet-ods = { version = "0.0.2", optional = true }
 
 [dev-dependencies]
 env_logger = "0.10.0"
@@ -77,4 +76,4 @@ rtf = ["rtf-parser"]
 docx = ["docx-rs"]
 xlsx = ["calamine", "rust_xlsxwriter"]
 xls = ["calamine"]
-ods = ["calamine", "spreadsheet-ods"]
+ods = ["calamine", "shiva-spreadsheet-ods"]

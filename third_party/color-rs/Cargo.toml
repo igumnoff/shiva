@@ -1,6 +1,6 @@
 [package]
-name = "color-rs"
-version = "0.8.0"
+name = "shiva-color-rs"
+version = "0.0.1"
 authors = ["Arturo Castro", "Brendan Zabarauskas <bjzaba@yahoo.com.au>", "Luqman Aden"]
 description = "A library that provides types and conversions for working with various color formats. Forked from the unmuntained crate color"
 license-file="LICENSE"

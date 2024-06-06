@@ -22,7 +22,9 @@
 | CSV           | +     | +        |
 | RTF           | +     | -        |
 | DOCX          | +     | -        |
-| XLS           | -     | -        |
+| XLS           | +     | -        |
+| XLSX          | +     | +        |
+| ODS           | +     | +        |
 | Typst         | -     | -        |
 
 
@@ -39,6 +41,9 @@
 | JSON          | +      | +         | +    | +     | -     | +         | +          | +          |
 | XML           | +      | +         | -    | -     | -     | +         | +          | +          |
 | CSV           | -      | -         | -    | +     | -     | -         | -          | -          |
+| XLS           | -      | -         | -    | +     | -     | -         | -          | -          |
+| XLSX          | -      | -         | -    | +     | -     | -         | -          | -          |
+| ODS           | -      | -         | -    | +     | -     | -         | -          | -          |
 
 ## Generate document features
 
@@ -51,13 +56,16 @@
 | JSON          | +      | +         | +    | +     | -     | +         | +          | +          |
 | XML           | +      | +         | -    | -     | -     | +         | +          | +          |
 | CSV           | -      | -         | -    | +     | -     | -         | -          | -          |
+| XLSX          | -      | -         | -    | +     | -     | -         | -          | -          |
+| ODS           | -      | -         | -    | +     | -     | -         | -          | -          |
 
 ## Usage Shiva library
 
 Cargo.toml
 ```toml
 [dependencies]
-shiva = {  version = "0.4.0", features = ["html", "markdown", "text", "pdf", "json", "csv", "rtf", "docx", "xml"] }
+shiva = {  version = "0.5.0", features = ["html", "markdown", "text", "pdf", "json", 
+    "csv", "rtf", "docx", "xml", "xls", "xlsx", "ods"] }
 ```
 
 main.rs
@@ -97,7 +105,7 @@ I would love to see contributions from the community. If you experience bugs, fe
 1. Read "[Contributor License Agreement (CLA)](https://github.com/igumnoff/shiva/blob/main/CLA)"
 2. Contact with me via telegram @ievkz or discord @igumnovnsk
 3. Confirm e-mail invitation in repository
-4. Do "git clone"
+4. Do "git clone" (You don't need to fork!)
 5. Create branch with your assigned issue
 6. Create pull request to main branch
 
