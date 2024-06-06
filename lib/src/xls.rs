@@ -80,6 +80,7 @@ mod tests {
     use std::collections::HashMap;
     use anyhow::Ok;
     use bytes::Bytes;
+    use crate::text;
     use crate::xls::*;
 
     #[test]
@@ -94,7 +95,13 @@ mod tests {
 
         let parsed = Transformer::parse(&bytes, &images)?;
 
-        println!("Parsed document: {:?}", parsed);
+        println!("Parsed document: {:#?}", parsed);
+
+        let generated_result = text::Transformer::generate(&parsed);
+        let generated_bytes = generated_result?;
+        let generated_text = std::str::from_utf8(&generated_bytes.0)?;
+        println!("{}", generated_text);
+
 
         Ok(())
     }
