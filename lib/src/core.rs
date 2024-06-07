@@ -1,7 +1,6 @@
 use bytes::Bytes;
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Debug;
 use thiserror::Error;
@@ -60,7 +59,8 @@ impl Document {
 pub trait TransformerTrait {
     fn parse<F>(document: &Bytes,  image_loader: F) -> anyhow::Result<Document>
         where F: Fn(&str) -> anyhow::Result<Bytes>;
-    fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)>;
+    fn generate<F>(document: &Document,  image_saver: F) -> anyhow::Result<Bytes>
+        where F: Fn(&Bytes, &str) -> anyhow::Result<()>;
 }
 
 #[derive(Error, Debug)]
@@ -151,9 +151,13 @@ pub fn disk_image_loader(path: &str) -> impl Fn(&str) -> anyhow::Result<Bytes>  
     image_loader
 }
 
-pub fn stub_image_loader(_path: &str) -> impl Fn(&str) -> anyhow::Result<Bytes>  {
-    let image_loader = move |_image: &str| -> anyhow::Result<Bytes> {
-        Ok(Bytes::from(""))
+
+pub fn disk_image_saver(path: &str) -> impl Fn(&Bytes, &str) -> anyhow::Result<()>  {
+    let path = path.to_string();
+    let image_saver = move |bytes: &Bytes, image: &str| -> anyhow::Result<()> {
+        let image_path = format!("{}/{}", path, image);
+        std::fs::write(image_path, bytes)?;
+        Ok(())
     };
-    image_loader
+    image_saver
 }
