@@ -58,7 +58,8 @@ impl Document {
 }
 
 pub trait TransformerTrait {
-    fn parse(document: &Bytes, images: &HashMap<String, Bytes>) -> anyhow::Result<Document>;
+    fn parse<F>(document: &Bytes,  image_loader: F) -> anyhow::Result<Document>
+        where F: Fn(&str) -> anyhow::Result<Bytes>;
     fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)>;
 }
 
@@ -137,4 +138,22 @@ pub struct TableCell {
 pub enum ImageType {
     Png,
     Jpeg,
+}
+
+
+pub fn disk_image_loader(path: &str) -> impl Fn(&str) -> anyhow::Result<Bytes>  {
+    let path = path.to_string();
+    let image_loader = move |image: &str| -> anyhow::Result<Bytes> {
+        let image_path = format!("{}/{}", path, image);
+        let bytes = std::fs::read(image_path)?;
+        Ok(Bytes::from(bytes))
+    };
+    image_loader
+}
+
+pub fn stub_image_loader(_path: &str) -> impl Fn(&str) -> anyhow::Result<Bytes>  {
+    let image_loader = move |_image: &str| -> anyhow::Result<Bytes> {
+        Ok(Bytes::from(""))
+    };
+    image_loader
 }
