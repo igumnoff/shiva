@@ -8,12 +8,17 @@ use scraper::{Html, Node};
 
 pub struct Transformer;
 impl TransformerTrait for Transformer {
-    fn parse(document: &Bytes, _images: &HashMap<String, Bytes>) -> anyhow::Result<Document> {
+    //     fn parse<F>(document: &Bytes,  image_loader: F) -> anyhow::Result<Document>
+    //         where F: Fn(&str) -> anyhow::Result<Bytes>;
+    fn parse<F>(document: &Bytes, image_loader: F) -> anyhow::Result<Document>
+        where F: Fn(&str) -> anyhow::Result<Bytes>
+    {
         let html = String::from_utf8(document.to_vec())?;
         let document = Html::parse_document(&html);
         let mut elements: Vec<Element> = Vec::new();
 
-        parse_html(document.root_element().children(), &mut elements)?;
+        let image_loader = ImageLoader { function: image_loader };
+        parse_html(document.root_element().children(), &mut elements, &image_loader)?;
         Ok(Document::new(elements))
     }
 
@@ -124,7 +129,13 @@ impl TransformerTrait for Transformer {
     }
 }
 
-fn parse_html(children: Children<Node>, elements: &mut Vec<Element>) -> anyhow::Result<()> {
+struct ImageLoader<F> where F: Fn(&str) -> anyhow::Result<Bytes> {
+    pub function: F,
+}
+
+fn parse_html<F>(children: Children<Node>, elements: &mut Vec<Element>, image_loader: &ImageLoader<F>) -> anyhow::Result<()>
+where F: Fn(&str) -> anyhow::Result<Bytes>
+{
     for child in children {
         match child.value() {
             Node::Element(ref element) => match element.name() {
@@ -149,6 +160,7 @@ fn parse_html(children: Children<Node>, elements: &mut Vec<Element>) -> anyhow::
                                                             parse_html(
                                                                 tr_child.children(),
                                                                 &mut header_elements,
+                                                                image_loader,
                                                             )?;
                                                             headers.extend(
                                                                 header_elements.into_iter().map(
@@ -165,6 +177,7 @@ fn parse_html(children: Children<Node>, elements: &mut Vec<Element>) -> anyhow::
                                                             parse_html(
                                                                 tr_child.children(),
                                                                 &mut cell_elements,
+                                                                image_loader,
                                                             )?;
                                                             cells.extend(
                                                                 cell_elements.into_iter().map(
@@ -194,7 +207,7 @@ fn parse_html(children: Children<Node>, elements: &mut Vec<Element>) -> anyhow::
                 }
                 "p" => {
                     let mut paragraph_elements: Vec<Element> = Vec::new();
-                    parse_html(child.children(), &mut paragraph_elements)?;
+                    parse_html(child.children(), &mut paragraph_elements, image_loader)?;
                     elements.push(Paragraph {
                         elements: paragraph_elements,
                     });
@@ -214,9 +227,9 @@ fn parse_html(children: Children<Node>, elements: &mut Vec<Element>) -> anyhow::
                     let src = element.attr("src").unwrap_or_default();
                     let title = element.attr("title").unwrap_or_default();
                     let alt = element.attr("alt").unwrap_or_default();
-                    let image_bytes = std::fs::read(src).unwrap_or_default();
+                    let image_bytes = (image_loader.function)(src)?;
                     elements.push(Image {
-                        bytes: Bytes::from(image_bytes),
+                        bytes: image_bytes,
                         title: title.to_string(),
                         alt: alt.to_string(),
                         image_type: ImageType::Png,
@@ -229,7 +242,7 @@ fn parse_html(children: Children<Node>, elements: &mut Vec<Element>) -> anyhow::
                         if let Node::Element(ref li_element) = list_child.value() {
                             if li_element.name() == "li" {
                                 let mut item_elements: Vec<Element> = Vec::new();
-                                parse_html(list_child.children(), &mut item_elements)?;
+                                parse_html(list_child.children(), &mut item_elements, image_loader)?;
                                 list_items.extend(
                                     item_elements
                                         .into_iter()
@@ -264,7 +277,7 @@ fn parse_html(children: Children<Node>, elements: &mut Vec<Element>) -> anyhow::
                     });
                 }
                 _ => {
-                    parse_html(child.children(), elements)?;
+                    parse_html(child.children(), elements, image_loader)?;
                 }
             },
             Node::Text(ref text) => {
@@ -366,3 +379,24 @@ fn retrieve_deep_text(node: NodeRef<Node>, tag_name: &str) -> String {
     text
 }
 
+
+#[cfg(test)]
+mod tests {
+    use crate::core::*;
+    use crate::html::*;
+
+    #[test]
+    fn test() -> anyhow::Result<()> {
+        let document_html = r#"
+        <html>
+        <body>
+        <p>123</p>
+        <img src="small.png">
+        </body>
+        </html>
+        "#;
+        let document = Transformer::parse(&Bytes::from(document_html), disk_image_loader("test/data"))?;
+        println!("{:#?}", document);
+        Ok(())
+    }
+}
