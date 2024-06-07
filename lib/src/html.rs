@@ -1,15 +1,12 @@
 use crate::core::*;
 use bytes::Bytes;
 use ego_tree::{iter::Children, NodeRef};
-use std::collections::HashMap;
 
 use crate::core::Element::{Header, Hyperlink, Image, List, Paragraph, Table, Text};
 use scraper::{Html, Node};
 
 pub struct Transformer;
 impl TransformerTrait for Transformer {
-    //     fn parse<F>(document: &Bytes,  image_loader: F) -> anyhow::Result<Document>
-    //         where F: Fn(&str) -> anyhow::Result<Bytes>;
     fn parse<F>(document: &Bytes, image_loader: F) -> anyhow::Result<Document>
         where F: Fn(&str) -> anyhow::Result<Bytes>
     {
@@ -22,10 +19,12 @@ impl TransformerTrait for Transformer {
         Ok(Document::new(elements))
     }
 
-    fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)> {
+    fn generate<F>(document: &Document,  image_saver: F) -> anyhow::Result<Bytes>
+        where F: Fn(&Bytes, &str) -> anyhow::Result<()>
+    {
         let mut html = String::new();
-        let mut images: HashMap<String, Bytes> = HashMap::new();
         let mut image_num: i32 = 0;
+        let image_saver = ImageSaver { function: image_saver };
 
         let mut header_text = String::new();
         document.page_header.iter().for_each(|el| match el {
@@ -67,8 +66,8 @@ impl TransformerTrait for Transformer {
                     for child in elements {
                         html.push_str(&generate_html_for_element(
                             child,
-                            &mut images,
                             &mut image_num,
+                            &image_saver,
                         )?);
                     }
 
@@ -78,7 +77,7 @@ impl TransformerTrait for Transformer {
                     elements: _,
                     numbered: _,
                 } => {
-                    let list = generate_html_for_element(element, &mut images, &mut image_num)?;
+                    let list = generate_html_for_element(element, &mut image_num, &image_saver)?;
 
                     html.push_str(&list);
                 }
@@ -91,8 +90,8 @@ impl TransformerTrait for Transformer {
                         for header in headers {
                             let header_html = generate_html_for_element(
                                 &header.element,
-                                &mut images,
                                 &mut image_num,
+                                &image_saver,
                             )?;
 
                             table_html.push_str(&format!("<th>{}</th>\n", header_html));
@@ -106,8 +105,8 @@ impl TransformerTrait for Transformer {
                         for cell in &row.cells {
                             let cell_html = generate_html_for_element(
                                 &cell.element,
-                                &mut images,
                                 &mut image_num,
+                                &image_saver,
                             )?;
 
                             table_html.push_str(&format!("<td>{}</td>\n", cell_html));
@@ -125,11 +124,15 @@ impl TransformerTrait for Transformer {
 
         html.push_str("</body>\n</html>");
 
-        Ok((Bytes::from(html), HashMap::new()))
+        Ok(Bytes::from(html))
     }
 }
 
 struct ImageLoader<F> where F: Fn(&str) -> anyhow::Result<Bytes> {
+    pub function: F,
+}
+
+struct ImageSaver<F> where F: Fn(&Bytes, &str) -> anyhow::Result<()> {
     pub function: F,
 }
 
@@ -297,8 +300,8 @@ where F: Fn(&str) -> anyhow::Result<Bytes>
 
 fn generate_html_for_element(
     element: &Element,
-    images: &mut HashMap<String, Bytes>,
     image_num: &mut i32,
+    image_saver: &ImageSaver<impl Fn(&Bytes, &str) -> anyhow::Result<()>>,
 ) -> anyhow::Result<String> {
     match element {
         Text { text, size: _ } => Ok(text.to_string()),
@@ -306,7 +309,7 @@ fn generate_html_for_element(
             let mut paragraph_html = String::from("<p>");
             for child in elements {
                 paragraph_html
-                    .push_str(generate_html_for_element(child, images, image_num)?.as_str());
+                    .push_str(generate_html_for_element(child, image_num, image_saver)?.as_str());
             }
             paragraph_html.push_str("</p>");
             Ok(paragraph_html)
@@ -321,7 +324,7 @@ fn generate_html_for_element(
             let mut list_html = format!("<{}>", tag);
             list_html.push('\n');
             for item in elements {
-                let item_html = generate_html_for_element(&item.element, images, image_num)?;
+                let item_html = generate_html_for_element(&item.element, image_num, image_saver)?;
                 if let List { .. } = item.element {
                     list_html.push_str(&item_html.to_string());
                 } else {
@@ -340,7 +343,8 @@ fn generate_html_for_element(
             image_type: _,
         } => {
             let image_path = format!("image{}.png", image_num);
-            images.insert(image_path.to_string(), bytes.clone());
+            // images.insert(image_path.to_string(), bytes.clone());
+            (image_saver.function)(bytes, &image_path)?;
             *image_num += 1;
             Ok(format!(
                 "<img src=\"{}\" alt=\"{}\" title=\"{}\" />",
@@ -390,13 +394,14 @@ mod tests {
         let document_html = r#"
         <html>
         <body>
-        <p>123</p>
-        <img src="small.png">
+        <p>123<img src="small.png"></p>
         </body>
         </html>
         "#;
         let document = Transformer::parse(&Bytes::from(document_html), disk_image_loader("test/data"))?;
         println!("{:#?}", document);
+        let result = Transformer::generate(&document, disk_image_saver("test/data"))?;
+        println!("{}", String::from_utf8(result.to_vec())?);
         Ok(())
     }
 }
