@@ -390,7 +390,7 @@ mod tests {
     use crate::html::*;
 
     #[test]
-    fn test() -> anyhow::Result<()> {
+    fn test_image_loader_saver() -> anyhow::Result<()> {
         let document_html = r#"
         <html>
         <body>
