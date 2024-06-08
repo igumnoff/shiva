@@ -1,6 +1,6 @@
 [package]
 name = "server"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 
 [dependencies]
@@ -19,8 +19,8 @@ env_logger = "0.11.3"
 log = "0.4.21"
 zip = "0.6"
 tower-http = { version = "0.5.2", features = ["limit", "tracing"] }
+anyhow = "1.0.82"
 
 [dev-dependencies]
 httpc-test = "0.1.9"
-anyhow = "1.0.82"
 printpdf = "0.7.0"
