@@ -1,7 +1,6 @@
 use bytes::Bytes;
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
-use std::fmt;
 use std::fmt::Debug;
 use thiserror::Error;
 
@@ -19,26 +18,6 @@ pub struct Document {
     pub page_footer: Vec<Element>,
 }
 
-#[derive(Error, Debug, Deserialize)]
-pub enum DocumentType {
-    Html,
-    Markdown,
-    Text,
-    Pdf,
-    Json,
-}
-
-impl fmt::Display for DocumentType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            DocumentType::Html => write!(f, "HTML"),
-            DocumentType::Markdown => write!(f, "MarkDown"),
-            DocumentType::Text => write!(f, "Text"),
-            DocumentType::Pdf => write!(f, "PDF"),
-            DocumentType::Json => write!(f, "JSON"),
-        }
-    }
-}
 
 impl Document {
     pub fn new(elements: Vec<Element>) -> Document {
