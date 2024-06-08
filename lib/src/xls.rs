@@ -2,13 +2,12 @@ use crate::core::Element::{ Table, Text};
 use crate::core::*;
 use bytes::Bytes;
 use calamine::{ open_workbook_from_rs, Reader, Xls};
-use std::collections::HashMap;
 use std::io::Cursor;
 
 pub struct Transformer;
 
 impl TransformerTrait for Transformer {
-    fn parse(document: &Bytes, _images: &HashMap<String, Bytes>) -> anyhow::Result<Document>
+    fn parse(document: &Bytes) -> anyhow::Result<Document>
         where Self: Sized
     {
         let cursor = Cursor::new(document.clone());
@@ -66,7 +65,7 @@ impl TransformerTrait for Transformer {
         Ok(Document::new(data))
     }
 
-    fn generate(_document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)>
+    fn generate(_document: &Document) -> anyhow::Result<Bytes>
         where Self: Sized
     {
         todo!()
@@ -77,7 +76,6 @@ impl TransformerTrait for Transformer {
 mod tests {
     use std::fs::File;
     use std::io::{ Read };
-    use std::collections::HashMap;
     use anyhow::Ok;
     use bytes::Bytes;
     use crate::text;
@@ -91,15 +89,14 @@ mod tests {
         file.read_to_end(&mut buffer)?;
 
         let bytes = Bytes::from(buffer);
-        let images = HashMap::new();
 
-        let parsed = Transformer::parse(&bytes, &images)?;
+        let parsed = Transformer::parse(&bytes)?;
 
         println!("Parsed document: {:#?}", parsed);
 
         let generated_result = text::Transformer::generate(&parsed);
         let generated_bytes = generated_result?;
-        let generated_text = std::str::from_utf8(&generated_bytes.0)?;
+        let generated_text = std::str::from_utf8(&generated_bytes)?;
         println!("{}", generated_text);
 
 

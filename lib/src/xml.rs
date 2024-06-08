@@ -2,18 +2,17 @@ use crate::core::{Document, TransformerTrait};
 use anyhow::Ok;
 use bytes::Bytes;
 use serde_xml_rs::{from_str, to_string};
-use std::collections::HashMap;
 pub struct Transformer;
 
 impl TransformerTrait for Transformer {
-    fn parse(document: &Bytes, _images: &HashMap<String, Bytes>) -> anyhow::Result<Document> {
+    fn parse(document: &Bytes) -> anyhow::Result<Document> {
         let doc_string = String::from_utf8(document.to_vec())?;
         let doc: Document = from_str(&doc_string)?;
         Ok(doc)
     }
-    fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)> {
+    fn generate(document: &Document) -> anyhow::Result<Bytes> {
         let result = to_string(document)?;
-        Ok((Bytes::from(result), HashMap::new()))
+        Ok(Bytes::from(result))
     }
 }
 
@@ -114,7 +113,7 @@ mod tests {
         println!("{:?}", generated_result);
         println!("==========================");
         let generated_bytes = generated_result?;
-        let generated_text = std::str::from_utf8(&generated_bytes.0)?;
+        let generated_text = std::str::from_utf8(&generated_bytes)?;
         println!("{}", generated_text);
         Ok(())
     }

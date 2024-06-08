@@ -2,7 +2,6 @@ use crate::core::Element::{ Table, Text};
 use crate::core::*;
 use bytes::Bytes;
 use calamine::{ open_workbook_from_rs, Reader, Ods };
-use std::collections::HashMap;
 use std::io::Cursor;
 use std::vec;
 use spreadsheet_ods::{Sheet, WorkBook, write_ods_buf};
@@ -11,7 +10,7 @@ use icu_locid::locale;
 pub struct Transformer;
 
 impl TransformerTrait for Transformer {
-    fn parse(document: &Bytes, _images: &HashMap<String, Bytes>) -> anyhow::Result<Document>
+    fn parse(document: &Bytes) -> anyhow::Result<Document>
         where Self: Sized
     {
         let cursor = Cursor::new(document.clone());
@@ -69,7 +68,7 @@ impl TransformerTrait for Transformer {
         Ok(Document::new(data))
     }
 
-    fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)>
+    fn generate(document: &Document) -> anyhow::Result<Bytes>
         where Self: Sized
     {
         let mut workbook = WorkBook::new(locale!("en_US"));
@@ -110,7 +109,7 @@ impl TransformerTrait for Transformer {
 
         let mut ods_data =  vec![];
         ods_data = write_ods_buf(&mut workbook, ods_data)?;
-        Ok((Bytes::from(ods_data), HashMap::new()))
+        Ok(Bytes::from(ods_data))
     }
 }
 
@@ -118,7 +117,6 @@ impl TransformerTrait for Transformer {
 mod tests {
     use std::fs::File;
     use std::io::{ Read };
-    use std::collections::HashMap;
     use anyhow::Ok;
     use bytes::Bytes;
     use crate::ods::*;
@@ -131,9 +129,8 @@ mod tests {
         file.read_to_end(&mut buffer)?;
 
         let bytes = Bytes::from(buffer);
-        let images = HashMap::new();
 
-        let parsed = Transformer::parse(&bytes, &images)?;
+        let parsed = Transformer::parse(&bytes)?;
 
         println!("Parsed document: {:?}", parsed);
 
@@ -148,16 +145,14 @@ mod tests {
         file.read_to_end(&mut buffer)?;
 
         let bytes = Bytes::from(buffer);
-        let images = HashMap::new();
-
-        let parsed = Transformer::parse(&bytes, &images)?;
+        let parsed = Transformer::parse(&bytes)?;
 
         let generated_data: Result<
-            (bytes::Bytes, std::collections::HashMap<std::string::String, bytes::Bytes>),
+            bytes::Bytes,
             anyhow::Error
         > = Transformer::generate(&parsed);
 
-        let bytes_to_write = generated_data.map(|(bytes, _)| bytes)?;
+        let bytes_to_write = generated_data?;
         std::fs::write("test/data/test_document.ods", bytes_to_write)?;
 
         println!("Excel file created successfully!");

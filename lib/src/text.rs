@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 pub struct Transformer;
 impl TransformerTrait for Transformer {
-    fn parse(document: &Bytes, _images: &HashMap<String, Bytes>) -> anyhow::Result<Document>
+    fn parse(document: &Bytes) -> anyhow::Result<Document>
     where
         Self: Sized,
     {
@@ -30,7 +30,7 @@ impl TransformerTrait for Transformer {
         Ok(Document::new(vec![new_paragraph]))
     }
 
-    fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)>
+    fn generate(document: &Document) -> anyhow::Result<Bytes>
     where
         Self: Sized,
     {
@@ -246,7 +246,7 @@ impl TransformerTrait for Transformer {
             )?;
         }
 
-        Ok((Bytes::from(markdown), HashMap::new()))
+        Ok(Bytes::from(markdown))
     }
 }
 
@@ -276,7 +276,7 @@ Second header
 | Row 2, Column 1 | Row 2, Column 2 |
 +-----------------+-----------------+"#;
         // println!("{:?}", document);
-        let parsed = Transformer::parse(&document.as_bytes().into(), &HashMap::new());
+        let parsed = Transformer::parse(&document.as_bytes().into());
         let document_string = std::str::from_utf8(document.as_bytes())?;
         println!("{}", document_string);
         assert!(parsed.is_ok());
@@ -302,7 +302,7 @@ Second header
         assert!(generated_result.is_ok());
         // println!("{:?}", generated_result.unwrap());
         let generated_bytes = generated_result?;
-        let generated_text = std::str::from_utf8(&generated_bytes.0)?;
+        let generated_text = std::str::from_utf8(&generated_bytes)?;
         println!("{}", generated_text);
         Ok(())
     }
