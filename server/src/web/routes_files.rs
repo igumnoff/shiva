@@ -8,7 +8,6 @@ use serde::Serialize;
 use shiva::core::{Document, TransformerTrait, TransformerWithImageLoaderSaverTrait};
 use std::collections::HashMap;
 use std::io::{Cursor, Read};
-use anyhow::bail;
 
 #[derive(Debug, Clone, Serialize)]
 struct UploadFileInfo {
@@ -139,12 +138,8 @@ async fn convert_file_zip(
 
 fn memory_image_loader(images: HashMap<String, Bytes>) -> impl Fn(&str) -> anyhow::Result<Bytes>  {
     let image_loader = move |image: &str| -> anyhow::Result<Bytes> {
-        let error = format!("No image: {}" , image);
-        let bytes_result= images.get(image).cloned();
-        match bytes_result {
-            None => {bail!(error)}
-            Some(bytes) => {Ok(Bytes::from(bytes))}
-        }
+        let bytes= images.get(image).cloned().ok_or_else(|| anyhow::anyhow!("No image: {}", image))?;
+        Ok(Bytes::from(bytes))
 
     };
     image_loader
