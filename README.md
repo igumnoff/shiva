@@ -126,7 +126,7 @@ pub trait TransformerTrait {
 ```
 
 
-### Optional shiva::core::TransformerWithImageLoaderSaverTrait (If images store outside of document for example: HTML, MarkDown)
+### Optional shiva::core::TransformerWithImageLoaderSaverTrait (If images store outside of document for example: HTML, Markdown)
 
 ```rust
 pub trait TransformerWithImageLoaderSaverTrait {
