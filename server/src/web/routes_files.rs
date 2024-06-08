@@ -5,9 +5,10 @@ use axum::extract::{Multipart, Path};
 use axum::response::{IntoResponse, Response};
 use futures_util::StreamExt;
 use serde::Serialize;
-use shiva::core::{Document, TransformerTrait};
+use shiva::core::{Document, TransformerTrait, TransformerWithImageLoaderSaverTrait};
 use std::collections::HashMap;
 use std::io::{Cursor, Read};
+use anyhow::bail;
 
 #[derive(Debug, Clone, Serialize)]
 struct UploadFileInfo {
@@ -19,7 +20,7 @@ struct UploadFileInfo {
 #[derive(Debug, Clone)]
 struct DownloadFile {
     file_name: String,
-    file_data: (Bytes, HashMap<String, Bytes>),
+    file_data: Bytes,
 }
 
 #[derive(Debug, Clone)]
@@ -39,7 +40,7 @@ impl IntoResponse for DownloadFile {
     fn into_response(self) -> Response {
         use axum::http::HeaderValue;
 
-        let mut res = self.file_data.0.into_response();
+        let mut res = self.file_data.into_response();
         res.headers_mut().insert(
             "Content-Disposition",
             HeaderValue::from_bytes(self.file_name.as_bytes()).unwrap(),
@@ -112,10 +113,10 @@ async fn convert_file_zip(
 
     let document = match file_extension.as_str() {
         "md" => Document::from(
-            shiva::markdown::Transformer::parse(&input_file_data_bytes, &images).unwrap(),
+            shiva::markdown::Transformer::parse_with_loader(&input_file_data_bytes, memory_image_loader(images)).unwrap(),
         ),
         "html" | "htm" => Document::from(
-            shiva::html::Transformer::parse(&input_file_data_bytes, &images).unwrap(),
+            shiva::html::Transformer::parse_with_loader(&input_file_data_bytes, memory_image_loader(images)).unwrap(),
         ),
         _ => return Err(Error::FailParseDocument),
     };
@@ -135,6 +136,21 @@ async fn convert_file_zip(
         file_data: output_bytes,
     })
 }
+
+fn memory_image_loader(images: HashMap<String, Bytes>) -> impl Fn(&str) -> anyhow::Result<Bytes>  {
+    let image_loader = move |image: &str| -> anyhow::Result<Bytes> {
+        let error = format!("No image: {}" , image);
+        let bytes_result= images.get(image).cloned();
+        match bytes_result {
+            None => {bail!(error)}
+            Some(bytes) => {Ok(Bytes::from(bytes))}
+        }
+
+    };
+    image_loader
+}
+
+
 
 //checking the supported formats in the archive
 fn supported_extensions_in_archive(file_extension: &str) -> bool {
@@ -316,19 +332,19 @@ async fn convert_file(
 
     let document = match file_extension.as_str() {
         "md" => Document::from(
-            shiva::markdown::Transformer::parse(&input_file_data_bytes, &HashMap::new()).unwrap(),
+            shiva::markdown::Transformer::parse(&input_file_data_bytes).unwrap(),
         ),
         "html" | "htm" => Document::from(
-            shiva::html::Transformer::parse(&input_file_data_bytes, &HashMap::new()).unwrap(),
+            shiva::html::Transformer::parse(&input_file_data_bytes).unwrap(),
         ),
         "txt" => Document::from(
-            shiva::text::Transformer::parse(&input_file_data_bytes, &HashMap::new()).unwrap(),
+            shiva::text::Transformer::parse(&input_file_data_bytes).unwrap(),
         ),
         "pdf" => Document::from(
-            shiva::pdf::Transformer::parse(&input_file_data_bytes, &HashMap::new()).unwrap(),
+            shiva::pdf::Transformer::parse(&input_file_data_bytes).unwrap(),
         ),
         "json" => Document::from(
-            shiva::json::Transformer::parse(&input_file_data_bytes, &HashMap::new()).unwrap(),
+            shiva::json::Transformer::parse(&input_file_data_bytes).unwrap(),
         ),
         _ => return Err(Error::FailParseDocument),
     };
