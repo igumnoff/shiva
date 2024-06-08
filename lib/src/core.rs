@@ -57,12 +57,18 @@ impl Document {
 }
 
 pub trait TransformerTrait {
-    fn parse<F>(document: &Bytes,  image_loader: F) -> anyhow::Result<Document>
-        where F: Fn(&str) -> anyhow::Result<Bytes>;
-    fn generate<F>(document: &Document,  image_saver: F) -> anyhow::Result<Bytes>
-        where F: Fn(&Bytes, &str) -> anyhow::Result<()>;
+    fn parse(document: &Bytes) -> anyhow::Result<Document>;
+    fn generate(document: &Document) -> anyhow::Result<Bytes>;
 }
 
+
+
+pub trait TransformerWithImageLoaderSaverTrait {
+    fn parse_with_loader<F>(document: &Bytes,  image_loader: F) -> anyhow::Result<Document>
+        where F: Fn(&str) -> anyhow::Result<Bytes>;
+    fn generate_with_saver<F>(document: &Document,  image_saver: F) -> anyhow::Result<Bytes>
+        where F: Fn(&Bytes, &str) -> anyhow::Result<()>;
+}
 #[derive(Error, Debug)]
 pub enum ParserError {
     #[error("Parser error")]

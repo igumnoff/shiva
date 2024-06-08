@@ -6,8 +6,18 @@ use crate::core::Element::{Header, Hyperlink, Image, List, Paragraph, Table, Tex
 use scraper::{Html, Node};
 
 pub struct Transformer;
+
 impl TransformerTrait for Transformer {
-    fn parse<F>(document: &Bytes, image_loader: F) -> anyhow::Result<Document>
+    fn parse(document: &Bytes) -> anyhow::Result<Document> {
+        Transformer::parse_with_loader(document, disk_image_loader("."))
+    }
+
+    fn generate(document: &Document) -> anyhow::Result<Bytes> {
+        Transformer::generate_with_saver(document, disk_image_saver("."))
+    }
+}
+impl TransformerWithImageLoaderSaverTrait for Transformer {
+    fn parse_with_loader<F>(document: &Bytes, image_loader: F) -> anyhow::Result<Document>
         where F: Fn(&str) -> anyhow::Result<Bytes>
     {
         let html = String::from_utf8(document.to_vec())?;
@@ -19,7 +29,7 @@ impl TransformerTrait for Transformer {
         Ok(Document::new(elements))
     }
 
-    fn generate<F>(document: &Document,  image_saver: F) -> anyhow::Result<Bytes>
+    fn generate_with_saver<F>(document: &Document,  image_saver: F) -> anyhow::Result<Bytes>
         where F: Fn(&Bytes, &str) -> anyhow::Result<()>
     {
         let mut html = String::new();
@@ -398,9 +408,9 @@ mod tests {
         </body>
         </html>
         "#;
-        let document = Transformer::parse(&Bytes::from(document_html), disk_image_loader("test/data"))?;
+        let document = Transformer::parse_with_loader(&Bytes::from(document_html), disk_image_loader("test/data"))?;
         println!("{:#?}", document);
-        let result = Transformer::generate(&document, disk_image_saver("test/data"))?;
+        let result = Transformer::generate_with_saver(&document, disk_image_saver("test/data"))?;
         println!("{}", String::from_utf8(result.to_vec())?);
         Ok(())
     }
