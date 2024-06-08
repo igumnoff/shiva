@@ -4,7 +4,6 @@ use crate::core::{
     TableCell, TableHeader, TableRow, TransformerTrait,
 };
 use bytes::Bytes;
-use std::collections::HashMap;
 pub struct Transformer;
 
 #[allow(unused)]
@@ -16,11 +15,10 @@ impl TransformerTrait for Transformer {
     ///
     /// # Arguments
     /// * `document` - The CSV data encapsulated in a `Bytes` instance.
-    /// * `_images` - A hashmap that potentially contains associated binary data like images.
     ///
     /// # Returns
     /// A result containing a `Document` if successful, or an `anyhow::Error` in case of failure.
-    fn parse(document: &Bytes, _images: &HashMap<String, Bytes>) -> anyhow::Result<Document> {
+    fn parse(document: &Bytes) -> anyhow::Result<Document> {
         // Deserialize the CSV data into a nested Vec structure.
         let document = serialize_csv(document)?;
 
@@ -72,7 +70,7 @@ impl TransformerTrait for Transformer {
         Ok(Document::new(vec![Table { headers, rows }]))
     }
 
-    fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)> {
+    fn generate(document: &Document) -> anyhow::Result<Bytes> {
         let elements = document.elements.clone();
 
         let mut data: Vec<Vec<String>> = Vec::new();
@@ -107,7 +105,7 @@ impl TransformerTrait for Transformer {
         let csv_bytes = deserialize_csv(&data)?;
 
         // Return Bytes and an empty HashMap for images or additional data
-        Ok((csv_bytes, HashMap::new()))
+        Ok(csv_bytes)
     }
 }
 
@@ -152,7 +150,6 @@ mod tests {
     use crate::core::TransformerTrait;
     use crate::csv::{self, deserialize_csv, serialize_csv};
     use crate::markdown;
-    use std::collections::HashMap;
 
     #[test]
     fn test() -> anyhow::Result<()> {
@@ -161,18 +158,18 @@ mod tests {
 2,"Jane Smith",94,95,91
 3,"Emily ""Johnson""",,88,83
 4,Robert Robinson,99,96,97"#;
-        let parsed = csv::Transformer::parse(&document.as_bytes().into(), &HashMap::new());
+        let parsed = csv::Transformer::parse(&document.as_bytes().into());
 
         assert!(parsed.is_ok());
 
         let parsed = parsed?;
         {
-            let (generated, _) = markdown::Transformer::generate(&parsed)?;
+            let generated = markdown::Transformer::generate(&parsed)?;
             let generated_string = std::str::from_utf8(&generated)?;
             println!("{}", generated_string);
         }
 
-        let (generated, _) = csv::Transformer::generate(&parsed)?;
+        let generated = csv::Transformer::generate(&parsed)?;
         let generated_string = std::str::from_utf8(&generated)?;
 
         assert_eq!(

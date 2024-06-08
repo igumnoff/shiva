@@ -3,13 +3,12 @@ use crate::core::{Document, Element, ListItem, TableCell, TableRow, TransformerT
 
 use bytes::Bytes;
 use docx_rs::{read_docx, ParagraphStyle, RunChild, TableRowChild};
-use std::collections::HashMap;
 
 pub struct Transformer;
 
 
 impl TransformerTrait for Transformer {
-    fn parse(document: &Bytes, _images: &HashMap<String, Bytes>) -> anyhow::Result<Document> {
+    fn parse(document: &Bytes) -> anyhow::Result<Document> {
         fn extract_text(doc_element: &docx_rs::Paragraph) -> String {
             for c in &doc_element.children {
                 match c {
@@ -245,7 +244,7 @@ impl TransformerTrait for Transformer {
 
         Ok(Document::new(result))
     }
-    fn generate(_document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)> {
+    fn generate(_document: &Document) -> anyhow::Result<Bytes> {
         todo!()
     }
 }
@@ -255,15 +254,13 @@ mod tests {
     use crate::core::TransformerTrait;
     use crate::{docx, html};
     use bytes::Bytes;
-    use std::collections::HashMap;
 
     #[test]
     fn test() -> anyhow::Result<()> {
         // read from document.docx file from disk
         let document = std::fs::read("test/data/document.docx")?;
         let bytes = Bytes::from(document);
-        let images = HashMap::new();
-        let parsed = docx::Transformer::parse(&bytes, &images);
+        let parsed = docx::Transformer::parse(&bytes);
         assert!(parsed.is_ok());
         println!(
             "--------------------------------------------\n parsed - {:#?}",
@@ -272,7 +269,7 @@ mod tests {
 
         let result = html::Transformer::generate(&parsed?)?;
         //write to file
-        std::fs::write("test/data/document_from_docx.html", result.0)?;
+        std::fs::write("test/data/document_from_docx.html", result)?;
 
         Ok(())
     }

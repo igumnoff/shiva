@@ -14,7 +14,6 @@ pub struct Transformer;
 impl TransformerTrait for Transformer {
     fn parse(
         document: &bytes::Bytes,
-        _images: &std::collections::HashMap<String, bytes::Bytes>,
     ) -> anyhow::Result<Document> {
         let data_str = std::str::from_utf8(document).unwrap();
         let tokens = Lexer::scan(&data_str).unwrap();
@@ -46,10 +45,7 @@ impl TransformerTrait for Transformer {
     }
     fn generate(
         _document: &Document,
-    ) -> anyhow::Result<(
-        bytes::Bytes,
-        std::collections::HashMap<String, bytes::Bytes>,
-    )> {
+    ) -> anyhow::Result<bytes::Bytes> {
         todo!();
     }
 }
@@ -58,16 +54,15 @@ impl TransformerTrait for Transformer {
 
 mod test {
     use bytes::Bytes;
-    use std::collections::HashMap;
 
     use super::*;
     #[test]
     fn test() -> anyhow::Result<()> {
         let document = std::fs::read("test/data/document.rtf")?;
         let documents_bytes = Bytes::from(document);
-        let parsed = Transformer::parse(&documents_bytes, &HashMap::new())?;
+        let parsed = Transformer::parse(&documents_bytes)?;
         let generated_result = crate::pdf::Transformer::generate(&parsed)?;
-        std::fs::write("test/data/document_from_rtf.pdf", generated_result.0)?;
+        std::fs::write("test/data/document_from_rtf.pdf", generated_result)?;
 
         Ok(())
     }

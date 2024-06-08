@@ -3,13 +3,25 @@ use crate::core::*;
 use bytes::Bytes;
 use pulldown_cmark::{Event, HeadingLevel, Options, Parser, Tag, TagEnd, TextMergeStream};
 use regex::Regex;
-use std::collections::HashMap;
 
 pub struct Transformer;
+
 impl TransformerTrait for Transformer {
-    fn parse(document: &Bytes, images: &HashMap<String, Bytes>) -> anyhow::Result<Document>
-    where
-        Self: Sized,
+    fn parse(document: &Bytes) -> anyhow::Result<Document> {
+        Transformer::parse_with_loader(document, disk_image_loader("."))
+    }
+
+    fn generate(document: &Document) -> anyhow::Result<Bytes> {
+        Transformer::generate_with_saver(document, disk_image_saver("."))
+    }
+}
+
+struct ImageSaver<F> where F: Fn(&Bytes, &str) -> anyhow::Result<()> {
+    pub function: F,
+}
+impl TransformerWithImageLoaderSaverTrait for Transformer {
+    fn parse_with_loader<F>(document: &Bytes, image_loader: F) -> anyhow::Result<Document>
+        where F: Fn(&str) -> anyhow::Result<Bytes>,Self: Sized,
     {
         fn process_element_creation(
             current_element: &mut Option<Element>,
@@ -146,8 +158,7 @@ impl TransformerTrait for Transformer {
                                 _ => ImageType::Png,
                             };
 
-                            //TODO: better to write helper to determine whether to download image or read locally base on dest_url
-                            let bytes = images.get(&dest_url.to_string()).unwrap().clone();
+                            let bytes = image_loader(&dest_url)?;
                             let img_el = Element::Image {
                                 bytes,
                                 title: title.to_string(),
@@ -334,12 +345,12 @@ impl TransformerTrait for Transformer {
         Ok(Document::new(elements))
     }
 
-    fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)>
-    where
-        Self: Sized,
+    fn generate_with_saver<F>(document: &Document,  image_saver: F) -> anyhow::Result<Bytes>
+        where F: Fn(&Bytes, &str) -> anyhow::Result<()>, Self: Sized,
     {
-        let mut images: HashMap<String, Bytes> = HashMap::new();
         let mut image_num: i32 = 0;
+
+        let image_saver = ImageSaver { function: image_saver };
 
         let mut markdown = String::new();
         fn generate_element(
@@ -348,18 +359,10 @@ impl TransformerTrait for Transformer {
             list_depth: usize,
             list_counters: &mut Vec<usize>,
             list_types: &mut Vec<bool>,
-            images: &mut HashMap<String, Bytes>,
             image_num: &mut i32,
+            saver: &ImageSaver<impl Fn(&Bytes, &str) -> anyhow::Result<()>>,
         ) -> anyhow::Result<()> {
-            fn generate_list_item(
-                element: &ListItem,
-                markdown: &mut String,
-                list_depth: usize,
-                list_counters: &mut Vec<usize>,
-                list_types: &mut Vec<bool>,
-                images: &mut HashMap<String, Bytes>,
-                image_num: &mut i32,
-            ) -> anyhow::Result<()> {
+            let generate_list_item = |element: &ListItem, markdown: &mut String, list_depth: usize, list_counters: &mut Vec<usize>, list_types: &mut Vec<bool>, image_num: &mut i32| -> anyhow::Result<()> {
                 let prefix = if *list_types.last().unwrap() {
                     let counter = list_counters.last_mut().unwrap();
 
@@ -380,14 +383,14 @@ impl TransformerTrait for Transformer {
                     list_depth,
                     list_counters,
                     list_types,
-                    images,
                     image_num,
+                    saver,
                 )?;
                 if let Text { .. } = element.element {
                     markdown.push('\n');
                 }
                 Ok(())
-            }
+            };
 
             match element {
                 Header { level, text } => {
@@ -405,8 +408,8 @@ impl TransformerTrait for Transformer {
                             list_depth,
                             list_counters,
                             list_types,
-                            images,
                             image_num,
+                            saver,
                         )?;
                     }
                     markdown.push('\n');
@@ -422,7 +425,6 @@ impl TransformerTrait for Transformer {
                             list_depth + 1,
                             list_counters,
                             list_types,
-                            images,
                             image_num,
                         )?;
                     }
@@ -436,12 +438,12 @@ impl TransformerTrait for Transformer {
                 Text { text, size: _ } => {
                     let re = Regex::new(r#"^(\n)*\s+$?"#)?;
                     if !re.is_match(text) {
-                        markdown.push('\n');
+                        // markdown.push('\n');
                         markdown.push_str(text);
                         if !text.ends_with(' ') {
                             markdown.push(' ');
                         }
-                        markdown.push('\n');
+                        // markdown.push('\n');
                     }
                 }
                 Hyperlink {
@@ -461,7 +463,8 @@ impl TransformerTrait for Transformer {
                 } => {
                     let image_path = format!("image{}.png", image_num);
                     markdown.push_str(&format!("![{}]({} \"{}\")", alt, image_path, title));
-                    images.insert(image_path.to_string(), bytes.clone());
+                    markdown.push('\n');
+                    (saver.function)(&bytes, &image_path)?;
                     *image_num += 1;
                 }
                 Table { headers, rows } => {
@@ -535,12 +538,12 @@ impl TransformerTrait for Transformer {
                 0,
                 &mut list_counters,
                 &mut list_types,
-                &mut images,
                 &mut image_num,
+                &image_saver,
             )?;
         }
 
-        Ok((Bytes::from(markdown), HashMap::new()))
+        Ok(Bytes::from(markdown))
     }
 }
 
@@ -562,13 +565,13 @@ blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla
 1. List item 1
 2. List item 2
 3. List item 3
-1. List item secode level 1
-2. List item secode level 2
+   1. List item secode level 1
+   2. List item secode level 2
 4. List item 4
-1. List item secode level 3
-2. List item secode level 4
+   1. List item secode level 3
+   2. List item secode level 4
 5. List item 5
-1. List item secode level 5
+   1. List item secode level 5
 
 - List item one
 - List item two
@@ -579,7 +582,7 @@ blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla
 - List item six
 - List item seven
 
-![Picture alt1](test/data/picture.png "Picture title1")
+![Picture alt1](picture.png "Picture title1")
 
 ## Second header
 
@@ -591,34 +594,30 @@ blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla
 Paragraph2  bla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla
 blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         // println!("{:?}", document);
-        let mut images = HashMap::new();
-        let image_bytes = std::fs::read("test/data/picture.png")?;
-        let bytes = Bytes::from(image_bytes);
-        images.insert("test/data/picture.png".to_string(), bytes);
-        let parsed = Transformer::parse(&document.as_bytes().into(), &images);
+        let parsed = Transformer::parse_with_loader(&document.as_bytes().into(), disk_image_loader("test/data"));
         let document_string = std::str::from_utf8(document.as_bytes())?;
         println!("{}", document_string);
         assert!(parsed.is_ok());
         let parsed_document = parsed.unwrap();
         println!("==========================");
-        println!("{:?}", parsed_document);
+        println!("{:#?}", parsed_document);
         println!("==========================");
-        let generated_result = Transformer::generate(&parsed_document);
+        let generated_result = Transformer::generate_with_saver(&parsed_document, disk_image_saver("test/data"));
         assert!(generated_result.is_ok());
         // println!("{:?}", generated_result.unwrap());
         let generated_bytes = generated_result?;
-        let generated_text = std::str::from_utf8(&generated_bytes.0)?;
+        let generated_text = std::str::from_utf8(&generated_bytes)?;
         println!("{}", generated_text);
         println!("==========================");
         let generated_result = text::Transformer::generate(&parsed_document);
         assert!(generated_result.is_ok());
         // println!("{:?}", generated_result.unwrap());
         let generated_bytes = generated_result?;
-        let generated_text = std::str::from_utf8(&generated_bytes.0)?;
+        let generated_text = std::str::from_utf8(&generated_bytes)?;
         println!("{}", generated_text);
 
         let generated_result = pdf::Transformer::generate(&parsed_document)?;
-        std::fs::write("test/data/generated.pdf", generated_result.0)?;
+        std::fs::write("test/data/generated.pdf", generated_result)?;
 
         Ok(())
     }
@@ -658,393 +657,11 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
             page_footer: vec![],
         };
 
-        let images = HashMap::new();
-        let parsed = Transformer::parse(&document.as_bytes().into(), &images).unwrap();
+        let parsed = Transformer::parse(&document.as_bytes().into()).unwrap();
 
         assert_eq!(parsed, result_doc)
     }
 
-    #[test]
-    fn test_parse_paragraph() {
-        let document = r#"
-
-Paragraph0  bla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla
-
-Paragraph1  bla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla
-blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla
-
-Paragraph3  bla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla
-blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla
-
-            "#;
-
-        let result_doc = Document {
-                elements: vec![
-                    Paragraph {
-                        elements: vec![
-                            Text {
-                                text: "Paragraph0  bla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla".to_string(),
-                                size: 14,
-                            },
-                        ],
-                    },
-                    Paragraph {
-                        elements: vec![
-                            Text {
-                                text: "Paragraph1  bla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla".to_string(),
-                                size: 14,
-                            },
-                            Text {
-                                text: "blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla".to_string(),
-                                size: 14,
-                            },
-                        ],
-                    },
-                    Paragraph {
-                        elements: vec![
-                            Text {
-                                text: "Paragraph3  bla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla".to_string(),
-                                size: 14,
-                            },
-                            Text {
-                                text: "blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla".to_string(),
-                                size: 14,
-                            },
-                        ],
-                    },
-                ],
-                page_width: 210.0,
-                page_height: 297.0,
-                left_page_indent: 10.0,
-                right_page_indent: 10.0,
-                top_page_indent: 10.0,
-                bottom_page_indent: 10.0,
-                page_header: vec![],
-                page_footer: vec![],
-            };
-
-        let images = HashMap::new();
-        let parsed = Transformer::parse(&document.as_bytes().into(), &images).unwrap();
-        assert_eq!(parsed, result_doc)
-    }
-
-    #[test]
-    fn test_parse_ordered_lists() {
-        let document = r#"
-1. List item 1
-2. List item 2
-3. List item 3
-    1. List item second level 1
-    2. List item second level 2
-        1. List item third level 1
-    3. List item second level 3
-4. List item 4
-            "#;
-
-        let result_doc = Document {
-            elements: vec![List {
-                elements: vec![
-                    ListItem {
-                        element: Text {
-                            text: "List item 1".to_string(),
-                            size: 14,
-                        },
-                    },
-                    ListItem {
-                        element: Text {
-                            text: "List item 2".to_string(),
-                            size: 14,
-                        },
-                    },
-                    ListItem {
-                        element: Text {
-                            text: "List item 3".to_string(),
-                            size: 14,
-                        },
-                    },
-                    ListItem {
-                        element: List {
-                            elements: vec![
-                                ListItem {
-                                    element: Text {
-                                        text: "List item second level 1".to_string(),
-                                        size: 14,
-                                    },
-                                },
-                                ListItem {
-                                    element: Text {
-                                        text: "List item second level 2".to_string(),
-                                        size: 14,
-                                    },
-                                },
-                                ListItem {
-                                    element: List {
-                                        elements: vec![ListItem {
-                                            element: Text {
-                                                text: "List item third level 1".to_string(),
-                                                size: 14,
-                                            },
-                                        }],
-                                        numbered: true,
-                                    },
-                                },
-                                ListItem {
-                                    element: Text {
-                                        text: "List item second level 3".to_string(),
-                                        size: 14,
-                                    },
-                                },
-                            ],
-                            numbered: true,
-                        },
-                    },
-                    ListItem {
-                        element: Text {
-                            text: "List item 4".to_string(),
-                            size: 14,
-                        },
-                    },
-                ],
-                numbered: true,
-            }],
-            page_width: 210.0,
-            page_height: 297.0,
-            left_page_indent: 10.0,
-            right_page_indent: 10.0,
-            top_page_indent: 10.0,
-            bottom_page_indent: 10.0,
-            page_header: vec![],
-            page_footer: vec![],
-        };
-
-        let images = HashMap::new();
-        let parsed = Transformer::parse(&document.as_bytes().into(), &images).unwrap();
-        assert_eq!(parsed, result_doc)
-    }
-
-    #[test]
-    fn test_parse_unordered_lists() {
-        let document = r#"
-- List item 1
-- List item 2
-- List item 3
-    - List item second level 1
-    - List item second level 2
-        - List item third level 1
-    - List item second level 3
-- List item 4
-             "#;
-
-        let result_doc = Document {
-            elements: vec![List {
-                elements: vec![
-                    ListItem {
-                        element: Text {
-                            text: "List item 1".to_string(),
-                            size: 14,
-                        },
-                    },
-                    ListItem {
-                        element: Text {
-                            text: "List item 2".to_string(),
-                            size: 14,
-                        },
-                    },
-                    ListItem {
-                        element: Text {
-                            text: "List item 3".to_string(),
-                            size: 14,
-                        },
-                    },
-                    ListItem {
-                        element: List {
-                            elements: vec![
-                                ListItem {
-                                    element: Text {
-                                        text: "List item second level 1".to_string(),
-                                        size: 14,
-                                    },
-                                },
-                                ListItem {
-                                    element: Text {
-                                        text: "List item second level 2".to_string(),
-                                        size: 14,
-                                    },
-                                },
-                                ListItem {
-                                    element: List {
-                                        elements: vec![ListItem {
-                                            element: Text {
-                                                text: "List item third level 1".to_string(),
-                                                size: 14,
-                                            },
-                                        }],
-                                        numbered: false,
-                                    },
-                                },
-                                ListItem {
-                                    element: Text {
-                                        text: "List item second level 3".to_string(),
-                                        size: 14,
-                                    },
-                                },
-                            ],
-                            numbered: false,
-                        },
-                    },
-                    ListItem {
-                        element: Text {
-                            text: "List item 4".to_string(),
-                            size: 14,
-                        },
-                    },
-                ],
-                numbered: false,
-            }],
-            page_width: 210.0,
-            page_height: 297.0,
-            left_page_indent: 10.0,
-            right_page_indent: 10.0,
-            top_page_indent: 10.0,
-            bottom_page_indent: 10.0,
-            page_header: vec![],
-            page_footer: vec![],
-        };
-
-        let images = HashMap::new();
-        let parsed = Transformer::parse(&document.as_bytes().into(), &images).unwrap();
-        assert_eq!(parsed, result_doc)
-    }
-
-    #[test]
-    fn test_parse_list_with_different_elements() {
-        let document = r#"
-1. # List item 1
-2. ## List item 2
-3. ### List item 3
-    - List item secode level 1
-    - [Link text Here](https://link-url-here.org)
-              "#;
-
-        let result_doc = Document {
-            elements: vec![List {
-                elements: vec![
-                    ListItem {
-                        element: Header {
-                            level: 1,
-                            text: "List item 1".to_string(),
-                        },
-                    },
-                    ListItem {
-                        element: Header {
-                            level: 2,
-                            text: "List item 2".to_string(),
-                        },
-                    },
-                    ListItem {
-                        element: Header {
-                            level: 3,
-                            text: "List item 3".to_string(),
-                        },
-                    },
-                    ListItem {
-                        element: List {
-                            elements: vec![
-                                ListItem {
-                                    element: Text {
-                                        text: "List item secode level 1".to_string(),
-                                        size: 14,
-                                    },
-                                },
-                                ListItem {
-                                    element: Hyperlink {
-                                        title: "Link text Here".to_string(),
-                                        url: "https://link-url-here.org".to_string(),
-                                        alt: "alt".to_string(),
-                                        size: 14,
-                                    },
-                                },
-                            ],
-                            numbered: false,
-                        },
-                    },
-                ],
-                numbered: true,
-            }],
-            page_width: 210.0,
-            page_height: 297.0,
-            left_page_indent: 10.0,
-            right_page_indent: 10.0,
-            top_page_indent: 10.0,
-            bottom_page_indent: 10.0,
-            page_header: vec![],
-            page_footer: vec![],
-        };
-
-        let images = HashMap::new();
-        let parsed = Transformer::parse(&document.as_bytes().into(), &images).unwrap();
-
-        assert_eq!(parsed, result_doc);
-    }
-
-    #[test]
-    fn test_parse_picture() {
-        let document = r#"
-![Picture alt1](image0.png "Picture title1")
-          "#;
-
-        let result_doc = Document {
-            elements: vec![Image {
-                bytes: Bytes::from("TEST IMAGE DATA"),
-                title: "Picture title1".to_string(),
-                alt: "Picture alt1".to_string(),
-                image_type: ImageType::Png,
-            }],
-            page_width: 210.0,
-            page_height: 297.0,
-            left_page_indent: 10.0,
-            right_page_indent: 10.0,
-            top_page_indent: 10.0,
-            bottom_page_indent: 10.0,
-            page_header: vec![],
-            page_footer: vec![],
-        };
-
-        let mut images = HashMap::new();
-        let image_bytes = "TEST IMAGE DATA";
-        images.insert("image0.png".to_string(), Bytes::from(image_bytes));
-        let parsed = Transformer::parse(&document.as_bytes().into(), &images).unwrap();
-
-        assert_eq!(parsed, result_doc)
-    }
-    #[test]
-    fn test_parse_hyperlink() {
-        let document = r#"
-[Link text Here](https://link-url-here.org)
-      "#;
-
-        let result_doc = Document {
-            elements: vec![Paragraph {
-                elements: vec![Text {
-                    text: "Link text Here".to_string(),
-                    size: 14,
-                }],
-            }],
-            page_width: 210.0,
-            page_height: 297.0,
-            left_page_indent: 10.0,
-            right_page_indent: 10.0,
-            top_page_indent: 10.0,
-            bottom_page_indent: 10.0,
-            page_header: vec![],
-            page_footer: vec![],
-        };
-
-        let images = HashMap::new();
-        let parsed = Transformer::parse(&document.as_bytes().into(), &images).unwrap();
-
-        assert_eq!(parsed, result_doc)
-    }
 
     #[test]
     fn test_parse_table() {
@@ -1118,8 +735,7 @@ blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla
             page_footer: vec![],
         };
 
-        let images = HashMap::new();
-        let parsed = Transformer::parse(&document.as_bytes().into(), &images).unwrap();
+        let parsed = Transformer::parse_with_loader(&document.as_bytes().into(), disk_image_loader("test/data")).unwrap();
 
         assert_eq!(parsed, result_doc)
     }

@@ -151,6 +151,7 @@ pub fn disk_image_loader(path: &str) -> impl Fn(&str) -> anyhow::Result<Bytes>  
     let path = path.to_string();
     let image_loader = move |image: &str| -> anyhow::Result<Bytes> {
         let image_path = format!("{}/{}", path, image);
+        println!("Loading image: {}", image_path);
         let bytes = std::fs::read(image_path)?;
         Ok(Bytes::from(bytes))
     };

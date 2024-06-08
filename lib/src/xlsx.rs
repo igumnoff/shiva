@@ -2,13 +2,12 @@ use crate::core::Element::{ Table, Text};
 use crate::core::*;
 use bytes::Bytes;
 use calamine::{ open_workbook_from_rs, Reader, Xlsx };
-use std::collections::HashMap;
 use std::io::Cursor;
 use rust_xlsxwriter::*;
 pub struct Transformer;
 
 impl TransformerTrait for Transformer {
-    fn parse(document: &Bytes, _images: &HashMap<String, Bytes>) -> anyhow::Result<Document>
+    fn parse(document: &Bytes) -> anyhow::Result<Document>
         where Self: Sized
     {
         let cursor = Cursor::new(document.clone());
@@ -66,7 +65,7 @@ impl TransformerTrait for Transformer {
         Ok(Document::new(data))
     }
 
-    fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)>
+    fn generate(document: &Document) -> anyhow::Result<Bytes>
         where Self: Sized
     {
         let mut workbook = Workbook::new();
@@ -102,7 +101,7 @@ impl TransformerTrait for Transformer {
             generate_element(element, &mut workbook)?;
         }
         let xlsx_data = workbook.save_to_buffer()?;
-        Ok((Bytes::from(xlsx_data), HashMap::new()))
+        Ok(Bytes::from(xlsx_data))
     }
 }
 
@@ -110,7 +109,6 @@ impl TransformerTrait for Transformer {
 mod tests {
     use std::fs::File;
     use std::io::{ Read };
-    use std::collections::HashMap;
     use anyhow::Ok;
     use bytes::Bytes;
     use crate::xlsx::*;
@@ -123,9 +121,7 @@ mod tests {
         file.read_to_end(&mut buffer)?;
 
         let bytes = Bytes::from(buffer);
-        let images = HashMap::new();
-
-        let parsed = Transformer::parse(&bytes, &images)?;
+        let parsed = Transformer::parse(&bytes)?;
 
         println!("Parsed document: {:?}", parsed);
 
@@ -140,16 +136,11 @@ mod tests {
         file.read_to_end(&mut buffer)?;
 
         let bytes = Bytes::from(buffer);
-        let images = HashMap::new();
+        let parsed = Transformer::parse(&bytes)?;
 
-        let parsed = Transformer::parse(&bytes, &images)?;
+        let generated_data: Result<bytes::Bytes, anyhow::Error> = Transformer::generate(&parsed);
 
-        let generated_data: Result<
-            (bytes::Bytes, std::collections::HashMap<std::string::String, bytes::Bytes>),
-            anyhow::Error
-        > = Transformer::generate(&parsed);
-
-        let bytes_to_write = generated_data.map(|(bytes, _)| bytes)?;
+        let bytes_to_write = generated_data?;
         std::fs::write("test/data/test_document.xlsx", bytes_to_write)?;
 
         println!("Excel file created successfully!");

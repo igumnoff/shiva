@@ -165,7 +165,7 @@ impl World for ShivaWorld {
 
 pub struct Transformer;
 impl TransformerTrait for Transformer {
-    fn parse(document: &Bytes, _images: &HashMap<String, Bytes>) -> anyhow::Result<Document> {
+    fn parse(document: &Bytes) -> anyhow::Result<Document> {
         let mut elements: Vec<Element> = Vec::new();
         let pdf_document = PdfDocument::load_mem(document)?;
         for (_id, page_id) in pdf_document.get_pages() {
@@ -178,7 +178,7 @@ impl TransformerTrait for Transformer {
         Ok(Document::new(elements))
     }
 
-    fn generate(document: &Document) -> anyhow::Result<(Bytes, HashMap<String, Bytes>)> {
+    fn generate(document: &Document) -> anyhow::Result<Bytes> {
         fn process_header(
             source: &mut TypstString,
             level: usize,
@@ -430,7 +430,7 @@ impl TransformerTrait for Transformer {
         let pdf = typst_pdf::pdf(&document, Smart::Auto, None);
 
         let bytes = Bytes::from(pdf);
-        Ok((bytes, HashMap::new()))
+        Ok(bytes)
     }
 }
 
@@ -679,18 +679,14 @@ mod tests {
     fn test() -> anyhow::Result<()> {
         let pdf = std::fs::read("test/data/document.pdf")?;
         let pdf_bytes = Bytes::from(pdf);
-        let mut images = HashMap::new();
-        let image_bytes = std::fs::read("test/data/picture.png")?;
-        let image_bytes = Bytes::from(image_bytes);
-        images.insert("test/data/image0.png".to_string(), image_bytes);
-        let parsed = Transformer::parse(&pdf_bytes, &images);
+        let parsed = Transformer::parse(&pdf_bytes);
         assert!(parsed.is_ok());
         let parsed_document = parsed.unwrap();
         println!("==========================");
         println!("{:?}", parsed_document);
         println!("==========================");
         let generated_result = Transformer::generate(&parsed_document)?;
-        std::fs::write("test/data/generated.pdf", generated_result.0)?;
+        std::fs::write("test/data/generated.pdf", generated_result)?;
         Ok(())
     }
 
@@ -702,7 +698,7 @@ mod tests {
         let image_bytes = std::fs::read("test/data/picture.png")?;
         let image_bytes = Bytes::from(image_bytes);
         images.insert("image0.png".to_string(), image_bytes);
-        let parsed = markdown::Transformer::parse(&documents_bytes, &images);
+        let parsed = markdown::Transformer::parse_with_loader(&documents_bytes, disk_image_loader("test/data"));
         assert!(parsed.is_ok());
         let mut parsed_document = parsed.unwrap();
         println!("==========================");
@@ -719,7 +715,7 @@ mod tests {
         }];
         let generated_result = Transformer::generate(&parsed_document);
         assert!(generated_result.is_ok());
-        std::fs::write("test/data/typst.pdf", generated_result.unwrap().0)?;
+        std::fs::write("test/data/typst.pdf", generated_result.unwrap())?;
 
         Ok(())
     }
@@ -779,7 +775,7 @@ mod tests {
 
         std::fs::write(
             "test/data/generated_hyperlink.pdf",
-            generated_result.unwrap().0,
+            generated_result.unwrap(),
         )?;
 
         Ok(())
