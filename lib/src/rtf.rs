@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use crate::core::{Document, Element::{Header, Paragraph, Text}, TransformerTrait};
 
 use rtf_parser::lexer::Lexer;
@@ -83,7 +82,7 @@ impl TransformerTrait for Transformer {
 
         rtf_content.push_str("}");
 
-        Ok((bytes::Bytes::from(rtf_content.into_bytes()), HashMap::new()))
+        Ok(bytes::Bytes::from(rtf_content.into_bytes()))
 
     }
 }
