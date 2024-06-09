@@ -48,18 +48,16 @@ impl TransformerTrait for Transformer {
         bytes::Bytes,
         std::collections::HashMap<String, bytes::Bytes>,
     )> {
-        let mut rtf_content = String::new(); //в эту строку будет записываться контент файла
+        let mut rtf_content = String::new();
 
-        rtf_content.push_str("{\\rtf1\\ansi\\deff0"); //стандартный заголовок RTF-документа, который указывает, что это RTF-документ, использующий ANSI-символы и шрифт по умолчанию
-
+        rtf_content.push_str("{\\rtf1\\ansi\\deff0"); //the standard title of an RTF document, which indicates that it is an RTF document using ANSI characters and the default font
         for element in &document.elements {
             match element {
 
-                //если элемент заголовок, то
                 Header { level, text} => {
-                    let header_size = 30 + (*level as i32 * 2); //вычисляем размер шрифта для заголовка в зависимости от уровня (level)
+                    let header_size = 30 + (*level as i32 * 2);
 
-                    //форматируем строку RTF
+                    //formatting the string RTF
                     rtf_content.push_str(&format!(
                         "{{\\fs{}\\b {} \\b0}}\\par ",
                         header_size * 2,
@@ -67,7 +65,6 @@ impl TransformerTrait for Transformer {
                     ));
                 }
 
-                //если элемент параграф, то
                 Paragraph { elements } => {
                     for elem in elements {
                         if let Text { text, size } = elem {

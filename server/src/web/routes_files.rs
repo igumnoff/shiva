@@ -125,6 +125,7 @@ async fn convert_file_zip(
         "pdf" => shiva::pdf::Transformer::generate(&document).unwrap(),
         "json" => shiva::json::Transformer::generate(&document).unwrap(),
         "rtf" => shiva::rtf::Transformer::generate(&document).unwrap(),
+        "docx" => shiva::docx::Transformer::generate(&document).unwrap(),
         _ => return Err(Error::FailConvertFile),
     };
 
@@ -335,6 +336,7 @@ async fn convert_file(
         "pdf" => shiva::pdf::Transformer::generate(&document).unwrap(),
         "json" => shiva::json::Transformer::generate(&document).unwrap(),
         "rtf" => shiva::rtf::Transformer::generate(&document).unwrap(),
+        "docx" => shiva::docx::Transformer::generate(&document).unwrap(),
         _ => return Err(Error::FailConvertFile),
     };
 

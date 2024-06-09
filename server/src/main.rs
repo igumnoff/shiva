@@ -119,7 +119,7 @@ mod tests {
 
         //We form all combinations of incoming and outgoing file formats
         let input_formats = vec!["md", "html", "txt"];
-        let output_formats = vec!["md", "html", "txt", "pdf", "json", "rtf"];
+        let output_formats = vec!["md", "html", "txt", "pdf", "json", "rtf", "docx"];
 
         // We go through all the combinations
         for input_format in &input_formats {
@@ -143,6 +143,7 @@ mod tests {
                         &"pdf" => "application/pdf",
                         &"json" => "application/json",
                         &"rtf" => "application/rtf",
+                        &"docx" => "application/docx",
                         _ => return Err(anyhow!("Invalid output format: {}", output_format)),
                     })?;
 
