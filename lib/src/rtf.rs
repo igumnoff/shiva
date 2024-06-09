@@ -102,8 +102,8 @@ mod test {
         let document = std::fs::read("test/data/document.rtf")?;
         let documents_bytes = Bytes::from(document);
         let parsed = Transformer::parse(&documents_bytes, &HashMap::new())?;
-        let generated_result = crate::pdf::Transformer::generate(&parsed)?;
-        std::fs::write("test/data/document_from_rtf.pdf", generated_result.0)?;
+        let generated_result = crate::rtf::Transformer::generate(&parsed)?;
+        std::fs::write("test/data/document_from_rtf.rtf", generated_result.0)?;
 
         Ok(())
     }
