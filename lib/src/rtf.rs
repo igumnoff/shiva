@@ -91,13 +91,15 @@ impl TransformerTrait for Transformer {
 
 mod test {
     use bytes::Bytes;
+    use crate::{markdown};
+    use crate::core::{disk_image_loader, TransformerWithImageLoaderSaverTrait};
 
     use super::*;
     #[test]
     fn test() -> anyhow::Result<()> {
-        let document = std::fs::read("test/data/document.rtf")?;
+        let document = std::fs::read("test/data/document.md")?;
         let documents_bytes = Bytes::from(document);
-        let parsed = Transformer::parse(&documents_bytes)?;
+        let parsed = markdown::Transformer::parse_with_loader(&documents_bytes,disk_image_loader("test/data"))?;
         let generated_result = crate::rtf::Transformer::generate(&parsed)?;
         std::fs::write("test/data/document_from_rtf.rtf", generated_result)?;
 
