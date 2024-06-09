@@ -1,11 +1,9 @@
-use crate::core::{
-    Document,
-    Element::{Header,  Paragraph,  Text},
-    TransformerTrait,
-};
+use std::collections::HashMap;
+use crate::core::{Document, Element::{Header, Paragraph, Text}, TransformerTrait};
 
 use rtf_parser::lexer::Lexer;
 use rtf_parser::parser::Parser;
+
 
 
 
@@ -45,12 +43,53 @@ impl TransformerTrait for Transformer {
     Ok(document)
     }
     fn generate(
-        _document: &Document,
+        document: &Document,
     ) -> anyhow::Result<(
         bytes::Bytes,
         std::collections::HashMap<String, bytes::Bytes>,
     )> {
-        todo!();
+        let mut rtf_content = String::new(); //в эту строку будет записываться контент файла
+
+        rtf_content.push_str("{\\rtf1\\ansi\\deff0"); //стандартный заголовок RTF-документа, который указывает, что это RTF-документ, использующий ANSI-символы и шрифт по умолчанию
+
+        for element in &document.elements {
+            match element {
+
+                //если элемент заголовок, то
+                Header { level, text} => {
+                    let header_size = 30 + (*level as i32 * 2); //вычисляем размер шрифта для заголовка в зависимости от уровня (level)
+
+                    //форматируем строку RTF
+                    rtf_content.push_str(&format!(
+                        "{{\\fs{}\\b {} \\b0}}\\par ",
+                        header_size * 2,
+                        text
+                    ));
+                }
+
+                //если элемент параграф, то
+                Paragraph { elements } => {
+                    for elem in elements {
+                        if let Text { text, size } = elem {
+                            rtf_content.push_str(&format!(
+                                "{{\\fs{} {}}}",
+                                *size as i32 * 2,
+                                text
+                            ));
+                        }
+                    }
+                    rtf_content.push_str("\\par ");
+                }
+                _ => {
+                    eprintln!("Unknown element");
+                }
+            }
+        }
+
+        rtf_content.push_str("}");
+
+        Ok((bytes::Bytes::from(rtf_content.into_bytes()), HashMap::new()))
+
     }
 }
 

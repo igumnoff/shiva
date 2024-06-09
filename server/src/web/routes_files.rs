@@ -87,9 +87,7 @@ pub async fn handler_convert_file(
                 Ok(build_response_file)
             }
         },
-        Err(e) => {
-            Err(e)
-        }
+        Err(e) => Err(e),
     }
 }
 
@@ -120,13 +118,13 @@ async fn convert_file_zip(
         _ => return Err(Error::FailParseDocument),
     };
 
-
     let output_bytes = match output_format.as_str() {
         "md" => shiva::markdown::Transformer::generate(&document).unwrap(),
         "html" | "htm" => shiva::html::Transformer::generate(&document).unwrap(),
         "txt" => shiva::text::Transformer::generate(&document).unwrap(),
         "pdf" => shiva::pdf::Transformer::generate(&document).unwrap(),
         "json" => shiva::json::Transformer::generate(&document).unwrap(),
+        "rtf" => shiva::rtf::Transformer::generate(&document).unwrap(),
         _ => return Err(Error::FailConvertFile),
     };
 
@@ -147,7 +145,7 @@ fn supported_extensions_in_archive(file_extension: &str) -> bool {
 
 //unpacking the archive
 async fn unpacking(mut field: Field<'_>) -> Result<StructUploadFile> {
-   // Creating variables to store archive file data
+    // Creating variables to store archive file data
     let mut file_name = None;
     let mut file_data = None;
     let mut file_extension = None;
@@ -160,11 +158,11 @@ async fn unpacking(mut field: Field<'_>) -> Result<StructUploadFile> {
         match chunk {
             Ok(data) => {
                 file_content.extend_from_slice(&data);
-            },
+            }
             Err(e) => {
                 println!("Error reading chunk: {:?}", e);
                 return Err(Error::FailBytes);
-            },
+            }
         }
     }
 
@@ -230,7 +228,7 @@ async fn unpacking(mut field: Field<'_>) -> Result<StructUploadFile> {
     let upload_file_zip = UploadFileZip {
         file_name: file_name.unwrap_or("Shiva_convert".to_string()),
         file_data: file_data.ok_or_else(|| Error::FailBytes)?,
-        file_extension: file_extension.ok_or_else(||Error::ExtensionMissing)?,
+        file_extension: file_extension.ok_or_else(|| Error::ExtensionMissing)?,
         images,
     };
 
@@ -238,7 +236,6 @@ async fn unpacking(mut field: Field<'_>) -> Result<StructUploadFile> {
 }
 
 async fn upload_file(mut multipart: Multipart) -> Result<StructUploadFile> {
-
     //create variables in which we will then write the name, file extension and the file itself in binary form
     let mut file_name = None;
     let mut file_extension = None;
@@ -259,7 +256,6 @@ async fn upload_file(mut multipart: Multipart) -> Result<StructUploadFile> {
                 .filter(|upload_name| !upload_name.trim().is_empty())
                 .map(String::from);
 
-
             //defining the file extension
             file_extension = filename
                 .split(".")
@@ -267,7 +263,6 @@ async fn upload_file(mut multipart: Multipart) -> Result<StructUploadFile> {
                 .map(|ext| ext.to_lowercase())
                 .filter(|ext| !ext.trim().is_empty())
                 .map(String::from);
-
 
             //matching the file extension
             if let Some(ref ext) = file_extension {
@@ -277,12 +272,12 @@ async fn upload_file(mut multipart: Multipart) -> Result<StructUploadFile> {
                     }
 
                     _ => {
-                            //if not zip, check the supported extension
-                            if supported_format(ext).await {
-                                file_data = field.bytes().await.unwrap();
-                            } else {
-                                return Err(Error::UnsupportedFormat);
-                            }
+                        //if not zip, check the supported extension
+                        if supported_format(ext).await {
+                            file_data = field.bytes().await.unwrap();
+                        } else {
+                            return Err(Error::UnsupportedFormat);
+                        }
                     }
                 }
             } else {
@@ -333,13 +328,13 @@ async fn convert_file(
         _ => return Err(Error::FailParseDocument),
     };
 
-
     let output_bytes = match output_format.as_str() {
         "md" => shiva::markdown::Transformer::generate(&document).unwrap(),
         "html" | "htm" => shiva::html::Transformer::generate(&document).unwrap(),
         "txt" => shiva::text::Transformer::generate(&document).unwrap(),
         "pdf" => shiva::pdf::Transformer::generate(&document).unwrap(),
         "json" => shiva::json::Transformer::generate(&document).unwrap(),
+        "rtf" => shiva::rtf::Transformer::generate(&document).unwrap(),
         _ => return Err(Error::FailConvertFile),
     };
 
