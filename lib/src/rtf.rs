@@ -1,11 +1,9 @@
-use crate::core::{
-    Document,
-    Element::{Header,  Paragraph,  Text},
-    TransformerTrait,
-};
+use std::collections::HashMap;
+use crate::core::{Document, Element::{Header, Paragraph, Text}, TransformerTrait};
 
 use rtf_parser::lexer::Lexer;
 use rtf_parser::parser::Parser;
+
 
 
 
@@ -44,9 +42,49 @@ impl TransformerTrait for Transformer {
     Ok(document)
     }
     fn generate(
-        _document: &Document,
-    ) -> anyhow::Result<bytes::Bytes> {
-        todo!();
+        document: &Document,
+    ) -> anyhow::Result<
+        bytes::Bytes
+    > {
+        let mut rtf_content = String::new();
+
+        rtf_content.push_str("{\\rtf1\\ansi\\deff0"); //the standard title of an RTF document, which indicates that it is an RTF document using ANSI characters and the default font
+        for element in &document.elements {
+            match element {
+
+                Header { level, text} => {
+                    let header_size = 30 + (*level as i32 * 2);
+
+                    //formatting the string RTF
+                    rtf_content.push_str(&format!(
+                        "{{\\fs{}\\b {} \\b0}}\\par ",
+                        header_size * 2,
+                        text
+                    ));
+                }
+
+                Paragraph { elements } => {
+                    for elem in elements {
+                        if let Text { text, size } = elem {
+                            rtf_content.push_str(&format!(
+                                "{{\\fs{} {}}}",
+                                *size as i32 * 2,
+                                text
+                            ));
+                        }
+                    }
+                    rtf_content.push_str("\\par ");
+                }
+                _ => {
+                    eprintln!("Unknown element");
+                }
+            }
+        }
+
+        rtf_content.push_str("}");
+
+        Ok((bytes::Bytes::from(rtf_content.into_bytes()), HashMap::new()))
+
     }
 }
 
@@ -61,8 +99,8 @@ mod test {
         let document = std::fs::read("test/data/document.rtf")?;
         let documents_bytes = Bytes::from(document);
         let parsed = Transformer::parse(&documents_bytes)?;
-        let generated_result = crate::pdf::Transformer::generate(&parsed)?;
-        std::fs::write("test/data/document_from_rtf.pdf", generated_result)?;
+        let generated_result = crate::rtf::Transformer::generate(&parsed)?;
+        std::fs::write("test/data/document_from_rtf.rtf", generated_result)?;
 
         Ok(())
     }

@@ -2,7 +2,8 @@ use crate::core::Element::Table;
 use crate::core::{Document, Element, ListItem, TableCell, TableRow, TransformerTrait};
 
 use bytes::Bytes;
-use docx_rs::{read_docx, ParagraphStyle, RunChild, TableRowChild};
+use docx_rs::{read_docx, ParagraphStyle, RunChild, TableRowChild, Docx, Paragraph, Run};
+use std::io::Cursor;
 
 pub struct Transformer;
 
@@ -244,15 +245,59 @@ impl TransformerTrait for Transformer {
 
         Ok(Document::new(result))
     }
-    fn generate(_document: &Document) -> anyhow::Result<Bytes> {
-        todo!()
+    fn generate(document: &Document) -> anyhow::Result<Bytes> {
+
+        let mut doc = Docx::new();
+
+        for element in &document.elements {
+            match element {
+                Element::Header { level, text } => {
+                    let size = match level {
+                        1 => 32,
+                        2 => 28,
+                        3 => 24,
+                        4 => 20,
+                        5 => 16,
+                        6 => 12,
+                        _ => 10,
+                    };
+                    doc = doc.add_paragraph(
+                        Paragraph::new()
+                            .add_run(Run::new().add_text(text).bold().size(size))
+                    );
+                }
+
+                Element::Paragraph { elements } => {
+                    let mut paragraph = Paragraph::new();
+                    for elem in elements {
+                        if let Element::Text { text, size } = elem {
+                            paragraph = paragraph.add_run(Run::new().add_text(text).size((*size * 2) as usize));
+                        }
+                    }
+
+                    doc = doc.add_paragraph(paragraph);
+                }
+
+                _ => {
+                    eprintln!("Unknown element");
+                }
+            }
+        }
+
+        let buffer = Vec::new();
+        let mut cursor = Cursor::new(buffer);
+
+        doc.build().pack(&mut cursor)?;
+        let buffer = cursor.into_inner();
+
+        Ok(bytes::Bytes::from(buffer))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::core::TransformerTrait;
-    use crate::{docx, html};
+    use crate::{docx};
     use bytes::Bytes;
 
     #[test]
@@ -267,9 +312,9 @@ mod tests {
             parsed
         );
 
-        let result = html::Transformer::generate(&parsed?)?;
+        let result = docx::Transformer::generate(&parsed?)?;
         //write to file
-        std::fs::write("test/data/document_from_docx.html", result)?;
+        std::fs::write("test/data/document_from_docx.docx", result)?;
 
         Ok(())
     }

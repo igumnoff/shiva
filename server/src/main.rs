@@ -1,9 +1,9 @@
 pub use self::error::Result;
 use crate::web::routes_files::handler_convert_file;
+use axum::extract::DefaultBodyLimit;
 use axum::response::{Html, IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{middleware, Router};
-use axum::extract::DefaultBodyLimit;
 use clap::{Arg, Command};
 use tokio::net::TcpListener;
 use tower_http::limit::RequestBodyLimitLayer;
@@ -11,7 +11,6 @@ use tower_http::limit::RequestBodyLimitLayer;
 mod error;
 
 mod web;
-
 
 // multy thread
 #[tokio::main]
@@ -52,7 +51,7 @@ async fn main() -> Result<()> {
     let route_input_file = Router::new()
         .route("/transform/:output_format", post(handler_convert_file))
         .layer(DefaultBodyLimit::disable())
-        .layer(RequestBodyLimitLayer::new(100 * 1024 * 1024));//file size limit - 100 Mb
+        .layer(RequestBodyLimitLayer::new(100 * 1024 * 1024)); //file size limit - 100 Mb
 
     let routes_all = Router::new()
         .merge(route_test)
@@ -90,15 +89,15 @@ async fn main_response_mapper(res: Response) -> Response {
 
 #[cfg(test)]
 mod tests {
-    use anyhow::{Result};
-    use reqwest::{multipart};
-    use std::fs;
-    use tokio::fs::File;
     use anyhow::anyhow;
     use anyhow::Error;
-    use std::io::Cursor;
+    use anyhow::Result;
+    use reqwest::multipart;
     use reqwest::Body;
+    use std::fs;
+    use std::io::Cursor;
     use std::io::Write;
+    use tokio::fs::File;
 
     #[tokio::test]
     async fn test_server() -> Result<()> {
@@ -108,7 +107,6 @@ mod tests {
 
         Ok(())
     }
-
 
     #[tokio::test]
     async fn test_handler_convert_file_md_html_txt() -> Result<(), Error> {
@@ -121,7 +119,7 @@ mod tests {
 
         //We form all combinations of incoming and outgoing file formats
         let input_formats = vec!["md", "html", "txt"];
-        let output_formats = vec!["md", "html", "txt", "pdf", "json"];
+        let output_formats = vec!["md", "html", "txt", "pdf", "json", "rtf", "docx"];
 
         // We go through all the combinations
         for input_format in &input_formats {
@@ -144,6 +142,8 @@ mod tests {
                         &"txt" => "text/plain",
                         &"pdf" => "application/pdf",
                         &"json" => "application/json",
+                        &"rtf" => "application/rtf",
+                        &"docx" => "application/docx",
                         _ => return Err(anyhow!("Invalid output format: {}", output_format)),
                     })?;
 
@@ -316,7 +316,7 @@ mod tests {
 
         let pdf_content = response.bytes().await?;
 
-        let output_formats = vec!["md", "html", "txt", "pdf", "json"];
+        let output_formats = vec!["md", "html", "txt", "pdf", "json", "rtf"];
 
         for output_format in &output_formats {
             let body = Body::from(pdf_content.clone());
@@ -353,17 +353,16 @@ mod tests {
         Ok(())
     }
 
-
     #[tokio::test]
     async fn test_upload_zip() -> Result<(), Box<dyn std::error::Error>> {
         println!("start test_upload_zip");
-/*
-        env_logger::builder()
-            .filter_level(log::LevelFilter::Trace)
-            .init();
-*/
+        /*
+                env_logger::builder()
+                    .filter_level(log::LevelFilter::Trace)
+                    .init();
+        */
         // We form all combinations of outgoing formats
-        let output_formats = vec!["md", "txt", "pdf", "json"];
+        let output_formats = vec!["md", "txt", "pdf", "json", "rtf"];
 
         for output_format in &output_formats {
             // Creating HTTP-client
