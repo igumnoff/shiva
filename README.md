@@ -25,7 +25,7 @@
 | XLS           | +     | -        |
 | XLSX          | +     | +        |
 | ODS           | +     | +        |
-| Typst         | -     | -        |
+| Typst         | -     | +        |
 
 
 ## Parse document features
@@ -58,6 +58,7 @@
 | CSV           | -      | -         | -    | +     | -     | -         | -          | -          |
 | XLSX          | -      | -         | -    | +     | -     | -         | -          | -          |
 | ODS           | -      | -         | -    | +     | -     | -         | -          | -          |
+| Typst         | +      | +         | +    | +     | +     | +         | +          | +          |
 
 ## Usage Shiva library
 
