@@ -430,3 +430,23 @@ impl TransformerTrait for Transformer {
         Ok(bytes)
     }
 }
+
+
+#[cfg(test)]
+mod test {
+    use bytes::Bytes;
+    use crate::{markdown};
+    use crate::core::{disk_image_loader, TransformerWithImageLoaderSaverTrait};
+
+    use super::*;
+    #[test]
+    fn test_generate() -> anyhow::Result<()> {
+        let document = std::fs::read("test/data/document.md")?;
+        let documents_bytes = Bytes::from(document);
+        let parsed = markdown::Transformer::parse_with_loader(&documents_bytes,disk_image_loader("test/data"))?;
+        let generated_result = crate::typst::Transformer::generate(&parsed)?;
+        std::fs::write("test/data/document_from_md.typ", generated_result)?;
+
+        Ok(())
+    }
+}
