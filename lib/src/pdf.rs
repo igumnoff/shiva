@@ -307,6 +307,20 @@ mod tests {
     }
 
     #[test]
+    fn test_md() -> anyhow::Result<()> {
+        let document = std::fs::read("test/data/document.md")?;
+        let documents_bytes = Bytes::from(document);
+        let parsed_document = markdown::Transformer::parse_with_loader(&documents_bytes,disk_image_loader("test/data"))?;
+        println!("==========================");
+        println!("{:?}", parsed_document);
+        println!("==========================");
+        let generated_result = Transformer::generate(&parsed_document)?;
+        std::fs::write("test/data/generated.pdf", generated_result)?;
+        Ok(())
+    }
+
+
+    #[test]
     fn test_list() -> anyhow::Result<()> {
         let document = std::fs::read("test/data/document.md")?;
         let documents_bytes = Bytes::from(document);
