@@ -3,12 +3,15 @@ use crate::core::{
     Document, Element, ListItem, ParserError, TransformerTrait,
 };
 
+use anyhow;
 use bytes::Bytes;
 use lopdf::content::Content;
 use lopdf::{Document as PdfDocument, Object, ObjectId};
 use std::collections::BTreeMap;
-// Outsource pdf conversion from Document
-use crate::typst;
+use typst::{
+    eval::Tracer,
+    foundations::Smart,
+};
 
 pub struct Transformer;
 impl TransformerTrait for Transformer {
@@ -25,7 +28,25 @@ impl TransformerTrait for Transformer {
         Ok(Document::new(elements))
     }
     fn generate(document: &Document) -> anyhow::Result<Bytes> {
-        typst::Transformer::generate(document)
+        let (text, img_map) = crate::typst::generate_document(document)?;
+        
+        let world = crate::typst::ShivaWorld::new(text, img_map);
+        let mut tracer = Tracer::default();
+
+        let document = typst::compile(&world, &mut tracer).unwrap();
+        let warnings = tracer.warnings();
+
+        if !warnings.is_empty() {// Trowing any warnings if necessary
+            for warn in warnings {
+                println!("Warning - {}", warn.message);
+            }
+        }
+        
+        // Converting to pdf then to bytes
+        let pdf = typst_pdf::pdf(&document, Smart::Auto, None);
+
+        let bytes = Bytes::from(pdf);
+        Ok(bytes)
     }
 }
 

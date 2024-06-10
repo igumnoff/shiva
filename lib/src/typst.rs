@@ -14,17 +14,18 @@ use comemo::Prehashed;
 
 use typst::{
     diag::{FileError, FileResult},
-    foundations::{Datetime, Smart},
+    foundations::{Datetime},
     eval::Tracer,
     syntax::{FileId, Source},
     text::{Font, FontBook},
     Library, World,
+
 };
 
 
 type TypstString = String;
 
-struct ShivaWorld {
+pub struct ShivaWorld {
     fonts: Vec<Font>,
     book: Prehashed<FontBook>,
     library: Prehashed<Library>,
@@ -33,7 +34,7 @@ struct ShivaWorld {
 }
 
 impl ShivaWorld {
-    fn new(source: String, img_map: HashMap<String, typst::foundations::Bytes>) -> Self {
+    pub fn new(source: String, img_map: HashMap<String, typst::foundations::Bytes>) -> Self {
         let source = Source::detached(source);
         
         let folder = "fonts";
@@ -172,270 +173,260 @@ impl TransformerTrait for Transformer {
     }
 
     fn generate(document: &Document) -> anyhow::Result<bytes::Bytes> {
-        // Array of methods to process Document object into a typst string repr
-        fn process_header(
-            source: &mut TypstString,
-            level: usize,
-            text: &str,
-        ) -> anyhow::Result<()> {
-            let header_depth = "=".repeat(level);
-            let header_text = format!("{header_depth} {text}");
-            source.push_str(&header_text);
-            source.push('\n');
+        let (text, _) = generate_document(document)?;
+        let bytes = Bytes::from(text);
+        Ok(bytes)
+    }
+}
 
-            Ok(())
+/// Converts Document into a typst::model::Document
+pub fn generate_document(document: &Document) -> anyhow::Result<(TypstString, HashMap<String, typst::foundations::Bytes>)> {
+    // Array of methods to process Document object into a typst string repr
+    fn process_header(
+        source: &mut TypstString,
+        level: usize,
+        text: &str,
+    ) -> anyhow::Result<()> {
+        let header_depth = "=".repeat(level);
+        let header_text = format!("{header_depth} {text}");
+        source.push_str(&header_text);
+        source.push('\n');
+
+        Ok(())
+    }
+
+    fn process_text(
+        source: &mut TypstString,
+        _size: u8,
+        text: &str,
+        is_bold: bool,
+    ) -> anyhow::Result<()> {
+        if is_bold {
+            let bold_text = format!("*{text}*");
+            source.push_str(&bold_text);
+        } else {
+            source.push_str(text);
         }
 
-        fn process_text(
-            source: &mut TypstString,
-            _size: u8,
-            text: &str,
-            is_bold: bool,
-        ) -> anyhow::Result<()> {
-            if is_bold {
-                let bold_text = format!("*{text}*");
-                source.push_str(&bold_text);
-            } else {
-                source.push_str(text);
+        Ok(())
+    }
+
+    fn process_link(source: &mut TypstString, url: &str) -> anyhow::Result<()> {
+        let link = format!("#link(\"{url}\")");
+
+        source.push_str(&link);
+
+        Ok(())
+    }
+
+    fn process_table(
+        source: &mut TypstString,
+        headers: &Vec<TableHeader>,
+        rows: &Vec<TableRow>,
+    ) -> anyhow::Result<()> {
+        let mut headers_text = TypstString::new();
+
+        for header in headers {
+            match &header.element {
+                Text { text, size } => {
+                    headers_text.push('[');
+                    process_text(&mut headers_text, *size, text, true)?;
+                    headers_text.push(']');
+                    headers_text.push(',');
+                }
+                _ => {
+                    eprintln!(
+                        "Should implement element for processing in inside table header - {:?}",
+                        header.element
+                    );
+                }
             }
-
-            Ok(())
         }
 
-        fn process_link(source: &mut TypstString, url: &str) -> anyhow::Result<()> {
-            let link = format!("#link(\"{url}\")");
+        let mut cells_text = TypstString::new();
 
-            source.push_str(&link);
-
-            Ok(())
-        }
-
-        fn process_table(
-            source: &mut TypstString,
-            headers: &Vec<TableHeader>,
-            rows: &Vec<TableRow>,
-        ) -> anyhow::Result<()> {
-            let mut headers_text = TypstString::new();
-
-            for header in headers {
-                match &header.element {
+        for row in rows {
+            for cell in &row.cells {
+                match &cell.element {
                     Text { text, size } => {
-                        headers_text.push('[');
-                        process_text(&mut headers_text, *size, text, true)?;
-                        headers_text.push(']');
-                        headers_text.push(',');
+                        cells_text.push('[');
+                        process_text(&mut cells_text, *size, text, false)?;
+                        cells_text.push(']');
+                        cells_text.push(',');
                     }
                     _ => {
                         eprintln!(
-                            "Should implement element for processing in inside table header - {:?}",
-                            header.element
+                            "Should implement element for processing in inside cell - {:?}",
+                            cell.element
                         );
                     }
                 }
             }
 
-            let mut cells_text = TypstString::new();
-
-            for row in rows {
-                for cell in &row.cells {
-                    match &cell.element {
-                        Text { text, size } => {
-                            cells_text.push('[');
-                            process_text(&mut cells_text, *size, text, false)?;
-                            cells_text.push(']');
-                            cells_text.push(',');
-                        }
-                        _ => {
-                            eprintln!(
-                                "Should implement element for processing in inside cell - {:?}",
-                                cell.element
-                            );
-                        }
-                    }
-                }
-
-                cells_text.push('\n');
-            }
-
-            let columns = headers.len();
-            let table_text = format!(
-                r#"
-            #table(
-                columns:{columns},
-                {headers_text}
-                {cells_text}
-            )
-            "#
-            );
-
-            source.push_str(&table_text);
-            Ok(())
+            cells_text.push('\n');
         }
 
-        fn process_list(
-            source: &mut TypstString,
-            img_map: &mut HashMap<String, typst::foundations::Bytes>,
-            list: &Vec<ListItem>,
-            numbered: bool,
-            depth: usize,
-        ) -> anyhow::Result<()> {
-            source.push_str(&" ".repeat(depth));
-            for el in list {
-                if let List { elements, numbered } = &el.element {
-                    process_list(source, img_map, elements, *numbered, depth + 1)?;
-                } else {
-                    if numbered {
-                        source.push_str("+ ")
-                    } else {
-                        source.push_str("- ")
-                    };
-
-                    process_element(source, img_map, &el.element)?;
-                }
-            }
-
-            Ok(())
-        }
-
-        fn process_image(
-            source: &mut TypstString,
-            bytes: &Bytes,
-            title: &str,
-            alt: &str,
-            image_type: &str,
-        ) -> anyhow::Result<()> {
-            if !bytes.is_empty() {
-                let image_text = format!("
-                #image(\"{title}{image_type}\", alt: \"{alt}\")
-                 "
-                );
-                source.push_str(&image_text);
-            }
-            // need to think how to implement using raw bytes
-            Ok(())
-        }
-
-        fn process_element (
-            source: &mut TypstString,
-            img_map: &mut HashMap<String, typst::foundations::Bytes>,
-            element: &Element,
-        ) -> anyhow::Result<()> {
-            match element {
-                Header { level, text } => process_header(source, *level as usize, text),
-                Paragraph { elements } => {
-                    for paragraph_element in elements {
-                        process_element(source, img_map, paragraph_element)?;
-                    }
-
-                    Ok(())
-                }
-                Text { text, size } => {
-                    process_text(source, *size, text, false)?;
-                    source.push('\n');
-
-                    Ok(())
-                }
-                List { elements, numbered } => {
-                    process_list(source, img_map, elements, *numbered, 0)?;
-                    Ok(())
-                }
-                Hyperlink {
-                    url,
-                    title: _,
-                    alt: _,
-                    size: _,
-                } => {
-                    process_link(source, url)?;
-                    source.push('\n');
-
-                    Ok(())
-                }
-                Table { headers, rows } => {
-                    process_table(source, headers, rows)?;
-                    Ok(())
-                }
-                Image {
-                    bytes,
-                    title,
-                    alt,
-                    image_type,
-                } => {
-                    let image_type = match image_type {
-                        ImageType::Jpeg => ".jpeg",
-                        ImageType::Png => ".png",
-                    };
-                    let key = format!("{title}{image_type}");
-                    img_map.insert(key, typst::foundations::Bytes::from(bytes.to_vec()));
-                    process_image(source, bytes, title, alt, image_type)?;
-                    source.push('\n');
-                    Ok(())
-                }
-                // _ => {
-                //     eprintln!("Should implement element - {:?}", element);
-                //     Ok(())
-                // }
-            }
-        }
-        
-        // String to build off of
-        let mut source = TypstString::new();
-        // Mapping of connections between elements
-        let mut img_map: HashMap<String, typst::foundations::Bytes> = HashMap::new();
-
-
-        // Converting both headers and footers into a string repr of them in Typst
-        let mut header_text = String::new();
-        document.page_header.iter().for_each(|el| match el {
-            Text { text, size: _ } => {
-                header_text.push_str(text);
-            }
-            _ => {}
-        });
-        let mut footer_text = String::new();
-        document.page_footer.iter().for_each(|el| match el {
-            Text { text, size: _ } => {
-                footer_text.push_str(text);
-            }
-            _ => {}
-        });
-        let footer_header_text = format!(
-            "#set page(
-            header: \"{header_text}\",
-            footer: \"{footer_text}\",
-          )\n"
+        let columns = headers.len();
+        let table_text = format!(
+            r#"
+        #table(
+            columns:{columns},
+            {headers_text}
+            {cells_text}
+        )
+        "#
         );
 
-        // Converting Document repr to one of typst string
-        source.push_str(&footer_header_text);
-        for element in &document.elements {
-            process_element(&mut source, &mut img_map, element)?;
-        }
+        source.push_str(&table_text);
+        Ok(())
+    }
 
-        // Creating a enviroment object 
-        let world = ShivaWorld::new(source, img_map);
-        let mut tracer = Tracer::default();
+    fn process_list(
+        source: &mut TypstString,
+        img_map: &mut HashMap<String, typst::foundations::Bytes>,
+        list: &Vec<ListItem>,
+        numbered: bool,
+        depth: usize,
+    ) -> anyhow::Result<()> {
+        source.push_str(&" ".repeat(depth));
+        for el in list {
+            if let List { elements, numbered } = &el.element {
+                process_list(source, img_map, elements, *numbered, depth + 1)?;
+            } else {
+                if numbered {
+                    source.push_str("+ ")
+                } else {
+                    source.push_str("- ")
+                };
 
-        let document = typst::compile(&world, &mut tracer).unwrap();
-        let warnings = tracer.warnings();
-
-        if !warnings.is_empty() {// Trowing any warnings if necessary
-            for warn in warnings {
-                println!("Warning - {}", warn.message);
+                process_element(source, img_map, &el.element)?;
             }
         }
 
-        // Converting to pdf then to bytes
-        let pdf = typst_pdf::pdf(&document, Smart::Auto, None);
-        let bytes = Bytes::from(pdf);
-        Ok(bytes)
+        Ok(())
     }
-}
 
+    fn process_image(
+        source: &mut TypstString,
+        bytes: &Bytes,
+        title: &str,
+        alt: &str,
+        image_type: &str,
+    ) -> anyhow::Result<()> {
+        if !bytes.is_empty() {
+            let image_text = format!("
+            #image(\"{title}{image_type}\", alt: \"{alt}\")
+            "
+            );
+            source.push_str(&image_text);
+        }
+        // need to think how to implement using raw bytes
+        Ok(())
+    }
+
+    fn process_element (
+        source: &mut TypstString,
+        img_map: &mut HashMap<String, typst::foundations::Bytes>,
+        element: &Element,
+    ) -> anyhow::Result<()> {
+        match element {
+            Header { level, text } => process_header(source, *level as usize, text),
+            Paragraph { elements } => {
+                for paragraph_element in elements {
+                    process_element(source, img_map, paragraph_element)?;
+                }
+
+                Ok(())
+            }
+            Text { text, size } => {
+                process_text(source, *size, text, false)?;
+                source.push('\n');
+
+                Ok(())
+            }
+            List { elements, numbered } => {
+                process_list(source, img_map, elements, *numbered, 0)?;
+                Ok(())
+            }
+            Hyperlink {
+                url,
+                title: _,
+                alt: _,
+                size: _,
+            } => {
+                process_link(source, url)?;
+                source.push('\n');
+
+                Ok(())
+            }
+            Table { headers, rows } => {
+                process_table(source, headers, rows)?;
+                Ok(())
+            }
+            Image {
+                bytes,
+                title,
+                alt,
+                image_type,
+            } => {
+                let image_type = match image_type {
+                    ImageType::Jpeg => ".jpeg",
+                    ImageType::Png => ".png",
+                };
+                let key = format!("{title}{image_type}");
+                img_map.insert(key, typst::foundations::Bytes::from(bytes.to_vec()));
+                process_image(source, bytes, title, alt, image_type)?;
+                source.push('\n');
+                Ok(())
+            }
+            // _ => {
+            //     eprintln!("Should implement element - {:?}", element);
+            //     Ok(())
+            // }
+        }
+    }
+
+    // String to build off of
+    let mut source = TypstString::new();
+    // Mapping of connections between elements
+    let mut img_map: HashMap<String, typst::foundations::Bytes> = HashMap::new();
+
+
+    // Converting both headers and footers into a string repr of them in Typst
+    let mut header_text = String::new();
+    document.page_header.iter().for_each(|el| match el {
+        Text { text, size: _ } => {
+            header_text.push_str(text);
+        }
+        _ => {}
+    });
+    let mut footer_text = String::new();
+    document.page_footer.iter().for_each(|el| match el {
+        Text { text, size: _ } => {
+            footer_text.push_str(text);
+        }
+        _ => {}
+    });
+    let footer_header_text = format!(
+        "#set page(
+        header: \"{header_text}\",
+        footer: \"{footer_text}\",
+    )\n"
+    );
+
+    // Converting Document repr to one of typst string
+    source.push_str(&footer_header_text);
+    for element in &document.elements {
+        process_element(&mut source, &mut img_map, element)?;
+    }
+
+    Ok((source, img_map))
+}
 
 #[cfg(test)]
 mod test {
     use bytes::Bytes;
-    use crate::{markdown};
+    use crate::markdown;
     use crate::core::{disk_image_loader, TransformerWithImageLoaderSaverTrait};
 
     use super::*;
