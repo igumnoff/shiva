@@ -4,8 +4,12 @@
 
 pub mod core;
 
+
 #[cfg(feature = "text")]
 pub mod text;
+
+#[cfg(feature = "typst")]
+pub mod typst;
 
 #[cfg(feature = "markdown")]
 pub mod markdown;

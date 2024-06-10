@@ -75,7 +75,7 @@ impl TransformerTrait for Transformer {
 #[cfg(test)]
 mod tests {
     use std::fs::File;
-    use std::io::{ Read };
+    use std::io::Read;
     use anyhow::Ok;
     use bytes::Bytes;
     use crate::text;
