@@ -803,6 +803,7 @@ mod tests {
     use std::fs::File;
     use std::io::Read;
     use bytes::Bytes;
+    use crate::{html, markdown, pdf, text};
     use crate::xml::*;
 
     #[test]
@@ -816,6 +817,11 @@ mod tests {
         let images: HashMap<String, Bytes> = HashMap::new();
         let parsed = Transformer::parse(&bytes, &images)?;
         println!("{:#?}", parsed);
+
+
+        let generated_result = html::Transformer::generate(&parsed)?;
+        std::fs::write("test/data/document_from_xml.html", generated_result.0)?;
+
 
         Ok(())
     }
