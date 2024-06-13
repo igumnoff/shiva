@@ -933,8 +933,9 @@ impl TransformerTrait for Transformer {
 #[cfg(test)]
 mod tests {
     use std::fs::File;
-    use std::io::Read;
+    use std::io::{Read, Write};
     use bytes::Bytes;
+    use crate::markdown;
     use crate::xml::*;
 
     #[test]
@@ -947,7 +948,9 @@ mod tests {
         let bytes = Bytes::from(buffer);
         let parsed = Transformer::parse(&bytes)?;
         println!("{:#?}", parsed);
-
+        let generated = markdown::Transformer::generate(&parsed)?;
+        let mut file = File::create("test/data/generated.md")?;
+        file.write_all(&generated)?;
         Ok(())
     }
 
@@ -960,8 +963,11 @@ mod tests {
         file.read_to_end(&mut buffer)?;
         let bytes = Bytes::from(buffer);
         let parsed = Transformer::parse(&bytes)?;
-        let generated = Transformer::generate(&parsed);
-        println!("{:#?}", generated.unwrap());
+        let generated = Transformer::generate(&parsed)?;
+        println!("{:#?}", generated);
+        // write to file
+        let mut file = File::create("test/data/generated.xml")?;
+        file.write_all(&generated)?;
 
         Ok(())
     }
