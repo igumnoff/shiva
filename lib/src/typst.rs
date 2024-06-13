@@ -2,7 +2,6 @@ use crate::core::Element::{Header, Hyperlink, Image, List, Paragraph, Table, Tex
 
 use bytes::Bytes;
 use anyhow;
-use typst_pdf;
 use std::collections::HashMap;
 use crate::core::{
     Document, Element, ImageType, ListItem, TableHeader, TableRow, TransformerTrait,
@@ -15,7 +14,6 @@ use comemo::Prehashed;
 use typst::{
     diag::{FileError, FileResult},
     foundations::{Datetime},
-    eval::Tracer,
     syntax::{FileId, Source},
     text::{Font, FontBook},
     Library, World,
