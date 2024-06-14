@@ -534,6 +534,12 @@ mod test {
     #[test]
     fn test_parse() -> anyhow::Result<()> {
 
+        // load document_from_md.typ
+        let document = std::fs::read("test/data/document_from_md.typ")?;
+        let documents_bytes = Bytes::from(document);
+        let parsed = crate::typst::Transformer::parse(&documents_bytes)?;
+        println!("{:#?}", parsed);
+
         Ok(())
     }
 
