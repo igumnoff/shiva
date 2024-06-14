@@ -2,8 +2,9 @@ use crate::core::Element::{Header, Hyperlink, Image, List, Paragraph, Table, Tex
 
 use bytes::Bytes;
 use anyhow;
+use spreadsheet_ods::text;
 use typst_pdf;
-use std::collections::HashMap;
+use std::{collections::HashMap, io::Read};
 use crate::core::{
     Document, Element, ImageType, ListItem, TableHeader, TableRow, TransformerTrait,
 };
@@ -14,7 +15,7 @@ use comemo::Prehashed;
 
 use typst::{
     diag::{FileError, FileResult},
-    foundations::{Datetime},
+    foundations::Datetime,
     eval::Tracer,
     syntax::{FileId, Source},
     text::{Font, FontBook},
@@ -34,7 +35,7 @@ pub struct ShivaWorld {
 }
 
 impl ShivaWorld {
-    pub fn new(source: String, img_map: HashMap<String, typst::foundations::Bytes>) -> Self {
+    pub fn new<T>(source: T, img_map: HashMap<String, typst::foundations::Bytes>) -> Self where T: Into<String> {
         let source = Source::detached(source);
         
         let folder = "fonts";
@@ -167,9 +168,108 @@ impl World for ShivaWorld {
 pub struct Transformer;
 
 impl TransformerTrait for Transformer {
-    #[allow(unused)]
+    /*
+    This parser utilizes typst built in parsing function that outputs file contents into a Document type
+    After this we convert their type into our intermediate repr
+
+    Note: 
+    Current document is missing things like fonts and features like bold and underlined text
+    */
     fn parse(document: &bytes::Bytes) -> anyhow::Result<Document> {
-        todo!()
+
+        fn process_element(frame: &typst::layout::Frame) -> Element {
+            // Iterating over frame items
+
+            let mut res = Vec::with_capacity(frame.items().len());
+
+            for (_point, item) in frame.items() {
+                res.push(match item {
+                    typst::layout::FrameItem::Group(group_item) => {
+                        process_group(group_item)
+                    },
+                    typst::layout::FrameItem::Text(text_item) => {
+                        process_text(text_item)
+                    },
+                    typst::layout::FrameItem::Shape(shape, span) => {
+                        process_shape(shape, span)
+                    },
+                    typst::layout::FrameItem::Image(image, axes, span) => {
+                        process_image(image, axes, span)
+                    },
+                    typst::layout::FrameItem::Meta(meta, _) => {
+                        process_meta(meta)
+                    },
+                })
+            }
+            Paragraph { elements: res }
+        }
+
+        fn process_text(text_item: &typst::text::TextItem) -> Element {
+            Element::Text { text: text_item.text.to_string(), size: text_item.size.to_pt().round() as u8}
+        }
+
+        fn process_image(image: &typst::visualize::Image, _axes: &typst::layout::Axes<typst::layout::Abs>, _span: &typst_syntax::Span) -> Element {
+            // Image kind is wrong, we do not support all image kinds yet. throw error?
+            let image_type = match image.kind() {
+                typst::visualize::ImageKind::Raster(_) => ImageType::Jpeg,
+                typst::visualize::ImageKind::Svg(_) => ImageType::Png,
+            };
+            Element::Image { bytes: bytes::Bytes::from(image.data().to_vec()),
+                             title: String::new(),
+                             alt: String::from(image.alt().unwrap_or("")), 
+                             image_type}
+        }
+
+        fn process_meta(meta: &typst::introspection::Meta) -> Element {
+            match meta {
+                // Unable to complete this lines as document does not support them
+                typst::introspection::Meta::Link(dest) => {
+                    match dest {
+                        typst::model::Destination::Url(string) => {
+                            Hyperlink { title: String::new(), url: string.to_string(), alt: String::new(), size: 12 }
+                        },
+                        typst::model::Destination::Position(_) => todo!(),
+                        typst::model::Destination::Location(_) => todo!(),
+                    }
+                },
+                typst::introspection::Meta::Elem(_) => todo!(),
+                typst::introspection::Meta::Hide => todo!(),
+            }
+        }
+
+         fn process_shape(shape: &typst::visualize::Shape, span: &typst_syntax::Span) -> Element {
+            match shape.geometry {
+                
+            }
+         }
+
+         fn process_group(group_item: &typst::layout::GroupItem) -> Element {
+            process_element(&group_item.frame)
+         }
+
+        let world = ShivaWorld::new(String::from_utf8_lossy(document), HashMap::new());
+
+        let mut tracer = Tracer::new();
+        // Using typst compiler to read file into intermediate repr
+        let doc = typst::compile(&world, &mut tracer).unwrap();
+
+        let warnings = tracer.warnings();
+        if !warnings.is_empty() {// Trowing any warnings if necessary
+            for warn in warnings {
+                println!("Warning - {}", warn.message);
+            }
+        }
+
+        // Converting from typst document format to ours
+        let mut pages:Vec<Element>  = Vec::with_capacity(doc.pages.len());
+
+        // Iterating over pages
+        // Panics if page numbers in document are set wrong
+        for typst::layout::Page {frame, numbering: _, number} in doc.pages {
+            pages.insert(number, process_element(&frame))
+        }
+
+        Ok(Document::new(pages))
     }
 
     fn generate(document: &Document) -> anyhow::Result<bytes::Bytes> {
@@ -430,6 +530,13 @@ mod test {
     use crate::core::{disk_image_loader, TransformerWithImageLoaderSaverTrait};
 
     use super::*;
+
+    #[test]
+    fn test_parse() -> anyhow::Result<()> {
+
+        Ok(())
+    }
+
     #[test]
     fn test_generate() -> anyhow::Result<()> {
         let document = std::fs::read("test/data/document.md")?;
