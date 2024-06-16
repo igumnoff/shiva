@@ -1,7 +1,7 @@
 use crate::core::{Document, Element, ListItem, TableCell, TableRow, TransformerTrait};
 
 use bytes::Bytes;
-use docx_rs::{read_docx, Docx, Paragraph, ParagraphStyle, Run, RunChild, TableRowChild, Hyperlink, HyperlinkType};
+use docx_rs::{read_docx, Docx, Paragraph, ParagraphStyle, Run, RunChild, TableRowChild, Hyperlink, HyperlinkType, Pic, Drawing};
 use std::io::Cursor;
 
 pub struct Transformer;
@@ -367,8 +367,38 @@ impl TransformerTrait for Transformer {
                     doc = doc.add_paragraph(Paragraph::add_hyperlink(paragraph, hyperlink));
                 }
 
-                Element::Image {bytes, title, alt, image_type} => {
+                Element::Image { bytes, title, alt, image_type} => {
+                    let mut pic = Pic::new(&bytes);
 
+                    // Устанавливаем максимальный размер изображения (в EMU)
+                    let max_width = 5900000; // 16.5 cm
+                    let max_height = 10629420; // 29.7 cm
+
+                    // Получаем текущий размер изображения
+                    let (width, height) = pic.size;
+
+                    // Масштабируем изображение, если оно превышает размеры страницы
+                    let mut new_width = width;
+                    let mut new_height = height;
+
+                    // Масштабируем изображение, если оно превышает размеры страницы
+                    if width > max_width {
+                        let ratio = max_width as f32 / width as f32;
+                        new_width = (width as f32 * ratio) as u32;
+                        new_height = (height as f32 * ratio) as u32;
+                    }
+                    if new_height > max_height {
+                        let ratio = max_height as f32 / new_height as f32;
+                        new_width = (new_width as f32 * ratio) as u32;
+                        new_height = (new_height as f32 * ratio) as u32;
+                    }
+
+                    pic = pic.size(new_width, new_height);
+
+                    let paragraph = Paragraph::new()
+                        .add_run(Run::new().add_image(pic));
+
+                    doc = doc.add_paragraph(paragraph);
                 }
 
                 Element::Table { headers, rows } => {
