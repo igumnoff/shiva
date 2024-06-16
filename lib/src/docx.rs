@@ -1,12 +1,10 @@
-use crate::core::Element::Table;
 use crate::core::{Document, Element, ListItem, TableCell, TableRow, TransformerTrait};
 
 use bytes::Bytes;
-use docx_rs::{read_docx, ParagraphStyle, RunChild, TableRowChild, Docx, Paragraph, Run};
+use docx_rs::{read_docx, Docx, Paragraph, ParagraphStyle, Run, RunChild, TableRowChild, Hyperlink, HyperlinkType};
 use std::io::Cursor;
 
 pub struct Transformer;
-
 
 impl TransformerTrait for Transformer {
     fn parse(document: &Bytes) -> anyhow::Result<Document> {
@@ -27,7 +25,6 @@ impl TransformerTrait for Transformer {
             "".to_string()
         }
 
-  
         let docx = read_docx(document)?;
         const HEADING1: &str = "Heading1";
         const HEADING2: &str = "Heading2";
@@ -40,7 +37,6 @@ impl TransformerTrait for Transformer {
         let mut current_list: Option<(usize, Vec<ListItem>)> = None;
 
         for ch in docx.document.children {
-
             if let docx_rs::DocumentChild::Paragraph(par) = ch {
                 if let Some(numbering_property) = &par.property.numbering_property {
                     let num_id = numbering_property
@@ -49,7 +45,6 @@ impl TransformerTrait for Transformer {
                         .expect("No number id in list item")
                         .id;
                     if num_id == 3 || num_id == 2 {
-
                         let list_text = extract_text(&par);
 
                         let list_item = ListItem {
@@ -100,24 +95,18 @@ impl TransformerTrait for Transformer {
                                 numbered: is_list_numbered,
                             });
                         }
-        
+
                         match &par.property.style {
                             Some(ParagraphStyle { val }) => match val.as_str() {
                                 HEADING1 => {
                                     let text = extract_text(&par);
-                                    let element = Element::Header {
-                                        level: 1,
-                                        text,
-                                    };
+                                    let element = Element::Header { level: 1, text };
 
                                     result.push(element);
                                 }
                                 HEADING2 => {
                                     let text = extract_text(&par);
-                                    let element = Element::Header {
-                                        level: 2,
-                                        text,
-                                    };
+                                    let element = Element::Header { level: 2, text };
 
                                     result.push(element);
                                 }
@@ -154,19 +143,13 @@ impl TransformerTrait for Transformer {
                         Some(ParagraphStyle { val }) => match val.as_str() {
                             HEADING1 => {
                                 let text = extract_text(&par);
-                                let element = Element::Header {
-                                    level: 1,
-                                    text,
-                                };
+                                let element = Element::Header { level: 1, text };
 
                                 result.push(element);
                             }
                             HEADING2 => {
                                 let text = extract_text(&par);
-                                let element = Element::Header {
-                                    level: 2,
-                                    text,
-                                };
+                                let element = Element::Header { level: 2, text };
 
                                 result.push(element);
                             }
@@ -223,15 +206,13 @@ impl TransformerTrait for Transformer {
                             rows.push(cells);
                         }
 
-                        result.push(Table {
+                        result.push(Element::Table {
                             headers: vec![],
                             rows,
                         });
                     }
                     _ => {}
                 }
-
-                
             }
         }
 
@@ -242,42 +223,192 @@ impl TransformerTrait for Transformer {
             });
         }
 
-
         Ok(Document::new(result))
     }
-    fn generate(document: &Document) -> anyhow::Result<Bytes> {
 
+
+    fn generate(document: &Document) -> anyhow::Result<Bytes> {
         let mut doc = Docx::new();
 
         for element in &document.elements {
             match element {
                 Element::Header { level, text } => {
                     let size = match level {
-                        1 => 32,
-                        2 => 28,
-                        3 => 24,
-                        4 => 20,
-                        5 => 16,
-                        6 => 12,
-                        _ => 10,
+                        1 => 18,
+                        2 => 16,
+                        _ => 14,
                     };
                     doc = doc.add_paragraph(
-                        Paragraph::new()
-                            .add_run(Run::new().add_text(text).bold().size(size))
+                        Paragraph::new().add_run(Run::new().add_text(text).size(size * 2)),
                     );
                 }
 
-                Element::Paragraph { elements } => {
-                    let mut paragraph = Paragraph::new();
-                    for elem in elements {
-                        if let Element::Text { text, size } = elem {
-                            paragraph = paragraph.add_run(Run::new().add_text(text).size((*size * 2) as usize));
-                        }
-                    }
-
-                    doc = doc.add_paragraph(paragraph);
+                Element::Text { text, size } => {
+                    doc = doc.add_paragraph(
+                        Paragraph::new()
+                            .add_run(Run::new().add_text(text).size(*size as usize * 2)),
+                    )
                 }
 
+                Element::Paragraph { elements } => {
+                    for paragraph_element in elements {
+                        match paragraph_element {
+                            Element::Text { text, size } => {
+                                doc =
+                                    doc.add_paragraph(Paragraph::new().add_run(
+                                        Run::new().add_text(text).size(*size as usize * 2),
+                                    ));
+                            }
+                            _ => {
+                                eprintln!("Unknown paragraph element");
+                            }
+                        }
+                    }
+                }
+
+                Element::List { elements, numbered } => {
+                    for list_item in elements {
+                        match &list_item.element {
+                            Element::Text { text, size } => {
+                                let mut paragraph = Paragraph::new()
+                                    .add_run(Run::new().add_text(text).size(*size as usize * 2));
+                                if *numbered {
+                                    paragraph = paragraph.style("ListNumber");
+                                } else {
+                                    paragraph = paragraph.style("ListBullet");
+                                }
+                                doc = doc.add_paragraph(paragraph);
+                            }
+                            Element::List { elements, numbered } => {
+                                for sub_list_item in elements {
+                                    match &sub_list_item.element {
+                                        Element::Text { text, size } => {
+                                            let mut sub_paragraph = Paragraph::new().add_run(
+                                                Run::new().add_text(text).size(*size as usize * 2),
+                                            );
+                                            if *numbered {
+                                                sub_paragraph = sub_paragraph.style("ListNumber");
+                                            } else {
+                                                sub_paragraph = sub_paragraph.style("ListBullet");
+                                            }
+                                            doc = doc.add_paragraph(sub_paragraph);
+                                        }
+                                        Element::List { elements, numbered } => {
+                                            for sub_sub_list_item in elements {
+                                                match &sub_sub_list_item.element {
+                                                    Element::Text { text, size } => {
+                                                        let mut sub_sub_paragraph =
+                                                            Paragraph::new().add_run(
+                                                                Run::new()
+                                                                    .add_text(text)
+                                                                    .size(*size as usize * 2),
+                                                            );
+                                                        if *numbered {
+                                                            sub_sub_paragraph = sub_sub_paragraph
+                                                                .style("ListNumber");
+                                                        } else {
+                                                            sub_sub_paragraph = sub_sub_paragraph
+                                                                .style("ListBullet");
+                                                        }
+                                                        doc = doc.add_paragraph(sub_sub_paragraph);
+                                                    }
+                                                    _ => {
+                                                        println!("unknown element in sub-sub-list");
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        _ => {
+                                            println!("unknown element in sub-list");
+                                        }
+                                    }
+                                }
+                            }
+                            Element::Header { level, text } => {
+                                let size = match level {
+                                    1 => 18,
+                                    2 => 16,
+                                    _ => 14,
+                                };
+                                let mut paragraph = Paragraph::new()
+                                    .add_run(Run::new().add_text(text).size(size * 2));
+                                if *numbered {
+                                    paragraph = paragraph.style("ListNumber");
+                                } else {
+                                    paragraph = paragraph.style("ListBullet");
+                                }
+                                doc = doc.add_paragraph(paragraph);
+                            }
+                            Element::Hyperlink { title, url, alt, size } => {
+                                let _ = alt;
+                                let hyperlink = Hyperlink::new(url, HyperlinkType::External)
+                                    .add_run(Run::new().add_text(url).size(*size as usize * 2));
+                                let paragraph = Paragraph::new()
+                                    .add_run(Run::new().add_text(title).size(*size as usize * 2));
+
+                                doc = doc.add_paragraph(Paragraph::add_hyperlink(paragraph, hyperlink));
+                            }
+                            _ => {
+                                println!("unknown element in list");
+                            }
+                        }
+                    }
+                }
+
+
+                Element::Hyperlink { title, url, alt, size } => {
+                    let _ = alt;
+                    let hyperlink = Hyperlink::new(url, HyperlinkType::External)
+                        .add_run(Run::new().add_text(url).size(*size as usize * 2));
+                    let paragraph = Paragraph::new()
+                        .add_run(Run::new().add_text(title).size(*size as usize * 2));
+
+                    doc = doc.add_paragraph(Paragraph::add_hyperlink(paragraph, hyperlink));
+                }
+
+                Element::Image {bytes, title, alt, image_type} => {
+
+                }
+
+                Element::Table { headers, rows } => {
+                    let mut table_rows = Vec::new();
+
+                    if !headers.is_empty() {
+                        let mut header_cell: Vec<docx_rs::TableCell> = Vec::new();
+                        for header in headers {
+                            if let Element::Text { text, size } = &header.element {
+                                let cell = docx_rs::TableCell::new().add_paragraph(
+                                    Paragraph::new().add_run(
+                                        Run::new().add_text(text).size(*size as usize * 2),
+                                    ),
+                                );
+                                header_cell.push(cell);
+                            }
+                        }
+                        let header_row = docx_rs::TableRow::new(header_cell);
+                        table_rows.push(header_row)
+                    }
+
+                    for row in rows {
+                        let mut rows_cell = Vec::new();
+
+                        for cell in &row.cells {
+                            if let Element::Text { text, size } = &cell.element {
+                                let table_cell = docx_rs::TableCell::new().add_paragraph(
+                                    Paragraph::new().add_run(
+                                        Run::new().add_text(text).size(*size as usize * 2),
+                                    ),
+                                );
+                                rows_cell.push(table_cell);
+                            }
+                        }
+                        let table_row = docx_rs::TableRow::new(rows_cell);
+                        table_rows.push(table_row);
+                    }
+                    let table = docx_rs::Table::new(table_rows);
+                    doc = doc.add_table(table);
+                }
                 _ => {
                     eprintln!("Unknown element");
                 }
@@ -294,27 +425,29 @@ impl TransformerTrait for Transformer {
     }
 }
 
+
+
 #[cfg(test)]
 mod tests {
-    use crate::core::TransformerTrait;
-    use crate::{docx};
+    use super::*;
+    use crate::core::{disk_image_loader, TransformerWithImageLoaderSaverTrait};
+    use crate::{docx, markdown};
     use bytes::Bytes;
 
     #[test]
     fn test() -> anyhow::Result<()> {
         // read from document.docx file from disk
-        let document = std::fs::read("test/data/document.docx")?;
-        let bytes = Bytes::from(document);
-        let parsed = docx::Transformer::parse(&bytes);
-        assert!(parsed.is_ok());
-        println!(
-            "--------------------------------------------\n parsed - {:#?}",
-            parsed
-        );
+        let document = std::fs::read("test/data/document.md")?;
+        let documents_bytes = Bytes::from(document);
+        let parsed = markdown::Transformer::parse_with_loader(
+            &documents_bytes,
+            disk_image_loader("test/data"),
+        )?;
 
-        let result = docx::Transformer::generate(&parsed?)?;
+        let generated_result = docx::Transformer::generate(&parsed)?;
         //write to file
-        std::fs::write("test/data/document_from_docx.docx", result)?;
+        println!("--->>>{:<12} - start writing *.docx", "TEST");
+        std::fs::write("test/data/document_from_md.docx", generated_result)?;
 
         Ok(())
     }
