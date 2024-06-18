@@ -1,10 +1,69 @@
 use crate::core::{Document, Element, ListItem, TableCell, TableRow, TransformerTrait};
 
 use bytes::Bytes;
-use docx_rs::{read_docx, Docx, Paragraph, ParagraphStyle, Run, RunChild, TableRowChild, Hyperlink, HyperlinkType, Pic, Drawing};
+use docx_rs::{
+    read_docx, Docx, Hyperlink, HyperlinkType, Paragraph, ParagraphStyle, Pic, Run, RunChild,
+    TableRowChild,
+};
 use std::io::Cursor;
 
 pub struct Transformer;
+
+//recursive function for processing nested elements in Element::List
+fn detect_element_in_list(doc: &mut Docx, element: &Element, numbered: bool) {
+    match element {
+        Element::Text { text, size } => {
+            let mut paragraph =
+                Paragraph::new().add_run(Run::new().add_text(text).size(*size as usize * 2));
+            if numbered {
+                paragraph = paragraph.style("ListNumber");
+            } else {
+                paragraph = paragraph.style("ListBullet");
+            }
+            *doc = doc.clone().add_paragraph(paragraph);
+        }
+
+        Element::Header { level, text } => {
+            let size = match level {
+                1 => 18,
+                2 => 16,
+                _ => 14,
+            };
+            let mut paragraph = Paragraph::new().add_run(Run::new().add_text(text).size(size * 2));
+            if numbered {
+                paragraph = paragraph.style("ListNumber");
+            } else {
+                paragraph = paragraph.style("ListBullet");
+            }
+            *doc = doc.clone().add_paragraph(paragraph);
+        }
+
+        Element::Hyperlink {
+            title,
+            url,
+            alt: _,
+            size,
+        } => {
+            let hyperlink = Hyperlink::new(url, HyperlinkType::External)
+                .add_run(Run::new().add_text(url).size(*size as usize * 2));
+            let paragraph =
+                Paragraph::new().add_run(Run::new().add_text(title).size(*size as usize * 2));
+            *doc = doc
+                .clone()
+                .add_paragraph(Paragraph::add_hyperlink(paragraph, hyperlink));
+        }
+
+        Element::List { elements, numbered } => {
+            for list_item in elements {
+                detect_element_in_list(doc, &list_item.element, *numbered);
+            }
+        }
+
+        _ => {
+            println!("unknown element");
+        }
+    }
+}
 
 impl TransformerTrait for Transformer {
     fn parse(document: &Bytes) -> anyhow::Result<Document> {
@@ -226,7 +285,6 @@ impl TransformerTrait for Transformer {
         Ok(Document::new(result))
     }
 
-
     fn generate(document: &Document) -> anyhow::Result<Bytes> {
         let mut doc = Docx::new();
 
@@ -268,96 +326,16 @@ impl TransformerTrait for Transformer {
 
                 Element::List { elements, numbered } => {
                     for list_item in elements {
-                        match &list_item.element {
-                            Element::Text { text, size } => {
-                                let mut paragraph = Paragraph::new()
-                                    .add_run(Run::new().add_text(text).size(*size as usize * 2));
-                                if *numbered {
-                                    paragraph = paragraph.style("ListNumber");
-                                } else {
-                                    paragraph = paragraph.style("ListBullet");
-                                }
-                                doc = doc.add_paragraph(paragraph);
-                            }
-                            Element::List { elements, numbered } => {
-                                for sub_list_item in elements {
-                                    match &sub_list_item.element {
-                                        Element::Text { text, size } => {
-                                            let mut sub_paragraph = Paragraph::new().add_run(
-                                                Run::new().add_text(text).size(*size as usize * 2),
-                                            );
-                                            if *numbered {
-                                                sub_paragraph = sub_paragraph.style("ListNumber");
-                                            } else {
-                                                sub_paragraph = sub_paragraph.style("ListBullet");
-                                            }
-                                            doc = doc.add_paragraph(sub_paragraph);
-                                        }
-                                        Element::List { elements, numbered } => {
-                                            for sub_sub_list_item in elements {
-                                                match &sub_sub_list_item.element {
-                                                    Element::Text { text, size } => {
-                                                        let mut sub_sub_paragraph =
-                                                            Paragraph::new().add_run(
-                                                                Run::new()
-                                                                    .add_text(text)
-                                                                    .size(*size as usize * 2),
-                                                            );
-                                                        if *numbered {
-                                                            sub_sub_paragraph = sub_sub_paragraph
-                                                                .style("ListNumber");
-                                                        } else {
-                                                            sub_sub_paragraph = sub_sub_paragraph
-                                                                .style("ListBullet");
-                                                        }
-                                                        doc = doc.add_paragraph(sub_sub_paragraph);
-                                                    }
-                                                    _ => {
-                                                        println!("unknown element in sub-sub-list");
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                        _ => {
-                                            println!("unknown element in sub-list");
-                                        }
-                                    }
-                                }
-                            }
-                            Element::Header { level, text } => {
-                                let size = match level {
-                                    1 => 18,
-                                    2 => 16,
-                                    _ => 14,
-                                };
-                                let mut paragraph = Paragraph::new()
-                                    .add_run(Run::new().add_text(text).size(size * 2));
-                                if *numbered {
-                                    paragraph = paragraph.style("ListNumber");
-                                } else {
-                                    paragraph = paragraph.style("ListBullet");
-                                }
-                                doc = doc.add_paragraph(paragraph);
-                            }
-                            Element::Hyperlink { title, url, alt, size } => {
-                                let _ = alt;
-                                let hyperlink = Hyperlink::new(url, HyperlinkType::External)
-                                    .add_run(Run::new().add_text(url).size(*size as usize * 2));
-                                let paragraph = Paragraph::new()
-                                    .add_run(Run::new().add_text(title).size(*size as usize * 2));
-
-                                doc = doc.add_paragraph(Paragraph::add_hyperlink(paragraph, hyperlink));
-                            }
-                            _ => {
-                                println!("unknown element in list");
-                            }
-                        }
+                        detect_element_in_list(&mut doc, &list_item.element, *numbered);
                     }
                 }
 
-
-                Element::Hyperlink { title, url, alt, size } => {
+                Element::Hyperlink {
+                    title,
+                    url,
+                    alt,
+                    size,
+                } => {
                     let _ = alt;
                     let hyperlink = Hyperlink::new(url, HyperlinkType::External)
                         .add_run(Run::new().add_text(url).size(*size as usize * 2));
@@ -367,21 +345,26 @@ impl TransformerTrait for Transformer {
                     doc = doc.add_paragraph(Paragraph::add_hyperlink(paragraph, hyperlink));
                 }
 
-                Element::Image { bytes, title, alt, image_type} => {
+                Element::Image {
+                    bytes,
+                    title: _,
+                    alt: _,
+                    image_type: _,
+                } => {
                     let mut pic = Pic::new(&bytes);
 
-                    // Устанавливаем максимальный размер изображения (в EMU)
+                    //setting the maximum image size (in EMU)
                     let max_width = 5900000; // 16.5 cm
                     let max_height = 10629420; // 29.7 cm
 
-                    // Получаем текущий размер изображения
+                    //getting the current image size
                     let (width, height) = pic.size;
 
-                    // Масштабируем изображение, если оно превышает размеры страницы
+                    //scale the image if it exceeds the page size
                     let mut new_width = width;
                     let mut new_height = height;
 
-                    // Масштабируем изображение, если оно превышает размеры страницы
+                    //scale the image if it exceeds the page size
                     if width > max_width {
                         let ratio = max_width as f32 / width as f32;
                         new_width = (width as f32 * ratio) as u32;
@@ -395,8 +378,7 @@ impl TransformerTrait for Transformer {
 
                     pic = pic.size(new_width, new_height);
 
-                    let paragraph = Paragraph::new()
-                        .add_run(Run::new().add_image(pic));
+                    let paragraph = Paragraph::new().add_run(Run::new().add_image(pic));
 
                     doc = doc.add_paragraph(paragraph);
                 }
@@ -439,9 +421,6 @@ impl TransformerTrait for Transformer {
                     let table = docx_rs::Table::new(table_rows);
                     doc = doc.add_table(table);
                 }
-                _ => {
-                    eprintln!("Unknown element");
-                }
             }
         }
 
@@ -455,8 +434,6 @@ impl TransformerTrait for Transformer {
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -466,7 +443,7 @@ mod tests {
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        // read from document.docx file from disk
+        //read from document.docx file from disk
         let document = std::fs::read("test/data/document.md")?;
         let documents_bytes = Bytes::from(document);
         let parsed = markdown::Transformer::parse_with_loader(
@@ -476,7 +453,7 @@ mod tests {
 
         let generated_result = docx::Transformer::generate(&parsed)?;
         //write to file
-        println!("--->>>{:<12} - start writing *.docx", "TEST");
+        println!("--->>>{:<12} - start writing document_from_md.docx", "TEST");
         std::fs::write("test/data/document_from_md.docx", generated_result)?;
 
         Ok(())
