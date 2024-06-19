@@ -1,20 +1,16 @@
 use anyhow::Result;
 use bytes::Bytes;
-use quick_xml::{ events::{ BytesDecl, BytesEnd, BytesStart, BytesText, Event }, Reader, Writer };
+use quick_xml::{
+    events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event},
+    Reader, Writer,
+};
 use std::str::from_utf8;
 
 use crate::core::{
-    Document,
-    Element,
-    TransformerTrait,
-    ListItem,
-    TableHeader,
-    TableRow,
-    ImageType,
-    TableCell,
+    Document, Element, ImageData, ListItem, TableCell, TableHeader, TableRow, TransformerTrait,
 };
 
-use serde::{ Deserialize, Serialize };
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Node {
@@ -42,7 +38,7 @@ impl Node {
                 Event::Start(ref e) => {
                     let name = String::from_utf8_lossy(e.name().as_ref()).to_string();
                     let mut attributes = Vec::new();
-                    for attr  in e.attributes() {
+                    for attr in e.attributes() {
                         let attr = attr?;
                         attributes.push(Attribute {
                             key: from_utf8(attr.key.as_ref())?.to_string(),
@@ -63,8 +59,7 @@ impl Node {
                     current_node = Some(new_node);
                 }
                 Event::End(ref e) => {
-                    if String::from_utf8_lossy(e.as_ref()).to_string() == "end".to_string() {
-                    }
+                    if String::from_utf8_lossy(e.as_ref()).to_string() == "end".to_string() {}
                     if let Some(node) = current_node.take() {
                         if let Some(mut parent) = stack.pop() {
                             parent.children.push(node);
@@ -75,8 +70,7 @@ impl Node {
                     }
                 }
                 Event::Text(e) => {
-                    if String::from_utf8_lossy(e.as_ref()).to_string() == "end".to_string() {
-                    }
+                    if String::from_utf8_lossy(e.as_ref()).to_string() == "end".to_string() {}
                     if let Some(node) = &mut current_node {
                         if let Ok(text) = e.unescape() {
                             node.text = Some(text.into_owned());
@@ -129,7 +123,9 @@ impl TransformerTrait for Transformer {
                 match element.name.as_str() {
                     "Paragraph" => {
                         let sub_elements = parse_element(element)?;
-                        elements.push(Element::Paragraph { elements: sub_elements });
+                        elements.push(Element::Paragraph {
+                            elements: sub_elements,
+                        });
                     }
                     "List" => {
                         let mut numbered = false;
@@ -149,7 +145,10 @@ impl TransformerTrait for Transformer {
                                 _ => {}
                             }
                         }
-                        elements.push(Element::List { elements: sub_elements, numbered: numbered });
+                        elements.push(Element::List {
+                            elements: sub_elements,
+                            numbered: numbered,
+                        });
                     }
                     "elements" => {
                         elements = parse_element(element)?;
@@ -176,47 +175,39 @@ impl TransformerTrait for Transformer {
                                 _ => {}
                             }
                         }
-                        elements.push(Element::Text { text: text.to_string(), size: size });
+                        elements.push(Element::Text {
+                            text: text.to_string(),
+                            size: size,
+                        });
                     }
                     "Image" => {
-                        let mut image_bytes = Bytes::new();
-                        let mut alt = "_";
-                        let mut title = "_";
-                        let mut image_type = ImageType::Png;
+                        let mut image = ImageData::default();
                         for child in element.children.iter() {
                             match child.name.as_str() {
                                 "image_type" => {
                                     if let Some(value) = &child.text {
-                                        match value.as_str() {
-                                            "Png" | "PNG" | "png" => {
-                                                image_type = ImageType::Png;
-                                            }
-                                            "Jpeg" | "JPEG" | "jpeg" => {
-                                                image_type = ImageType::Jpeg;
-                                            }
-                                            _ => {}
-                                        }
+                                        image.set_image_type(value);
                                     } else {
-                                        println!("Error: No value");
+                                        println!("Error: No image_type value");
                                     }
                                 }
                                 "bytes" => {
                                     if let Some(value) = &child.text {
-                                        image_bytes = Bytes::from(value.to_string());
+                                        image.set_image_bytes(Bytes::from(value.to_string()));
                                     } else {
                                         println!("Error: No value");
                                     }
                                 }
                                 "alt" => {
                                     if let Some(value) = &child.text {
-                                        alt = value;
+                                        image.set_image_alt(value);
                                     } else {
                                         println!("Error: No value");
                                     }
                                 }
                                 "title" => {
                                     if let Some(value) = &child.text {
-                                        title = value;
+                                        image.set_image_title(value);
                                     } else {
                                         println!("Error: No value");
                                     }
@@ -224,12 +215,7 @@ impl TransformerTrait for Transformer {
                                 _ => {}
                             }
                         }
-                        elements.push(Element::Image {
-                            bytes: image_bytes,
-                            title: title.to_string(),
-                            alt: alt.to_string(),
-                            image_type: image_type,
-                        });
+                        elements.push(Element::Image(image));
                     }
                     "Hyperlink" => {
                         let mut url = "_";
@@ -298,7 +284,10 @@ impl TransformerTrait for Transformer {
                                 _ => {}
                             }
                         }
-                        elements.push(Element::Header { text: text.to_string(), level: level });
+                        elements.push(Element::Header {
+                            text: text.to_string(),
+                            level: level,
+                        });
                     }
                     "Table" => {
                         let mut headers: Vec<TableHeader> = vec![];
@@ -322,12 +311,19 @@ impl TransformerTrait for Transformer {
                                                 let mut size = 10;
                                                 let mut width = 8.0;
                                                 for table_header_element in header.children.iter() {
-                                                    for table_header_element_group in table_header_element.children.iter() {
-                                                        match
-                                                            table_header_element_group.name.as_str()
+                                                    for table_header_element_group in
+                                                        table_header_element.children.iter()
+                                                    {
+                                                        match table_header_element_group
+                                                            .name
+                                                            .as_str()
                                                         {
                                                             "Text" => {
-                                                                for table_header_element_sub in table_header_element_group.children.iter() {
+                                                                for table_header_element_sub in
+                                                                    table_header_element_group
+                                                                        .children
+                                                                        .iter()
+                                                                {
                                                                     match
                                                                         table_header_element_sub.name.as_str()
                                                                     {
@@ -361,9 +357,8 @@ impl TransformerTrait for Transformer {
                                                                 }
                                                             }
                                                             "width" => {
-                                                                if
-                                                                    let Some(value) =
-                                                                        &table_header_element_group.text
+                                                                if let Some(value) =
+                                                                    &table_header_element_group.text
                                                                 {
                                                                     width = value.parse()?;
                                                                 } else {
@@ -391,9 +386,8 @@ impl TransformerTrait for Transformer {
                                 }
                                 "rows" => {
                                     for table_row in table_element.children.iter() {
-                                        let mut row_content: TableRow = {
-                                            TableRow { cells: vec![] }
-                                        };
+                                        let mut row_content: TableRow =
+                                            { TableRow { cells: vec![] } };
                                         for cells in table_row.children.iter() {
                                             let mut cells_content = vec![];
                                             for table_cell in cells.children.iter() {
@@ -407,14 +401,19 @@ impl TransformerTrait for Transformer {
                                                                 },
                                                             };
                                                         for cell in table_cell.children.iter() {
-                                                            for cell_element_sub in cell.children.iter() {
-                                                                match
-                                                                    cell_element_sub.name.as_str()
+                                                            for cell_element_sub in
+                                                                cell.children.iter()
+                                                            {
+                                                                match cell_element_sub.name.as_str()
                                                                 {
                                                                     "Text" => {
                                                                         let mut text = "_";
                                                                         let mut size = 10;
-                                                                        for cell_element_item in cell_element_sub.children.iter() {
+                                                                        for cell_element_item in
+                                                                            cell_element_sub
+                                                                                .children
+                                                                                .iter()
+                                                                        {
                                                                             match
                                                                                 cell_element_item.name.as_str()
                                                                             {
@@ -452,10 +451,13 @@ impl TransformerTrait for Transformer {
                                                                             }
                                                                         }
                                                                         cell_content = TableCell {
-                                                                            element: Element::Text {
-                                                                                text: text.to_string(),
-                                                                                size: size,
-                                                                            },
+                                                                            element:
+                                                                                Element::Text {
+                                                                                    text: text
+                                                                                        .to_string(
+                                                                                        ),
+                                                                                    size: size,
+                                                                                },
                                                                         };
                                                                     }
                                                                     _ => {}
@@ -467,7 +469,9 @@ impl TransformerTrait for Transformer {
                                                     _ => {}
                                                 }
                                             }
-                                            row_content = TableRow { cells: cells_content };
+                                            row_content = TableRow {
+                                                cells: cells_content,
+                                            };
                                         }
                                         rows.push(row_content);
                                     }
@@ -475,7 +479,10 @@ impl TransformerTrait for Transformer {
                                 _ => {}
                             }
                         }
-                        elements.push(Element::Table { headers: headers, rows: rows });
+                        elements.push(Element::Table {
+                            headers: headers,
+                            rows: rows,
+                        });
                     }
                     "element" => {
                         elements = parse_element(element)?;
@@ -522,7 +529,9 @@ impl TransformerTrait for Transformer {
                                                     text: text.to_string(),
                                                     size: size,
                                                 };
-                                                elements.push(ListItem { element: sub_element });
+                                                elements.push(ListItem {
+                                                    element: sub_element,
+                                                });
                                             }
                                             _ => {}
                                         }
@@ -639,7 +648,10 @@ impl TransformerTrait for Transformer {
                                 _ => {}
                             }
                         }
-                        page_header.push(Element::Text { text: text.to_string(), size: size });
+                        page_header.push(Element::Text {
+                            text: text.to_string(),
+                            size: size,
+                        });
                     }
                 }
                 "page_footer" => {
@@ -665,7 +677,10 @@ impl TransformerTrait for Transformer {
                                 _ => {}
                             }
                         }
-                        page_footer.push(Element::Text { text: text.to_string(), size: size });
+                        page_footer.push(Element::Text {
+                            text: text.to_string(),
+                            size: size,
+                        });
                     }
                 }
                 _ => {}
@@ -688,13 +703,9 @@ impl TransformerTrait for Transformer {
     fn generate(document: &Document) -> Result<Bytes> {
         let mut buffer: Vec<u8> = Vec::new();
         let mut writer = Writer::new(&mut buffer);
-        writer.write_event(
-            Event::Decl(
-                BytesDecl::from_start(
-                    BytesStart::from_content("xml version=\"1.0\" encoding=\"UTF-8\"", 0)
-                )
-            )
-        )?;
+        writer.write_event(Event::Decl(BytesDecl::from_start(
+            BytesStart::from_content("xml version=\"1.0\" encoding=\"UTF-8\"", 0),
+        )))?;
         writer.write_event(Event::Start(BytesStart::new("Document")))?;
         writer.write_event(Event::Start(BytesStart::new("elements")))?;
 
@@ -729,34 +740,36 @@ impl TransformerTrait for Transformer {
                     writer.write_event(Event::End(BytesEnd::new("size")))?;
                     writer.write_event(Event::End(BytesEnd::new("Text")))?;
                 }
-                Element::Image { bytes, title, alt, image_type } => {
+                Element::Image(image) => {
                     writer.write_event(Event::Start(BytesStart::new("Image")))?;
                     writer.write_event(Event::Start(BytesStart::new("title")))?;
-                    writer.write_event(Event::Text(BytesText::new(title)))?;
+                    writer.write_event(Event::Text(BytesText::new(image.title())))?;
                     writer.write_event(Event::End(BytesEnd::new("title")))?;
                     writer.write_event(Event::Start(BytesStart::new("alt")))?;
-                    writer.write_event(Event::Text(BytesText::new(alt)))?;
+                    writer.write_event(Event::Text(BytesText::new(image.alt())))?;
                     writer.write_event(Event::End(BytesEnd::new("alt")))?;
                     writer.write_event(Event::Start(BytesStart::new("bytes")))?;
-                    writer.write_event(
-                        Event::Text(
-                            BytesText::new(&String::from_utf8(bytes.to_vec()).unwrap().to_string())
-                        )
-                    )?;
+                    writer.write_event(Event::Text(BytesText::new(
+                        &String::from_utf8(image.bytes().to_vec())
+                            .unwrap()
+                            .to_string(),
+                    )))?;
                     writer.write_event(Event::End(BytesEnd::new("bytes")))?;
                     writer.write_event(Event::Start(BytesStart::new("image_type")))?;
-                    match image_type {
-                        ImageType::Png => {
-                            writer.write_event(Event::Text(BytesText::new("Png")))?;
-                        }
-                        ImageType::Jpeg => {
-                            writer.write_event(Event::Text(BytesText::new("Jpeg")))?;
-                        }
-                    }
+
+                    writer.write_event(Event::Text(BytesText::new(
+                        image.image_type().to_string().as_str(),
+                    )))?;
+
                     writer.write_event(Event::End(BytesEnd::new("image_type")))?;
                     writer.write_event(Event::End(BytesEnd::new("Image")))?;
                 }
-                Element::Hyperlink { title, url, alt, size } => {
+                Element::Hyperlink {
+                    title,
+                    url,
+                    alt,
+                    size,
+                } => {
                     writer.write_event(Event::Start(BytesStart::new("Hyperlink")))?;
                     writer.write_event(Event::Start(BytesStart::new("url")))?;
                     writer.write_event(Event::Text(BytesText::new(url)))?;
@@ -796,14 +809,16 @@ impl TransformerTrait for Transformer {
                                 writer.write_event(Event::Text(BytesText::new(&text)))?;
                                 writer.write_event(Event::End(BytesEnd::new("Text")))?;
                                 writer.write_event(Event::Start(BytesStart::new("Text")))?;
-                                writer.write_event(Event::Text(BytesText::new(&size.to_string())))?;
+                                writer
+                                    .write_event(Event::Text(BytesText::new(&size.to_string())))?;
                                 writer.write_event(Event::End(BytesEnd::new("Text")))?;
                             }
                             _ => {}
                         }
                         writer.write_event(Event::End(BytesEnd::new("element")))?;
                         writer.write_event(Event::Start(BytesStart::new("width")))?;
-                        writer.write_event(Event::Text(BytesText::new(&header.width.to_string())))?;
+                        writer
+                            .write_event(Event::Text(BytesText::new(&header.width.to_string())))?;
                         writer.write_event(Event::End(BytesEnd::new("width")))?;
                         writer.write_event(Event::End(BytesEnd::new("TableHeader")))?;
                     }
@@ -815,22 +830,26 @@ impl TransformerTrait for Transformer {
                         for cell in &row.cells {
                             match cell {
                                 TableCell { element } => {
-                                    writer.write_event(Event::Start(BytesStart::new("TableCell")))?;
+                                    writer
+                                        .write_event(Event::Start(BytesStart::new("TableCell")))?;
                                     writer.write_event(Event::Start(BytesStart::new("element")))?;
                                     match &element {
                                         Element::Text { text, size } => {
-                                            writer.write_event(
-                                                Event::Start(BytesStart::new("Text"))
-                                            )?;
-                                            writer.write_event(Event::Text(BytesText::new(&text)))?;
-                                            writer.write_event(Event::End(BytesEnd::new("Text")))?;
-                                            writer.write_event(
-                                                Event::Start(BytesStart::new("Text"))
-                                            )?;
-                                            writer.write_event(
-                                                Event::Text(BytesText::new(&size.to_string()))
-                                            )?;
-                                            writer.write_event(Event::End(BytesEnd::new("Text")))?;
+                                            writer.write_event(Event::Start(BytesStart::new(
+                                                "Text",
+                                            )))?;
+                                            writer
+                                                .write_event(Event::Text(BytesText::new(&text)))?;
+                                            writer
+                                                .write_event(Event::End(BytesEnd::new("Text")))?;
+                                            writer.write_event(Event::Start(BytesStart::new(
+                                                "Text",
+                                            )))?;
+                                            writer.write_event(Event::Text(BytesText::new(
+                                                &size.to_string(),
+                                            )))?;
+                                            writer
+                                                .write_event(Event::End(BytesEnd::new("Text")))?;
                                         }
                                         _ => {}
                                     }
@@ -851,7 +870,7 @@ impl TransformerTrait for Transformer {
 
         fn list_serialize_element(
             element: &ListItem,
-            writer: &mut Writer<&mut Vec<u8>>
+            writer: &mut Writer<&mut Vec<u8>>,
         ) -> Result<()> {
             match element {
                 ListItem { element } => {
@@ -871,22 +890,34 @@ impl TransformerTrait for Transformer {
         writer.write_event(Event::End(BytesEnd::new("elements")))?;
 
         writer.write_event(Event::Start(BytesStart::new("page_width")))?;
-        writer.write_event(Event::Text(BytesText::new(&document.page_width.to_string())))?;
+        writer.write_event(Event::Text(BytesText::new(
+            &document.page_width.to_string(),
+        )))?;
         writer.write_event(Event::End(BytesEnd::new("page_width")))?;
         writer.write_event(Event::Start(BytesStart::new("page_height")))?;
-        writer.write_event(Event::Text(BytesText::new(&document.page_height.to_string())))?;
+        writer.write_event(Event::Text(BytesText::new(
+            &document.page_height.to_string(),
+        )))?;
         writer.write_event(Event::End(BytesEnd::new("page_height")))?;
         writer.write_event(Event::Start(BytesStart::new("left_page_indent")))?;
-        writer.write_event(Event::Text(BytesText::new(&document.left_page_indent.to_string())))?;
+        writer.write_event(Event::Text(BytesText::new(
+            &document.left_page_indent.to_string(),
+        )))?;
         writer.write_event(Event::End(BytesEnd::new("left_page_indent")))?;
         writer.write_event(Event::Start(BytesStart::new("right_page_indent")))?;
-        writer.write_event(Event::Text(BytesText::new(&document.right_page_indent.to_string())))?;
+        writer.write_event(Event::Text(BytesText::new(
+            &document.right_page_indent.to_string(),
+        )))?;
         writer.write_event(Event::End(BytesEnd::new("right_page_indent")))?;
         writer.write_event(Event::Start(BytesStart::new("top_page_indent")))?;
-        writer.write_event(Event::Text(BytesText::new(&document.top_page_indent.to_string())))?;
+        writer.write_event(Event::Text(BytesText::new(
+            &document.top_page_indent.to_string(),
+        )))?;
         writer.write_event(Event::End(BytesEnd::new("top_page_indent")))?;
         writer.write_event(Event::Start(BytesStart::new("bottom_page_indent")))?;
-        writer.write_event(Event::Text(BytesText::new(&document.bottom_page_indent.to_string())))?;
+        writer.write_event(Event::Text(BytesText::new(
+            &document.bottom_page_indent.to_string(),
+        )))?;
         writer.write_event(Event::End(BytesEnd::new("bottom_page_indent")))?;
 
         writer.write_event(Event::Start(BytesStart::new("page_header")))?;
@@ -932,11 +963,11 @@ impl TransformerTrait for Transformer {
 
 #[cfg(test)]
 mod tests {
-    use std::fs::File;
-    use std::io::{Read, Write};
-    use bytes::Bytes;
     use crate::markdown;
     use crate::xml::*;
+    use bytes::Bytes;
+    use std::fs::File;
+    use std::io::{Read, Write};
 
     #[test]
     fn test_parse() -> anyhow::Result<()> {

@@ -1,25 +1,20 @@
 use crate::core::Element::{Header, Hyperlink, Image, List, Paragraph, Table, Text};
 
-use bytes::Bytes;
+use crate::core::{Document, Element, ListItem, TableHeader, TableRow, TransformerTrait};
 use anyhow;
-use std::collections::HashMap;
-use crate::core::{
-    Document, Element, ImageType, ListItem, TableHeader, TableRow, TransformerTrait,
-};
-use time::{OffsetDateTime, UtcOffset};
-use std::path::Path;
+use bytes::Bytes;
 use comemo::Prehashed;
-
+use std::collections::HashMap;
+use std::path::Path;
+use time::{OffsetDateTime, UtcOffset};
 
 use typst::{
     diag::{FileError, FileResult},
-    foundations::{Datetime},
+    foundations::Datetime,
     syntax::{FileId, Source},
     text::{Font, FontBook},
     Library, World,
-
 };
-
 
 type TypstString = String;
 
@@ -34,9 +29,9 @@ pub struct ShivaWorld {
 impl ShivaWorld {
     pub fn new(source: String, img_map: HashMap<String, typst::foundations::Bytes>) -> Self {
         let source = Source::detached(source);
-        
+
         let folder = "fonts";
-        
+
         // Check if the "fonts" folder exists
         if !std::path::Path::new(folder).exists() {
             // Create the "fonts" folder
@@ -75,7 +70,7 @@ impl ShivaWorld {
                 download_font(url, folder, filename);
             }
         }
-        
+
         let fonts = std::fs::read_dir(folder)
             .unwrap()
             .map(Result::unwrap)
@@ -91,7 +86,7 @@ impl ShivaWorld {
                 })
             })
             .collect::<Vec<Font>>();
-        
+
         Self {
             book: Prehashed::new(FontBook::from_fonts(&fonts)),
             fonts,
@@ -107,16 +102,12 @@ fn download_font(url: &str, folder: &str, filename: &str) {
 
     println!("Downloading font file {}...", font_path.display());
 
-    let mut reader = ureq::get(url)
-        .call().unwrap()
-        .into_reader();
+    let mut reader = ureq::get(url).call().unwrap().into_reader();
 
     let f = std::fs::File::create(&font_path).unwrap();
     let mut writer = std::io::BufWriter::new(f);
 
-    let _bytes_io_count =
-        std::io::copy(&mut reader, &mut writer).unwrap();
-
+    let _bytes_io_count = std::io::copy(&mut reader, &mut writer).unwrap();
 
     println!("Font file {} downloaded successfully!", font_path.display());
 }
@@ -161,7 +152,6 @@ impl World for ShivaWorld {
     }
 }
 
-
 pub struct Transformer;
 
 impl TransformerTrait for Transformer {
@@ -178,13 +168,11 @@ impl TransformerTrait for Transformer {
 }
 
 /// Converts Document into a typst::model::Document
-pub fn generate_document(document: &Document) -> anyhow::Result<(TypstString, HashMap<String, typst::foundations::Bytes>)> {
+pub fn generate_document(
+    document: &Document,
+) -> anyhow::Result<(TypstString, HashMap<String, typst::foundations::Bytes>)> {
     // Array of methods to process Document object into a typst string repr
-    fn process_header(
-        source: &mut TypstString,
-        level: usize,
-        text: &str,
-    ) -> anyhow::Result<()> {
+    fn process_header(source: &mut TypstString, level: usize, text: &str) -> anyhow::Result<()> {
         let header_depth = "=".repeat(level);
         let header_text = format!("{header_depth} {text}");
         source.push_str(&header_text);
@@ -312,7 +300,8 @@ pub fn generate_document(document: &Document) -> anyhow::Result<(TypstString, Ha
         image_type: &str,
     ) -> anyhow::Result<()> {
         if !bytes.is_empty() {
-            let image_text = format!("
+            let image_text = format!(
+                "
             #image(\"{title}{image_type}\", alt: \"{alt}\")
             "
             );
@@ -322,7 +311,7 @@ pub fn generate_document(document: &Document) -> anyhow::Result<(TypstString, Ha
         Ok(())
     }
 
-    fn process_element (
+    fn process_element(
         source: &mut TypstString,
         img_map: &mut HashMap<String, typst::foundations::Bytes>,
         element: &Element,
@@ -361,26 +350,23 @@ pub fn generate_document(document: &Document) -> anyhow::Result<(TypstString, Ha
                 process_table(source, headers, rows)?;
                 Ok(())
             }
-            Image {
-                bytes,
-                title,
-                alt,
-                image_type,
-            } => {
-                let image_type = match image_type {
-                    ImageType::Jpeg => ".jpeg",
-                    ImageType::Png => ".png",
-                };
-                let key = format!("{title}{image_type}");
-                img_map.insert(key, typst::foundations::Bytes::from(bytes.to_vec()));
-                process_image(source, bytes, title, alt, image_type)?;
+            Image(image) => {
+                let image_type = image.image_type().to_extension();
+                let key = format!("{}{}", image.title(), image_type);
+                img_map.insert(key, typst::foundations::Bytes::from(image.bytes().to_vec()));
+                process_image(
+                    source,
+                    image.bytes(),
+                    image.title(),
+                    image.alt(),
+                    image_type,
+                )?;
                 source.push('\n');
                 Ok(())
-            }
-            // _ => {
-            //     eprintln!("Should implement element - {:?}", element);
-            //     Ok(())
-            // }
+            } // _ => {
+              //     eprintln!("Should implement element - {:?}", element);
+              //     Ok(())
+              // }
         }
     }
 
@@ -388,7 +374,6 @@ pub fn generate_document(document: &Document) -> anyhow::Result<(TypstString, Ha
     let mut source = TypstString::new();
     // Mapping of connections between elements
     let mut img_map: HashMap<String, typst::foundations::Bytes> = HashMap::new();
-
 
     // Converting both headers and footers into a string repr of them in Typst
     let mut header_text = String::new();
@@ -423,16 +408,19 @@ pub fn generate_document(document: &Document) -> anyhow::Result<(TypstString, Ha
 
 #[cfg(test)]
 mod test {
-    use bytes::Bytes;
-    use crate::markdown;
     use crate::core::{disk_image_loader, TransformerWithImageLoaderSaverTrait};
+    use crate::markdown;
+    use bytes::Bytes;
 
     use super::*;
     #[test]
     fn test_generate() -> anyhow::Result<()> {
         let document = std::fs::read("test/data/document.md")?;
         let documents_bytes = Bytes::from(document);
-        let parsed = markdown::Transformer::parse_with_loader(&documents_bytes,disk_image_loader("test/data"))?;
+        let parsed = markdown::Transformer::parse_with_loader(
+            &documents_bytes,
+            disk_image_loader("test/data"),
+        )?;
         let generated_result = crate::typst::Transformer::generate(&parsed)?;
         std::fs::write("test/data/document_from_md.typ", generated_result)?;
 

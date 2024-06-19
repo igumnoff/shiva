@@ -16,12 +16,17 @@ impl TransformerTrait for Transformer {
     }
 }
 
-struct ImageSaver<F> where F: Fn(&Bytes, &str) -> anyhow::Result<()> {
+struct ImageSaver<F>
+where
+    F: Fn(&Bytes, &str) -> anyhow::Result<()>,
+{
     pub function: F,
 }
 impl TransformerWithImageLoaderSaverTrait for Transformer {
     fn parse_with_loader<F>(document: &Bytes, image_loader: F) -> anyhow::Result<Document>
-        where F: Fn(&str) -> anyhow::Result<Bytes>,Self: Sized,
+    where
+        F: Fn(&str) -> anyhow::Result<Bytes>,
+        Self: Sized,
     {
         fn process_element_creation(
             current_element: &mut Option<Element>,
@@ -152,19 +157,16 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                         } => {
                             let img_type = dest_url.to_string();
                             let img_type = img_type.split('.').last().unwrap();
-                            let image_type = match img_type {
-                                "png" => ImageType::Png,
-                                "jpeg" => ImageType::Jpeg,
-                                _ => ImageType::Png,
-                            };
 
                             let bytes = image_loader(&dest_url)?;
-                            let img_el = Element::Image {
+                            let img_el = Element::Image(ImageData::new(
                                 bytes,
-                                title: title.to_string(),
-                                alt: title.to_string(),
-                                image_type,
-                            };
+                                title.to_string(),
+                                "".to_string(),
+                                img_type.into(),
+                                0,
+                                0,
+                            ));
                             // Before image there is paragraph tag (likely because alt text is in paragraph )
                             current_element = None;
                             process_element_creation(&mut current_element, img_el, list_depth);
@@ -237,16 +239,10 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                                     _ => {}
                                 }
                             }
-                            Element::Image {
-                                alt,
-                                ..
-                            } => {
-                                *alt = text.to_string();
+                            Element::Image(image) => {
+                                image.set_image_alt(&text);
                             }
-                            Element::Hyperlink {
-                                alt,
-                                ..
-                            } => {
+                            Element::Hyperlink { alt, .. } => {
                                 *alt = alt.to_string();
                             }
                             _ => {}
@@ -345,12 +341,16 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
         Ok(Document::new(elements))
     }
 
-    fn generate_with_saver<F>(document: &Document,  image_saver: F) -> anyhow::Result<Bytes>
-        where F: Fn(&Bytes, &str) -> anyhow::Result<()>, Self: Sized,
+    fn generate_with_saver<F>(document: &Document, image_saver: F) -> anyhow::Result<Bytes>
+    where
+        F: Fn(&Bytes, &str) -> anyhow::Result<()>,
+        Self: Sized,
     {
         let mut image_num: i32 = 0;
 
-        let image_saver = ImageSaver { function: image_saver };
+        let image_saver = ImageSaver {
+            function: image_saver,
+        };
 
         let mut markdown = String::new();
         fn generate_element(
@@ -362,7 +362,13 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
             image_num: &mut i32,
             saver: &ImageSaver<impl Fn(&Bytes, &str) -> anyhow::Result<()>>,
         ) -> anyhow::Result<()> {
-            let generate_list_item = |element: &ListItem, markdown: &mut String, list_depth: usize, list_counters: &mut Vec<usize>, list_types: &mut Vec<bool>, image_num: &mut i32| -> anyhow::Result<()> {
+            let generate_list_item = |element: &ListItem,
+                                      markdown: &mut String,
+                                      list_depth: usize,
+                                      list_counters: &mut Vec<usize>,
+                                      list_types: &mut Vec<bool>,
+                                      image_num: &mut i32|
+             -> anyhow::Result<()> {
                 let prefix = if *list_types.last().unwrap() {
                     let counter = list_counters.last_mut().unwrap();
 
@@ -455,16 +461,16 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                         markdown.push_str(&format!("[{}]({} \"{}\")", title, url, alt));
                     }
                 }
-                Image {
-                    bytes,
-                    title,
-                    alt,
-                    image_type: _,
-                } => {
+                Image(image) => {
                     let image_path = format!("image{}.png", image_num);
-                    markdown.push_str(&format!("![{}]({} \"{}\")", alt, image_path, title));
+                    markdown.push_str(&format!(
+                        "![{}]({} \"{}\")",
+                        image.alt(),
+                        image_path,
+                        image.title()
+                    ));
                     markdown.push('\n');
-                    (saver.function)(&bytes, &image_path)?;
+                    (saver.function)(image.bytes(), &image_path)?;
                     *image_num += 1;
                 }
                 Table { headers, rows } => {
@@ -594,7 +600,10 @@ blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla
 Paragraph2  bla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla
 blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         // println!("{:?}", document);
-        let parsed = Transformer::parse_with_loader(&document.as_bytes().into(), disk_image_loader("test/data"));
+        let parsed = Transformer::parse_with_loader(
+            &document.as_bytes().into(),
+            disk_image_loader("test/data"),
+        );
         let document_string = std::str::from_utf8(document.as_bytes())?;
         println!("{}", document_string);
         assert!(parsed.is_ok());
@@ -602,7 +611,8 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         println!("==========================");
         println!("{:#?}", parsed_document);
         println!("==========================");
-        let generated_result = Transformer::generate_with_saver(&parsed_document, disk_image_saver("test/data"));
+        let generated_result =
+            Transformer::generate_with_saver(&parsed_document, disk_image_saver("test/data"));
         assert!(generated_result.is_ok());
         // println!("{:?}", generated_result.unwrap());
         let generated_bytes = generated_result?;
@@ -661,7 +671,6 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
 
         assert_eq!(parsed, result_doc)
     }
-
 
     #[test]
     fn test_parse_table() {
@@ -735,7 +744,11 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
             page_footer: vec![],
         };
 
-        let parsed = Transformer::parse_with_loader(&document.as_bytes().into(), disk_image_loader("test/data")).unwrap();
+        let parsed = Transformer::parse_with_loader(
+            &document.as_bytes().into(),
+            disk_image_loader("test/data"),
+        )
+        .unwrap();
 
         assert_eq!(parsed, result_doc)
     }
