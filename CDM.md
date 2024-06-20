@@ -40,10 +40,6 @@ classDiagram
       element: Element
     }
     
-    class ImageType {
-      Png
-      Jpeg
-    }
     
     ListItem --> Element
     TableHeader --> Element
