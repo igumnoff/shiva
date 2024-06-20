@@ -14,6 +14,7 @@ classDiagram
         +Vec~Element~ page_footer
     }
     class Element {
+      <<enum>>
       Text(text: String, size: u8)
       Header(level: u8, text: String)
       Paragraph(elements: Vec~Element~)
