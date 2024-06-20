@@ -13,60 +13,46 @@ classDiagram
         +Vec~Element~ page_header
         +Vec~Element~ page_footer
     }
-
     class Element {
-        <<enum>>
-        Text
-        Header
-        Paragraph
-        Table
-        List
-        Image
-        Hyperlink
+      Text(text: String, size: u8)
+      Header(level: u8, text: String)
+      Paragraph(elements: Vec~Element~)
+      Table(headers: Vec~TableHeader~, rows: Vec~TableRow~)
+      List(elements: Vec~ListItem~, numbered: bool)
+      Image(bytes: Bytes, title: String, alt: String, image_type: ImageType)
+      Hyperlink(title: String, url: String, alt: String, size: u8)
     }
-
-    Element : +String text
-    Element : +u8 size
-    Element : +u8 level
-    Element : +Vec~Element~ elements
-    Element : +Vec~TableHeader~ headers
-    Element : +Vec~TableRow~ rows
-    Element : +Vec~ListItem~ list_items
-    Element : +bool numbered
-    Element : +Bytes bytes
-    Element : +String title
-    Element : +String alt
-    Element : +ImageType image_type
-    Element : +String url
-
+    
     class ListItem {
-        +Element element
+      element: Element
     }
-
+    
     class TableHeader {
-        +Element element
-        +f32 width
+      element: Element
+      width: f32
     }
-
+    
     class TableRow {
-        +Vec~TableCell~ cells
+      cells: Vec~TableCell~
     }
-
+    
     class TableCell {
-        +Element element
+      element: Element
     }
-
+    
     class ImageType {
-        <<enum>>
-        Png
-        Jpeg
+      Png
+      Jpeg
     }
-
+    
+    ListItem --> Element
+    TableHeader --> Element
+    TableRow --> TableCell
+    TableCell --> Element
+    Element --> "0..*" Element : contains
+    Element --> "0..*" TableHeader : contains
+    Element --> "0..*" TableRow : contains
+    Element --> "0..*" ListItem : contains
     Document --> Element
-    Element --> ListItem
-    Element --> TableHeader
-    Element --> TableRow
-    Element --> TableCell
-    Element --> ImageType
 
 ```
