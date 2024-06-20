@@ -9,6 +9,11 @@
 - [x] Parsers produce CDM
 - [x] Generators consume CDM
 
+## Common Document Model
+
+![Common Document Model](https://github.com/igumnoff/shiva/raw/HEAD/CDM.png)
+
+
 ## Supported document types
 
 | Document type | Parse | Generate |
