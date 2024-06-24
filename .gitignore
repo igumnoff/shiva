@@ -5,3 +5,4 @@ Cargo.lock
 **/*.rs.bk
 *.pdb
 lib/test/data/generated*
+*/pkg/*
