@@ -20,7 +20,6 @@ wasm-bindgen = "0.2.84"
 # all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
 # code size when deploying.
 console_error_panic_hook = { version = "0.1.7", optional = true }
-shiva = {  path = "../lib", features = ["html", "markdown", "pdf", "docx"] }
 getrandom = { version = "0.2", features = ["js"] }
 
 [dependencies.web-sys]
@@ -28,6 +27,11 @@ version = "0.3"
 features = [
   "console",
 ]
+
+[dependencies.shiva]
+path = "../lib"
+features = ["html", "text", "csv", "markdown", "json", "xml","rtf", "docx", "xlsx", "xls", "ods", "pdf"]
+default-features = false
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.34"
