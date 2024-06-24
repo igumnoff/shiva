@@ -1,5 +1,5 @@
 [package]
-name = "shivawasm"
+name = "shiva-wasm"
 version = "0.1.0"
 authors = ["Evgeny Igumnov <igumnovnsk@gmail.com>", "longlom <longlom@yandex.ru>"]
 edition = "2021"
