@@ -1,8 +1,10 @@
 use bytes::Bytes;
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
+use wasm_bindgen::prelude::wasm_bindgen;
 use std::fmt::Debug;
 use thiserror::Error;
+use strum::{VariantArray, EnumString, Display, IntoStaticStr, EnumCount};
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
@@ -146,4 +148,82 @@ pub fn disk_image_saver(path: &str) -> impl Fn(&Bytes, &str) -> anyhow::Result<(
         Ok(())
     };
     image_saver
+}
+
+
+#[wasm_bindgen]
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Eq, EnumString, Display, VariantArray, IntoStaticStr, EnumCount)]
+#[strum(serialize_all = "lowercase")]
+pub enum DocumentType {
+    HTML = 0,
+    Markdown = 1,
+    Text = 2,
+    PDF = 3,
+    Json = 4,
+    CSV = 5,
+    RTF = 6,
+    DOCX = 7,
+    XML = 8,
+    XLS = 9,
+    XLSX = 10,
+    ODS = 11,
+}
+
+impl DocumentType {
+    pub fn variants() -> &'static [DocumentType] {
+        DocumentType::VARIANTS
+    }
+
+    pub fn variants_as_str() -> Vec<&'static str> {
+        DocumentType::VARIANTS.iter().map(|v| v.into()).collect()
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use std::str::FromStr;
+
+    const VARIANTS: &[DocumentType] = &[
+        DocumentType::HTML, DocumentType::Markdown, DocumentType::Text,
+        DocumentType::PDF, DocumentType::Json, DocumentType::CSV,
+        DocumentType::RTF, DocumentType::DOCX, DocumentType::XML,
+        DocumentType::XLS, DocumentType::XLSX, DocumentType::ODS];
+
+    #[test]
+    fn test_document_type_count() {
+        assert_eq!(VARIANTS.len(), DocumentType::COUNT);
+    }
+
+    #[test]
+    fn test_document_type_as_list() {
+        assert_eq!(DocumentType::VARIANTS, VARIANTS);
+        assert!(DocumentType::VARIANTS.contains(&DocumentType::HTML));
+        assert!(DocumentType::VARIANTS.contains(&DocumentType::RTF));
+    }
+
+    #[test]
+    fn test_serialize_all_lower_case() {
+        assert_eq!("csv", DocumentType::CSV.to_string());
+        assert_eq!(DocumentType::PDF, DocumentType::from_str("pdf").unwrap());
+        assert_eq!("json", <&'static str>::from(DocumentType::Json));
+    }
+
+    #[test]
+    fn test_variants_as_str() {
+        let variants = DocumentType::variants_as_str();
+        assert_eq!(variants.len(), DocumentType::COUNT);
+        assert!(variants.contains(&"html"));
+        assert!(variants.contains(&"docx"));
+    }
+
+    #[test]
+    fn test_as_repr() {
+        assert_eq!(DocumentType::HTML as u8, 0);
+        assert_eq!(DocumentType::XLSX as u8, 10);
+    }
+
 }
