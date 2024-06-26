@@ -1,6 +1,7 @@
 use bytes::Bytes;
 use clap::Parser;
-use shiva::core::{DocumentType, TransformerTrait};
+use shiva::core::{Document, DocumentType};
+use std::str::FromStr;
 
 #[derive(Parser, Debug)]
 #[command(name="shiva", author, version, about, long_about = None)]
@@ -12,12 +13,11 @@ struct Args {
     output_file: String,
 
     #[arg(long, value_parser = DocumentType::variants_as_str() )]
-    input_format: DocumentType,
+    input_format: String,
 
     #[arg(long, value_parser = DocumentType::variants_as_str() )]
-    output_format: DocumentType,
+    output_format: String,
 }
-
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
@@ -27,35 +27,9 @@ fn main() -> anyhow::Result<()> {
     )?;
     let input_bytes = Bytes::from(input_vec);
 
-    let document = match args.input_format {
-        DocumentType::Markdown => shiva::markdown::Transformer::parse(&input_bytes)?,
-        DocumentType::HTML => shiva::html::Transformer::parse(&input_bytes)?,
-        DocumentType::Text => shiva::text::Transformer::parse(&input_bytes)?,
-        DocumentType::PDF => shiva::pdf::Transformer::parse(&input_bytes)?,
-        DocumentType::Json => shiva::json::Transformer::parse(&input_bytes)?,
-        DocumentType::CSV => shiva::csv::Transformer::parse(&input_bytes)?,
-        DocumentType::RTF => shiva::rtf::Transformer::parse(&input_bytes)?,
-        DocumentType::DOCX => shiva::docx::Transformer::parse(&input_bytes)?,
-        DocumentType::XML => shiva::xml::Transformer::parse(&input_bytes)?,
-        DocumentType::XLS => shiva::xls::Transformer::parse(&input_bytes)?,
-        DocumentType::XLSX => shiva::xlsx::Transformer::parse(&input_bytes)?,
-        DocumentType::ODS => shiva::ods::Transformer::parse(&input_bytes)?,
-    };
+    let document = Document::parse(&input_bytes, DocumentType::from_str(args.input_format.as_str())?);
 
-    let output = match args.output_format {
-        DocumentType::Text => shiva::text::Transformer::generate(&document)?,
-        DocumentType::HTML => shiva::html::Transformer::generate(&document)?,
-        DocumentType::Markdown => shiva::markdown::Transformer::generate(&document)?,
-        DocumentType::PDF => shiva::pdf::Transformer::generate(&document)?,
-        DocumentType::Json => shiva::json::Transformer::generate(&document)?,
-        DocumentType::CSV => shiva::csv::Transformer::generate(&document)?,
-        DocumentType::RTF => shiva::rtf::Transformer::generate(&document)?,
-        DocumentType::DOCX => shiva::docx::Transformer::generate(&document)?,
-        DocumentType::XML => shiva::xml::Transformer::generate(&document)?,
-        DocumentType::XLS => shiva::xls::Transformer::generate(&document)?,
-        DocumentType::XLSX => shiva::xlsx::Transformer::generate(&document)?,
-        DocumentType::ODS => shiva::ods::Transformer::generate(&document)?,
-    };
+    let output = document?.generate(DocumentType::from_str(args.output_format.as_str())?)?;
 
     let file_name = args.output_file;
     std::fs::write(file_name, output)?;

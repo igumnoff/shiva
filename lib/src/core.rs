@@ -6,6 +6,8 @@ use std::fmt::Debug;
 use thiserror::Error;
 use strum::{VariantArray, EnumString, Display, IntoStaticStr, EnumCount};
 
+use crate::{csv, docx, html, json, markdown, ods, pdf, rtf, text, xls, xlsx, xml};
+
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct Document {
@@ -35,13 +37,48 @@ impl Document {
             page_footer: vec![],
         }
     }
+
+    pub fn parse(input_bytes: &Bytes, document_type: DocumentType) -> anyhow::Result<Document> {
+        let document = match document_type {
+            DocumentType::Markdown => markdown::Transformer::parse(input_bytes)?,
+            DocumentType::HTML => html::Transformer::parse(input_bytes)?,
+            DocumentType::Text => text::Transformer::parse(input_bytes)?,
+            DocumentType::PDF => pdf::Transformer::parse(input_bytes)?,
+            DocumentType::Json => json::Transformer::parse(input_bytes)?,
+            DocumentType::CSV => csv::Transformer::parse(input_bytes)?,
+            DocumentType::RTF => rtf::Transformer::parse(input_bytes)?,
+            DocumentType::DOCX => docx::Transformer::parse(input_bytes)?,
+            DocumentType::XML => xml::Transformer::parse(input_bytes)?,
+            DocumentType::XLS => xls::Transformer::parse(input_bytes)?,
+            DocumentType::XLSX => xlsx::Transformer::parse(input_bytes)?,
+            DocumentType::ODS => ods::Transformer::parse(input_bytes)?,
+        };
+        Ok(document)
+    }
+
+    pub fn generate(&self, document_type: DocumentType) -> anyhow::Result<Bytes> {
+        let output = match document_type {
+            DocumentType::Markdown => markdown::Transformer::generate(self)?,
+            DocumentType::HTML => html::Transformer::generate(self)?,
+            DocumentType::Text => text::Transformer::generate(self)?,
+            DocumentType::PDF => pdf::Transformer::generate(self)?,
+            DocumentType::Json => json::Transformer::generate(self)?,
+            DocumentType::CSV => csv::Transformer::generate(self)?,
+            DocumentType::RTF => rtf::Transformer::generate(self)?,
+            DocumentType::DOCX => docx::Transformer::generate(self)?,
+            DocumentType::XML => xml::Transformer::generate(self)?,
+            DocumentType::XLS => xls::Transformer::generate(self)?,
+            DocumentType::XLSX => xlsx::Transformer::generate(self)?,
+            DocumentType::ODS => ods::Transformer::generate(self)?,
+        };
+        Ok(output)
+    }
 }
 
 pub trait TransformerTrait {
     fn parse(document: &Bytes) -> anyhow::Result<Document>;
     fn generate(document: &Document) -> anyhow::Result<Bytes>;
 }
-
 
 
 pub trait TransformerWithImageLoaderSaverTrait {
