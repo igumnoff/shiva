@@ -1,24 +1,24 @@
 use crate::core::{Document, Element, ListItem, TableCell, TableRow, TransformerTrait};
 
 use bytes::Bytes;
-use docx_rs::{
-    read_docx, Docx, Hyperlink, HyperlinkType, Paragraph, ParagraphStyle, Pic, Run, RunChild,
-    TableRowChild,
-};
+use docx_rs::{read_docx, Docx, Hyperlink, HyperlinkType, Paragraph, ParagraphStyle, Pic, Run, RunChild, TableRowChild, NumberingId, IndentLevel};
 use std::io::Cursor;
 
 pub struct Transformer;
 
 //recursive function for processing nested elements in Element::List
-fn detect_element_in_list(doc: &mut Docx, element: &Element, numbered: bool) {
+fn detect_element_in_list(doc: &mut Docx, element: &Element, numbered: bool, depth: usize) {
     match element {
         Element::Text { text, size } => {
             let mut paragraph =
                 Paragraph::new().add_run(Run::new().add_text(text).size(*size as usize * 2));
             if numbered {
-                paragraph = paragraph.style("ListNumber");
+                paragraph = paragraph.numbering(NumberingId::new(2), IndentLevel::new(depth));
             } else {
-                paragraph = paragraph.style("ListBullet");
+                // Добавляем символ "-" в начале текста с учетом уровня вложенности
+                let indent = " ".repeat(depth * 4); // 4 пробела за каждый уровень вложенности
+                let modified_text = format!("{}- {}", indent, text);
+                paragraph = Paragraph::new().add_run(Run::new().add_text(modified_text).size(*size as usize * 2));
             }
             *doc = doc.clone().add_paragraph(paragraph);
         }
@@ -31,7 +31,7 @@ fn detect_element_in_list(doc: &mut Docx, element: &Element, numbered: bool) {
             };
             let mut paragraph = Paragraph::new().add_run(Run::new().add_text(text).size(size * 2));
             if numbered {
-                paragraph = paragraph.style("ListNumber");
+                paragraph = paragraph.numbering(NumberingId::new(3), IndentLevel::new(0));
             } else {
                 paragraph = paragraph.style("ListBullet");
             }
@@ -55,7 +55,7 @@ fn detect_element_in_list(doc: &mut Docx, element: &Element, numbered: bool) {
 
         Element::List { elements, numbered } => {
             for list_item in elements {
-                detect_element_in_list(doc, &list_item.element, *numbered);
+                detect_element_in_list(doc, &list_item.element, *numbered, depth + 1);
             }
         }
 
@@ -326,7 +326,7 @@ impl TransformerTrait for Transformer {
 
                 Element::List { elements, numbered } => {
                     for list_item in elements {
-                        detect_element_in_list(&mut doc, &list_item.element, *numbered);
+                        detect_element_in_list(&mut doc, &list_item.element, *numbered, 0);
                     }
                 }
 
