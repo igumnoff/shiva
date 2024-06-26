@@ -2,7 +2,7 @@ mod utils;
 
 use wasm_bindgen::prelude::*;
 
-use shiva::{core::TransformerTrait, *};
+use shiva::{core::TransformerTrait, core::DocumentType as FileFormat, *};
 
 use crate::utils::set_panic_hook;
 
@@ -12,23 +12,6 @@ macro_rules! log {
     ( $( $t:tt )* ) => {
         web_sys::console::log_1(&format!( $( $t )* ).into());
     }
-}
-
-#[wasm_bindgen]
-#[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum FileFormat {
-    Markdown = 0,
-    Docx = 1,
-    Html = 2,
-    Text = 3,
-    Json = 4,
-    Xml = 5,
-    Csv = 6,
-    Rtf = 7,
-    Xls = 8,    
-    Xlsx = 9,    
-    Ods = 10,
 }
 
 #[wasm_bindgen(catch)]
@@ -56,7 +39,7 @@ pub fn convert(
                 }
             }
         }
-        FileFormat::Docx => {
+        FileFormat::DOCX => {
             parsed_file = match docx::Transformer::parse(&file.into()) {
                 Ok(parse_result) => parse_result,
                 Err(e) => {
@@ -64,7 +47,7 @@ pub fn convert(
                 }
             }
         }
-        FileFormat::Html => {
+        FileFormat::HTML => {
             parsed_file = match html::Transformer::parse(&file.into()) {
                 Ok(parse_result) => parse_result,
                 Err(e) => {
@@ -80,7 +63,7 @@ pub fn convert(
                 }
             }
         }
-        FileFormat::Xml => {
+        FileFormat::XML => {
             parsed_file = match xml::Transformer::parse(&file.into()) {
                 Ok(parse_result) => parse_result,
                 Err(e) => {
@@ -88,7 +71,7 @@ pub fn convert(
                 }
             }
         }
-        FileFormat::Csv => {
+        FileFormat::CSV => {
             parsed_file = match csv::Transformer::parse(&file.into()) {
                 Ok(parse_result) => parse_result,
                 Err(e) => {
@@ -96,7 +79,7 @@ pub fn convert(
                 }
             }
         }
-        FileFormat::Rtf => {
+        FileFormat::RTF => {
             parsed_file = match rtf::Transformer::parse(&file.into()) {
                 Ok(parse_result) => parse_result,
                 Err(e) => {
@@ -104,7 +87,7 @@ pub fn convert(
                 }
             }
         }
-        FileFormat::Xls => {
+        FileFormat::XLS => {
             parsed_file = match xls::Transformer::parse(&file.into()) {
                 Ok(parse_result) => parse_result,
                 Err(e) => {
@@ -112,7 +95,7 @@ pub fn convert(
                 }
             }
         }
-        FileFormat::Xlsx => {
+        FileFormat::XLSX => {
             parsed_file = match xlsx::Transformer::parse(&file.into()) {
                 Ok(parse_result) => parse_result,
                 Err(e) => {
@@ -120,7 +103,7 @@ pub fn convert(
                 }
             }
         }
-        FileFormat::Ods => {
+        FileFormat::ODS => {
             parsed_file = match ods::Transformer::parse(&file.into()) {
                 Ok(parse_result) => parse_result,
                 Err(e) => {
@@ -151,7 +134,7 @@ pub fn convert(
             };
             return Ok(generated.to_vec());
         }
-        FileFormat::Docx => {
+        FileFormat::DOCX => {
             let generated = match docx::Transformer::generate(&parsed_file) {
                 Ok(res) => res,
                 Err(err) => {
@@ -161,7 +144,7 @@ pub fn convert(
             };
             return Ok(generated.to_vec());
         }
-        FileFormat::Html => {
+        FileFormat::HTML => {
             let generated = match html::Transformer::generate(&parsed_file) {
                 Ok(res) => res,
                 Err(err) => {
@@ -181,7 +164,7 @@ pub fn convert(
             };
             return Ok(generated.to_vec());
         }
-        FileFormat::Xml => {
+        FileFormat::XML => {
             let generated = match xml::Transformer::generate(&parsed_file) {
                 Ok(res) => res,
                 Err(err) => {
@@ -191,7 +174,7 @@ pub fn convert(
             };
             return Ok(generated.to_vec());
         }
-        FileFormat::Csv => {
+        FileFormat::CSV => {
             let generated = match csv::Transformer::generate(&parsed_file) {
                 Ok(res) => res,
                 Err(err) => {
@@ -201,7 +184,7 @@ pub fn convert(
             };
             return Ok(generated.to_vec());
         }
-        FileFormat::Rtf => {
+        FileFormat::RTF => {
             let generated = match rtf::Transformer::generate(&parsed_file) {
                 Ok(res) => res,
                 Err(err) => {
@@ -211,7 +194,7 @@ pub fn convert(
             };
             return Ok(generated.to_vec());
         }
-        FileFormat::Xls => {
+        FileFormat::XLS => {
             let generated = match xls::Transformer::generate(&parsed_file) {
                 Ok(res) => res,
                 Err(err) => {
@@ -221,7 +204,7 @@ pub fn convert(
             };
             return Ok(generated.to_vec());
         }
-        FileFormat::Xlsx => {
+        FileFormat::XLSX => {
             let generated = match xlsx::Transformer::generate(&parsed_file) {
                 Ok(res) => res,
                 Err(err) => {
@@ -231,7 +214,7 @@ pub fn convert(
             };
             return Ok(generated.to_vec());
         }
-        FileFormat::Ods => {
+        FileFormat::ODS => {
             let generated = match ods::Transformer::generate(&parsed_file) {
                 Ok(res) => res,
                 Err(err) => {

@@ -1,6 +1,6 @@
 use bytes::Bytes;
-use clap::{Parser, ValueEnum};
-use shiva::core::{TransformerTrait};
+use clap::Parser;
+use shiva::core::{DocumentType, TransformerTrait};
 
 #[derive(Parser, Debug)]
 #[command(name="shiva", author, version, about, long_about = None)]
@@ -11,28 +11,11 @@ struct Args {
     #[arg(long)]
     output_file: String,
 
-    #[arg(long)]
+    #[arg(long, value_parser = DocumentType::variants_as_str() )]
     input_format: DocumentType,
 
-    #[arg(long)]
+    #[arg(long, value_parser = DocumentType::variants_as_str() )]
     output_format: DocumentType,
-}
-
-
-#[derive(Debug, Parser, Clone, ValueEnum)]
-pub enum DocumentType {
-    HTML,
-    Markdown,
-    Text,
-    PDF,
-    JSON,
-    CSV,
-    RTF,
-    DOCX,
-    XML,
-    XLS,
-    XLSX,
-    ODS,
 }
 
 
@@ -49,7 +32,7 @@ fn main() -> anyhow::Result<()> {
         DocumentType::HTML => shiva::html::Transformer::parse(&input_bytes)?,
         DocumentType::Text => shiva::text::Transformer::parse(&input_bytes)?,
         DocumentType::PDF => shiva::pdf::Transformer::parse(&input_bytes)?,
-        DocumentType::JSON => shiva::json::Transformer::parse(&input_bytes)?,
+        DocumentType::Json => shiva::json::Transformer::parse(&input_bytes)?,
         DocumentType::CSV => shiva::csv::Transformer::parse(&input_bytes)?,
         DocumentType::RTF => shiva::rtf::Transformer::parse(&input_bytes)?,
         DocumentType::DOCX => shiva::docx::Transformer::parse(&input_bytes)?,
@@ -64,7 +47,7 @@ fn main() -> anyhow::Result<()> {
         DocumentType::HTML => shiva::html::Transformer::generate(&document)?,
         DocumentType::Markdown => shiva::markdown::Transformer::generate(&document)?,
         DocumentType::PDF => shiva::pdf::Transformer::generate(&document)?,
-        DocumentType::JSON => shiva::json::Transformer::generate(&document)?,
+        DocumentType::Json => shiva::json::Transformer::generate(&document)?,
         DocumentType::CSV => shiva::csv::Transformer::generate(&document)?,
         DocumentType::RTF => shiva::rtf::Transformer::generate(&document)?,
         DocumentType::DOCX => shiva::docx::Transformer::generate(&document)?,
