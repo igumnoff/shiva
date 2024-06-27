@@ -2,7 +2,7 @@ use crate::core::Element::{Header, Hyperlink, Image, List, Paragraph, Table, Tex
 
 use bytes::Bytes;
 use anyhow;
-use std::collections::HashMap;
+use std::{collections::HashMap, io::Cursor};
 use crate::core::{
     Document, Element, ImageType, ListItem, TableHeader, TableRow, TransformerTrait,
 };
@@ -102,23 +102,43 @@ impl ShivaWorld {
     }
 }
 
+#[cfg(target_arch = "wasm32")]
 fn download_font(url: &str, folder: &str, filename: &str) {
     let font_path = Path::new(folder).join(filename);
 
     println!("Downloading font file {}...", font_path.display());
 
-    let mut reader = ureq::get(url)
-        .call().unwrap()
-        .into_reader();
+    let request = ehttp::Request::get(url);
+    ehttp::fetch(request, move |result: ehttp::Result<ehttp::Response>| {
+        let mut reader = Cursor::new(result.unwrap().bytes);
+        let f = std::fs::File::create(&font_path).unwrap();
+        let mut writer = std::io::BufWriter::new(f);
 
+        let _bytes_io_count =
+            std::io::copy(&mut reader , &mut writer).unwrap();
+
+        println!("Font file {} downloaded successfully!", font_path.display());
+    });
+
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn download_font(url: &str, folder: &str, filename: &str) {
+    let font_path = Path::new(folder).join(filename);
+
+    println!("Downloading font file {}...", font_path.display());
+
+    let request = ehttp::Request::get(url);
+    let response = ehttp::fetch_blocking(&request);
+    let mut reader = Cursor::new(response.unwrap().bytes);
     let f = std::fs::File::create(&font_path).unwrap();
     let mut writer = std::io::BufWriter::new(f);
 
     let _bytes_io_count =
-        std::io::copy(&mut reader, &mut writer).unwrap();
-
+        std::io::copy(&mut reader , &mut writer).unwrap();
 
     println!("Font file {} downloaded successfully!", font_path.display());
+
 }
 
 impl World for ShivaWorld {

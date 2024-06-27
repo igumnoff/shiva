@@ -59,9 +59,7 @@ rust_xlsxwriter = { version = "0.64.2", optional = true }
 shiva-spreadsheet-ods = { version = "0.0.2", optional = true }
 strum = { version = "0.26", features = ["derive"] }
 wasm-bindgen = "0.2.84"
-
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-ureq = { version =  "2.9.7", optional = true}
+ehttp = "=0.5.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "0.2.92"
@@ -86,7 +84,7 @@ text = []
 csv = ["dep:csv"]
 markdown = ["regex", "pulldown-cmark"]
 html = ["scraper", "ego-tree"]
-pdf = ["lopdf", "typst", "ttf-parser", "comemo", "time", "typst-pdf", "ureq"]
+pdf = ["lopdf", "typst", "ttf-parser", "comemo", "time", "typst-pdf"]
 json = ["serde", "serde_json"]
 xml = ["serde", "serde-xml-rs", "quick-xml"]
 rtf = ["rtf-parser"]
