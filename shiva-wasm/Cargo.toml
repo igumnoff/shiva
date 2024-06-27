@@ -30,7 +30,7 @@ features = [
 
 [dependencies.shiva]
 path = "../lib"
-features = ["html", "text", "csv", "markdown", "json", "xml","rtf", "docx", "xlsx", "xls", "ods",]
+features = ["html", "text", "csv", "markdown", "json", "xml","rtf", "docx", "xlsx", "xls", "ods", "pdf"]
 default-features = false
 
 [dev-dependencies]
