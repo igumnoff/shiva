@@ -14,7 +14,6 @@ macro_rules! log {
     }
 }
 
-#[wasm_bindgen(catch)]
 pub fn convert(
     file: Vec<u8>,
     input_format: FileFormat,
