@@ -278,8 +278,6 @@ fn parse_object(
         }
     }
 
-    println!("{}", text);
-
     Ok(())
 }
 
