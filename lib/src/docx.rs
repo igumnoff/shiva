@@ -1,26 +1,62 @@
 use crate::core::{Document, Element, ListItem, TableCell, TableRow, TransformerTrait};
 
 use bytes::Bytes;
-use docx_rs::{read_docx, Docx, Hyperlink, HyperlinkType, Paragraph, ParagraphStyle, Pic, Run, RunChild, TableRowChild, NumberingId, IndentLevel};
+use docx_rs::{read_docx, Docx, Hyperlink, HyperlinkType, Paragraph, ParagraphStyle,
+              Pic, Run, RunChild, TableRowChild, NumberingId, IndentLevel,
+              AbstractNumbering, Level, Start, NumberFormat, LevelText, LevelJc,
+              SpecialIndentType, Numbering};
 use std::io::Cursor;
 
 pub struct Transformer;
+
+//function re_size input picture (if size very big)
+fn re_size_picture(pic: Pic) -> Pic {
+    let mut pic = pic;
+    //setting the maximum image size (in EMU)
+    let max_width = 5900000; // 16.5 cm
+    let max_height = 10629420; // 29.7 cm
+
+    //getting the current image size
+    let (width, height) = pic.size;
+
+    //scale the image if it exceeds the page size
+    let mut new_width = width;
+    let mut new_height = height;
+
+    //scale the image if it exceeds the page size
+    if width > max_width {
+        let ratio = max_width as f32 / width as f32;
+        new_width = (width as f32 * ratio) as u32;
+        new_height = (height as f32 * ratio) as u32;
+    }
+    if new_height > max_height {
+        let ratio = max_height as f32 / new_height as f32;
+        new_width = (new_width as f32 * ratio) as u32;
+        new_height = (new_height as f32 * ratio) as u32;
+    }
+
+    pic = pic.size(new_width, new_height);
+    pic
+
+}
 
 //recursive function for processing nested elements in Element::List
 fn detect_element_in_list(doc: &mut Docx, element: &Element, numbered: bool, depth: usize) {
     match element {
         Element::Text { text, size } => {
+
             let mut paragraph =
                 Paragraph::new().add_run(Run::new().add_text(text).size(*size as usize * 2));
+
             if numbered {
                 paragraph = paragraph.numbering(NumberingId::new(2), IndentLevel::new(depth));
             } else {
-                // Добавляем символ "-" в начале текста с учетом уровня вложенности
-                let indent = " ".repeat(depth * 4); // 4 пробела за каждый уровень вложенности
+                // Add the "-" character at the beginning of the text, taking into account the nesting level
+                let indent = " ".repeat(depth * 4); // 4 spaces for each nesting level
                 let modified_text = format!("{}- {}", indent, text);
                 paragraph = Paragraph::new().add_run(Run::new().add_text(modified_text).size(*size as usize * 2));
             }
-            *doc = doc.clone().add_paragraph(paragraph);
+             *doc = doc.clone().add_paragraph(paragraph);
         }
 
         Element::Header { level, text } => {
@@ -288,6 +324,44 @@ impl TransformerTrait for Transformer {
     fn generate(document: &Document) -> anyhow::Result<Bytes> {
         let mut doc = Docx::new();
 
+        // region:    ---abstract_numbering
+        let mut abstract_numbering = AbstractNumbering::new(2);
+        for level in 0..=7 {
+            let level_text = match level {
+                0 => "%1",
+                1 => "%1.%2",
+                2 => "%1.%2.%3.",
+                3 => "%1.%2.%3.%4",
+                4 => "%1.%2.%3.%4.%5",
+                5 => "%1.%2.%3.%4.%5.%6",
+                6 => "%1.%2.%3.%4.%5.%6.%7",
+                7 => "%1.%2.%3.%4.%5.%6.%7.%8",
+                _ => "%1.%2.%3.%4.%5.%6.%7.%8.%9",
+            };
+
+            //selecting the offset of a sub-item on the sheet
+            let sub_item_offset = level as i32 + 1;
+            // let sub_item_offset = 1;
+
+        abstract_numbering = abstract_numbering
+            .add_level(
+                Level::new(
+                    level,
+                    Start::new(1),
+                    NumberFormat::new("decimal"),
+                    LevelText::new(level_text),
+                    LevelJc::new("left"),
+                )
+                    .indent(Some(300 * sub_item_offset),
+                            Some(SpecialIndentType::Hanging(320)),
+                            None,
+                            None),
+            );
+    }
+        // endregion: ---abstract_numbering
+
+        doc = doc.add_abstract_numbering(abstract_numbering).add_numbering(Numbering::new(2, 2));
+
         for element in &document.elements {
             match element {
                 Element::Header { level, text } => {
@@ -330,12 +404,7 @@ impl TransformerTrait for Transformer {
                     }
                 }
 
-                Element::Hyperlink {
-                    title,
-                    url,
-                    alt,
-                    size,
-                } => {
+                Element::Hyperlink { title, url, alt, size, } => {
                     let _ = alt;
                     let hyperlink = Hyperlink::new(url, HyperlinkType::External)
                         .add_run(Run::new().add_text(url).size(*size as usize * 2));
@@ -345,38 +414,10 @@ impl TransformerTrait for Transformer {
                     doc = doc.add_paragraph(Paragraph::add_hyperlink(paragraph, hyperlink));
                 }
 
-                Element::Image {
-                    bytes,
-                    title: _,
-                    alt: _,
-                    image_type: _,
-                } => {
+                Element::Image { bytes, title: _, alt: _, image_type: _, } => {
                     let mut pic = Pic::new(&bytes);
 
-                    //setting the maximum image size (in EMU)
-                    let max_width = 5900000; // 16.5 cm
-                    let max_height = 10629420; // 29.7 cm
-
-                    //getting the current image size
-                    let (width, height) = pic.size;
-
-                    //scale the image if it exceeds the page size
-                    let mut new_width = width;
-                    let mut new_height = height;
-
-                    //scale the image if it exceeds the page size
-                    if width > max_width {
-                        let ratio = max_width as f32 / width as f32;
-                        new_width = (width as f32 * ratio) as u32;
-                        new_height = (height as f32 * ratio) as u32;
-                    }
-                    if new_height > max_height {
-                        let ratio = max_height as f32 / new_height as f32;
-                        new_width = (new_width as f32 * ratio) as u32;
-                        new_height = (new_height as f32 * ratio) as u32;
-                    }
-
-                    pic = pic.size(new_width, new_height);
+                    pic = re_size_picture(pic);
 
                     let paragraph = Paragraph::new().add_run(Run::new().add_image(pic));
 
