@@ -3,6 +3,7 @@
 Paragraph  bla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla
 blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla
 
+![Picture alt1](image2.png "Picture title1")
 
 
 1. List item 1
@@ -36,7 +37,7 @@ blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla
 
 
 
-![Picture alt1](image0.png "Picture title1")
+![Picture alt1](image2.png "Picture title1")
 
 
 ## Second header
