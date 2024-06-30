@@ -4,7 +4,7 @@ use bytes::Bytes;
 use anyhow;
 use std::{collections::HashMap, io::Cursor};
 use crate::core::{
-    Document, Element, ImageType, ListItem, TableHeader, TableRow, TransformerTrait,
+    Document, Element, ListItem, TableHeader, TableRow, TransformerTrait,
 };
 use time::{OffsetDateTime, UtcOffset};
 use std::path::Path;
@@ -381,19 +381,10 @@ pub fn generate_document(document: &Document) -> anyhow::Result<(TypstString, Ha
                 process_table(source, headers, rows)?;
                 Ok(())
             }
-            Image {
-                bytes,
-                title,
-                alt,
-                image_type,
-            } => {
-                let image_type = match image_type {
-                    ImageType::Jpeg => ".jpeg",
-                    ImageType::Png => ".png",
-                };
-                let key = format!("{title}{image_type}");
-                img_map.insert(key, typst::foundations::Bytes::from(bytes.to_vec()));
-                process_image(source, bytes, title, alt, image_type)?;
+            Image(image) => {
+                let key = format!("{}{}",image.title(),image.image_type());
+                img_map.insert(key, typst::foundations::Bytes::from(image.bytes().to_vec()));
+                process_image(source, image.bytes(), image.title(), image.alt(), &image.image_type().to_string())?;
                 source.push('\n');
                 Ok(())
             }
@@ -455,6 +446,17 @@ mod test {
         let parsed = markdown::Transformer::parse_with_loader(&documents_bytes,disk_image_loader("test/data"))?;
         let generated_result = crate::typst::Transformer::generate(&parsed)?;
         std::fs::write("test/data/document_from_md.typ", generated_result)?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_generate_from_xml() -> anyhow::Result<()> {
+        let document = std::fs::read("test/data/document.xml")?;
+        let documents_bytes = Bytes::from(document);
+        let parsed = crate::xml::Transformer::parse(&documents_bytes)?;
+        let generated_result = crate::typst::Transformer::generate(&parsed)?;
+        std::fs::write("test/data/document_from_xml.typ", generated_result)?;
 
         Ok(())
     }

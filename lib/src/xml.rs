@@ -1,17 +1,10 @@
 use anyhow::Result;
 use bytes::Bytes;
 use quick_xml::{ events::{ BytesDecl, BytesEnd, BytesStart, BytesText, Event }, Reader, Writer };
-use std::str::from_utf8;
+use std::str::{from_utf8};
 
 use crate::core::{
-    Document,
-    Element,
-    TransformerTrait,
-    ListItem,
-    TableHeader,
-    TableRow,
-    ImageType,
-    TableCell,
+    ImageDimension, Document, Element, ImageAlignment, ImageData, ImageType, ListItem, TableCell, TableHeader, TableRow, TransformerTrait
 };
 
 use serde::{ Deserialize, Serialize };
@@ -182,20 +175,15 @@ impl TransformerTrait for Transformer {
                         let mut image_bytes = Bytes::new();
                         let mut alt = "_";
                         let mut title = "_";
-                        let mut image_type = ImageType::Png;
+                        let mut image_type = ImageType::default().to_string();
+                        let mut align = ImageAlignment::default().to_string();
+                        let mut width = None;
+                        let mut height = None;
                         for child in element.children.iter() {
                             match child.name.as_str() {
                                 "image_type" => {
                                     if let Some(value) = &child.text {
-                                        match value.as_str() {
-                                            "Png" | "PNG" | "png" => {
-                                                image_type = ImageType::Png;
-                                            }
-                                            "Jpeg" | "JPEG" | "jpeg" => {
-                                                image_type = ImageType::Jpeg;
-                                            }
-                                            _ => {}
-                                        }
+                                        image_type = value.to_string();
                                     } else {
                                         println!("Error: No value");
                                     }
@@ -220,16 +208,39 @@ impl TransformerTrait for Transformer {
                                     } else {
                                         println!("Error: No value");
                                     }
-                                }
+                                },
+                                "align" => {
+                                    if let Some(value) = &child.text {
+                                        align = value.to_string();
+                                    } else {
+                                        println!("Error: No value");
+                                    }
+                                },
+                                "width" => {
+                                    if let Some(value) = &child.text {
+                                        width = Some(value.parse()?);
+                                    } else {
+                                        println!("Error: No value");
+                                    }
+                                },
+                                "height" => {
+                                    if let Some(value) = &child.text {
+                                        height = Some(value.parse()?);
+                                    } else {
+                                        println!("Error: No value");
+                                    }
+                                },
                                 _ => {}
                             }
                         }
-                        elements.push(Element::Image {
-                            bytes: image_bytes,
-                            title: title.to_string(),
-                            alt: alt.to_string(),
-                            image_type: image_type,
-                        });
+                        elements.push(Element::Image(ImageData::new(
+                            image_bytes,
+                            title.to_string(),
+                            alt.to_string(),
+                            image_type,
+                            align,
+                            ImageDimension {width,height},
+                        )));
                     }
                     "Hyperlink" => {
                         let mut url = "_";
@@ -729,30 +740,23 @@ impl TransformerTrait for Transformer {
                     writer.write_event(Event::End(BytesEnd::new("size")))?;
                     writer.write_event(Event::End(BytesEnd::new("Text")))?;
                 }
-                Element::Image { bytes, title, alt, image_type } => {
+                Element::Image(image) => {
                     writer.write_event(Event::Start(BytesStart::new("Image")))?;
                     writer.write_event(Event::Start(BytesStart::new("title")))?;
-                    writer.write_event(Event::Text(BytesText::new(title)))?;
+                    writer.write_event(Event::Text(BytesText::new(image.title())))?;
                     writer.write_event(Event::End(BytesEnd::new("title")))?;
                     writer.write_event(Event::Start(BytesStart::new("alt")))?;
-                    writer.write_event(Event::Text(BytesText::new(alt)))?;
+                    writer.write_event(Event::Text(BytesText::new(image.alt())))?;
                     writer.write_event(Event::End(BytesEnd::new("alt")))?;
                     writer.write_event(Event::Start(BytesStart::new("bytes")))?;
                     writer.write_event(
                         Event::Text(
-                            BytesText::new(&String::from_utf8(bytes.to_vec()).unwrap().to_string())
+                            BytesText::new(&String::from_utf8(image.bytes().to_vec()).unwrap().to_string())
                         )
                     )?;
                     writer.write_event(Event::End(BytesEnd::new("bytes")))?;
                     writer.write_event(Event::Start(BytesStart::new("image_type")))?;
-                    match image_type {
-                        ImageType::Png => {
-                            writer.write_event(Event::Text(BytesText::new("Png")))?;
-                        }
-                        ImageType::Jpeg => {
-                            writer.write_event(Event::Text(BytesText::new("Jpeg")))?;
-                        }
-                    }
+                    writer.write_event(Event::Text(BytesText::new(&image.image_type().to_string())))?;
                     writer.write_event(Event::End(BytesEnd::new("image_type")))?;
                     writer.write_event(Event::End(BytesEnd::new("Image")))?;
                 }

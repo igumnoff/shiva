@@ -240,13 +240,18 @@ where F: Fn(&str) -> anyhow::Result<Bytes>
                     let src = element.attr("src").unwrap_or_default();
                     let title = element.attr("title").unwrap_or_default();
                     let alt = element.attr("alt").unwrap_or_default();
+                    let align = element.attr("align").unwrap_or_default();
+                    let width = element.attr("width").and_then(|s| s.parse().ok());
+                    let height = element.attr("height").and_then(|s| s.parse().ok());
                     let image_bytes = (image_loader.function)(src)?;
-                    elements.push(Image {
-                        bytes: image_bytes,
-                        title: title.to_string(),
-                        alt: alt.to_string(),
-                        image_type: ImageType::Png,
-                    });
+                    elements.push(Image(ImageData::new(
+                        image_bytes,
+                        title.to_string(),
+                        alt.to_string(),
+                        src.to_string(),
+                        align.to_string(),
+                        ImageDimension {width,height}
+                    )));
                 }
                 "ul" | "ol" => {
                     let mut list_items: Vec<ListItem> = Vec::new();
@@ -346,19 +351,29 @@ fn generate_html_for_element(
             list_html.push('\n');
             Ok(list_html)
         }
-        Image {
-            bytes,
-            title,
-            alt,
-            image_type: _,
-        } => {
+        Image(image) => {
             let image_path = format!("image{}.png", image_num);
             // images.insert(image_path.to_string(), bytes.clone());
-            (image_saver.function)(bytes, &image_path)?;
+            (image_saver.function)(image.bytes(), &image_path)?;
             *image_num += 1;
+
+            let align_str = match image.align() {
+                ImageAlignment::None => String::new(),
+                _ => format!(" align=\"{}\"", image.align()),
+            };
+
+            let width_str = match &image.size().width {
+                Some(width) => format!(" width=\"{}\"", width),
+                None => String::new(),
+            };
+
+            let height_str = match &image.size().height {
+                Some(height) => format!(" height=\"{}\"", height),
+                None => String::new(),
+            };
             Ok(format!(
-                "<img src=\"{}\" alt=\"{}\" title=\"{}\" />",
-                image_path, alt, title
+                "<img src=\"{}\" alt=\"{}\" title=\"{}\"{}{}{} />",
+                image_path, image.alt(), image.title(), align_str, width_str, height_str
             ))
         }
         Hyperlink {
@@ -404,7 +419,7 @@ mod tests {
         let document_html = r#"
         <html>
         <body>
-        <p>123<img src="small.png"></p>
+        <p>123<img alt="smal image" align="left" src="small.png" width="100" height="99" title="image"></p>
         </body>
         </html>
         "#;

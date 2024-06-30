@@ -3,10 +3,9 @@ mod tests {
     use bytes::Bytes;
     use shiva::core::Element::{Header, Hyperlink, Image, List, Paragraph, Table, Text};
     use shiva::core::{
-        Document, Element, ImageType, ListItem, TableCell, TableHeader, TableRow, TransformerTrait,
+        Document, Element, ImageAlignment, ImageData, ImageDimension, ImageType, ListItem, TableCell, TableHeader, TableRow, TransformerTrait
     };
     use shiva::html::Transformer;
-    use std::collections::HashMap;
 
     #[test]
     fn test_html_header_parse() -> anyhow::Result<()> {
@@ -495,13 +494,8 @@ mod tests {
         let elements: Vec<Element> = parsed.elements;
         match &elements[0] {
             Paragraph { elements } => match &elements[0] {
-                Image {
-                    title,
-                    alt: _,
-                    image_type: _,
-                    bytes: _,
-                } => {
-                    assert_eq!(title, "Picture title2");
+                Image(image) => {
+                    assert_eq!(image.title(), "Picture title2");
                 }
                 _ => panic!("Expected Paragraph"),
             },
@@ -532,12 +526,14 @@ mod tests {
                         }
                     },
                     {
-                        Image {
-                            alt: "Picture alt2".to_string(),
-                            image_type: ImageType::Png,
-                            title: "Picture title2".to_string(),
-                            bytes: Bytes::from(image_bytes),
-                        }
+                        Image(ImageData::new(
+                            Bytes::from(image_bytes),
+                            "Picture title2".to_string(),
+                            "Picture alt2".to_string(),
+                            ImageType::default().to_string(),
+                            ImageAlignment::default().to_string(),
+                            ImageDimension::default(),
+                        ))
                     },
                     {
                         Text {

@@ -3,6 +3,7 @@ use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::wasm_bindgen;
 use std::fmt::Debug;
+use std::str::FromStr;
 use thiserror::Error;
 use strum::{VariantArray, EnumString, Display, IntoStaticStr, EnumCount};
 
@@ -119,13 +120,7 @@ pub enum Element {
         elements: Vec<ListItem>,
         numbered: bool,
     },
-    Image {
-        #[cfg_attr(feature = "json", serde(skip))]
-        bytes: Bytes,
-        title: String,
-        alt: String,
-        image_type: ImageType,
-    },
+    Image(ImageData),
     Hyperlink {
         title: String,
         url: String,
@@ -157,11 +152,153 @@ pub struct TableCell {
     pub element: Element,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+pub struct ImageData {
+    #[cfg_attr(feature = "json", serde(skip))]
+    bytes: Bytes,
+    title: String,
+    alt: String,
+    image_type: ImageType,
+    align: ImageAlignment,
+    size: ImageDimension
+}
+
+/**
+ * ImageData methods
+ */
+impl ImageData {
+    pub fn new(
+        bytes: Bytes,
+        title: String,
+        alt: String,
+        src_or_type: String,
+        alignment: String,
+        size: ImageDimension,
+    ) -> ImageData {
+        let mut image_data = ImageData {
+            bytes,
+            title,
+            alt,
+            image_type: ImageType::default(),
+            align: ImageAlignment::default(),
+            size
+        };
+        image_data.set_image_type(&src_or_type);
+        image_data.set_image_alignment(&alignment);
+        image_data
+    }
+
+    pub fn set_image_type(&mut self, image_type_str: &str) {
+        let image_type_str = image_type_str
+            .split('.')
+            .last()
+            .unwrap_or("")
+            .trim()
+            .to_lowercase();
+
+        if image_type_str.trim().is_empty() {
+            self.image_type = ImageType::default();
+            return;
+        }
+
+        match ImageType::from_str(&image_type_str) {
+            Ok(image_type) => self.image_type = image_type,
+            Err(_) => panic!("Invalid image type: {}", image_type_str),
+        }
+    }
+
+    pub fn set_image_alignment(&mut self, alignment_str: &str) {
+        if alignment_str.trim().is_empty() {
+            self.align = ImageAlignment::default();
+            return;
+        }
+        match ImageAlignment::from_str(alignment_str) {
+            Ok(alignment) => self.align = alignment,
+            Err(_) => panic!("Invalid image alignment: {}", alignment_str),
+        }
+    }
+
+    pub fn set_image_bytes(&mut self, bytes: Bytes) {
+        self.bytes = bytes;
+    }
+
+    pub fn set_image_alt(&mut self, alt: &str) {
+        self.alt = alt.to_string();
+    }
+
+    pub fn set_image_title(&mut self, title: &str) {
+        self.title = title.to_string();
+    }
+
+    pub fn set_image_size(&mut self, size: ImageDimension) {
+        self.size = size;
+    }
+
+    pub fn bytes(&self) -> &Bytes {
+        &self.bytes
+    }
+
+    pub fn title(&self) -> &str {
+        &self.title
+    }
+
+    pub fn alt(&self) -> &str {
+        &self.alt
+    }
+
+    pub fn image_type(&self) -> &ImageType {
+        &self.image_type
+    }
+
+    pub fn align(&self) -> &ImageAlignment {
+        &self.align
+    }
+
+    pub fn size(&self) -> &ImageDimension{
+        &self.size
+    }
+
+}
+
+#[derive(Debug, Clone, PartialEq, Default, Display, EnumString, VariantArray)]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[strum(serialize_all = "lowercase")]
 pub enum ImageType {
+    #[default]
     Png,
     Jpeg,
+    Gif,
+    SVG
+}
+
+impl ImageType {
+    pub fn to_extension(&self) -> &str {
+        match self {
+            ImageType::Png => ".png",
+            ImageType::Jpeg => ".jpeg",
+            ImageType::Gif => ".gif",
+            ImageType::SVG => ".svg",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Default, EnumString, Display, VariantArray)]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[strum(serialize_all = "lowercase")]
+pub enum ImageAlignment {
+    Left,
+    Center,
+    Right,
+    #[default]
+    None,
+}
+
+#[derive(Debug, Clone, PartialEq, Default)]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+pub struct ImageDimension {
+    pub width: Option<String>,
+    pub height: Option<String>,
 }
 
 
@@ -262,5 +399,48 @@ mod tests {
         assert_eq!(DocumentType::HTML as u8, 0);
         assert_eq!(DocumentType::XLSX as u8, 10);
     }
+
+    #[test]
+    fn test_image_type_from_str() {
+        assert_eq!(ImageType::from_str("png").unwrap(), ImageType::Png);
+        assert_eq!(ImageType::from_str("jpeg").unwrap(), ImageType::Jpeg);
+        assert_eq!(ImageType::from_str("gif").unwrap(), ImageType::Gif);
+    }
+
+    #[test]
+    fn test_image_new() {
+        let bytes = Bytes::from("image".as_bytes());
+        let image = ImageData::new(bytes.clone(), "title".to_string(), "alt".to_string(), "/name/image.png".to_string(), "center".to_string(), ImageDimension { width: Some("50%".to_string()), height: Some("200".to_string())});
+        assert_eq!(image.bytes(), &bytes);
+        assert_eq!(image.title(), "title");
+        assert_eq!(image.alt(), "alt");
+        assert_eq!(image.image_type(), &ImageType::Png);
+    }
+
+    #[test]
+    fn test_image_type_extension() {
+        assert_eq!(ImageType::Png.to_extension(), ".png");
+        assert_eq!(ImageType::Jpeg.to_extension(), ".jpeg");
+    }
+
+    #[test]
+    fn test_image_type_defaut() {
+        assert_eq!(ImageType::Png, ImageType::default());
+    }
+
+    #[test]
+    fn test_image_type_display() {
+        assert_eq!("png", ImageType::Png.to_string());
+        assert_eq!("jpeg", ImageType::Jpeg.to_string());
+    }
+
+    #[test]
+    fn test_image_alignment() {
+        assert_eq!(ImageAlignment::Left, ImageAlignment::from_str("left").unwrap());
+        assert_eq!(ImageAlignment::Center, ImageAlignment::from_str("center").unwrap());
+        assert_eq!(ImageAlignment::Right, ImageAlignment::from_str("right").unwrap());
+    }
+
+
 
 }

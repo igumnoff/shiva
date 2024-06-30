@@ -16,6 +16,9 @@
                <alt>Some alt</alt>
                <bytes>base64==</bytes>
                <image_type>Png</image_type>
+               <width>100</width>
+               <height>100</height>
+               <align>center</align>
             </Image>
             <Hyperlink>
                <url>http://example.com</url>
