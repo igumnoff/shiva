@@ -117,18 +117,54 @@ impl Document {
 
     pub fn generate(&self, document_type: DocumentType) -> anyhow::Result<Bytes> {
         let output = match document_type {
+            #[cfg(feature = "markdown")]
             DocumentType::Markdown => markdown::Transformer::generate(self)?,
+            #[cfg(not(feature = "markdown"))]
+            DocumentType::Markdown => return Err(anyhow::anyhow!("Markdown feature is not enabled")),
+            #[cfg(feature = "html")]
             DocumentType::HTML => html::Transformer::generate(self)?,
+            #[cfg(not(feature = "html"))]
+            DocumentType::HTML => return Err(anyhow::anyhow!("HTML feature is not enabled")),
+            #[cfg(feature = "text")]
             DocumentType::Text => text::Transformer::generate(self)?,
+            #[cfg(not(feature = "text"))]
+            DocumentType::Text => return Err(anyhow::anyhow!("Text feature is not enabled")),
+            #[cfg(feature = "pdf")]
             DocumentType::PDF => pdf::Transformer::generate(self)?,
+            #[cfg(not(feature = "pdf"))]
+            DocumentType::PDF => return Err(anyhow::anyhow!("PDF feature is not enabled")),
+            #[cfg(feature = "json")]
             DocumentType::Json => json::Transformer::generate(self)?,
+            #[cfg(not(feature = "json"))]
+            DocumentType::Json => return Err(anyhow::anyhow!("Json feature is not enabled")),
+            #[cfg(feature = "csv")]
             DocumentType::CSV => csv::Transformer::generate(self)?,
+            #[cfg(not(feature = "csv"))]
+            DocumentType::CSV => return Err(anyhow::anyhow!("CSV feature is not enabled")),
+            #[cfg(feature = "rtf")]
             DocumentType::RTF => rtf::Transformer::generate(self)?,
+            #[cfg(not(feature = "rtf"))]
+            DocumentType::RTF => return Err(anyhow::anyhow!("RTF feature is not enabled")),
+            #[cfg(feature = "docx")]
             DocumentType::DOCX => docx::Transformer::generate(self)?,
+            #[cfg(not(feature = "docx"))]
+            DocumentType::DOCX => return Err(anyhow::anyhow!("DOCX feature is not enabled")),
+            #[cfg(feature = "xml")]
             DocumentType::XML => xml::Transformer::generate(self)?,
+            #[cfg(not(feature = "xml"))]
+            DocumentType::XML => return Err(anyhow::anyhow!("XML feature is not enabled")),
+            #[cfg(feature = "xls")]
             DocumentType::XLS => xls::Transformer::generate(self)?,
+            #[cfg(not(feature = "xls"))]
+            DocumentType::XLS => return Err(anyhow::anyhow!("XLS feature is not enabled")),
+            #[cfg(feature = "xlsx")]
             DocumentType::XLSX => xlsx::Transformer::generate(self)?,
+            #[cfg(not(feature = "xlsx"))]
+            DocumentType::XLSX => return Err(anyhow::anyhow!("XLSX feature is not enabled")),
+            #[cfg(feature = "ods")]
             DocumentType::ODS => ods::Transformer::generate(self)?,
+            #[cfg(not(feature = "ods"))]
+            DocumentType::ODS => return Err(anyhow::anyhow!("ODS feature is not enabled")),
         };
         Ok(output)
     }
