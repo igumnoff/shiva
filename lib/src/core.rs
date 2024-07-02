@@ -63,18 +63,54 @@ impl Document {
 
     pub fn parse(input_bytes: &Bytes, document_type: DocumentType) -> anyhow::Result<Document> {
         let document = match document_type {
+            #[cfg(feature = "markdown")]
             DocumentType::Markdown => markdown::Transformer::parse(input_bytes)?,
+            #[cfg(not(feature = "markdown"))]
+            DocumentType::Markdown => return Err(anyhow::anyhow!("Markdown feature is not enabled")),
+            #[cfg(feature = "html")]
             DocumentType::HTML => html::Transformer::parse(input_bytes)?,
+            #[cfg(not(feature = "html"))]
+            DocumentType::HTML => return Err(anyhow::anyhow!("HTML feature is not enabled")),
+            #[cfg(feature = "text")]
             DocumentType::Text => text::Transformer::parse(input_bytes)?,
+            #[cfg(not(feature = "text"))]
+            DocumentType::Text => return Err(anyhow::anyhow!("Text feature is not enabled")),
+            #[cfg(feature = "pdf")]
             DocumentType::PDF => pdf::Transformer::parse(input_bytes)?,
+            #[cfg(not(feature = "pdf"))]
+            DocumentType::PDF => return Err(anyhow::anyhow!("PDF feature is not enabled")),
+            #[cfg(feature = "json")]
             DocumentType::Json => json::Transformer::parse(input_bytes)?,
+            #[cfg(not(feature = "json"))]
+            DocumentType::Json => return Err(anyhow::anyhow!("Json feature is not enabled")),
+            #[cfg(feature = "csv")]
             DocumentType::CSV => csv::Transformer::parse(input_bytes)?,
+            #[cfg(not(feature = "csv"))]
+            DocumentType::CSV => return Err(anyhow::anyhow!("CSV feature is not enabled")),
+            #[cfg(feature = "rtf")]
             DocumentType::RTF => rtf::Transformer::parse(input_bytes)?,
+            #[cfg(not(feature = "rtf"))]
+            DocumentType::RTF => return Err(anyhow::anyhow!("RTF feature is not enabled")),
+            #[cfg(feature = "docx")]
             DocumentType::DOCX => docx::Transformer::parse(input_bytes)?,
+            #[cfg(not(feature = "docx"))]
+            DocumentType::DOCX => return Err(anyhow::anyhow!("DOCX feature is not enabled")),
+            #[cfg(feature = "xml")]
             DocumentType::XML => xml::Transformer::parse(input_bytes)?,
+            #[cfg(not(feature = "xml"))]
+            DocumentType::XML => return Err(anyhow::anyhow!("XML feature is not enabled")),
+            #[cfg(feature = "xls")]
             DocumentType::XLS => xls::Transformer::parse(input_bytes)?,
+            #[cfg(not(feature = "xls"))]
+            DocumentType::XLS => return Err(anyhow::anyhow!("XLS feature is not enabled")),
+            #[cfg(feature = "xlsx")]
             DocumentType::XLSX => xlsx::Transformer::parse(input_bytes)?,
+            #[cfg(not(feature = "xlsx"))]
+            DocumentType::XLSX => return Err(anyhow::anyhow!("XLSX feature is not enabled")),
+            #[cfg(feature = "ods")]
             DocumentType::ODS => ods::Transformer::parse(input_bytes)?,
+            #[cfg(not(feature = "ods"))]
+            DocumentType::ODS => return Err(anyhow::anyhow!("ODS feature is not enabled")),
         };
         Ok(document)
     }
@@ -210,6 +246,8 @@ pub fn disk_image_saver(path: &str) -> impl Fn(&Bytes, &str) -> anyhow::Result<(
     image_saver
 }
 
+// Opinion (JohnScience): The variants of this enum should be enabled/disabled based on the features.
+// This way, the user will get compile-time errors if they work. However, this would be a breaking change.
 
 #[wasm_bindgen]
 #[repr(u8)]
