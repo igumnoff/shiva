@@ -6,7 +6,30 @@ use std::fmt::Debug;
 use thiserror::Error;
 use strum::{VariantArray, EnumString, Display, IntoStaticStr, EnumCount};
 
-use crate::{csv, docx, html, json, markdown, ods, pdf, rtf, text, xls, xlsx, xml};
+#[cfg(feature = "csv")]
+use crate::csv;
+#[cfg(feature = "docx")]
+use crate::docx;
+#[cfg(feature = "html")]
+use crate::html;
+#[cfg(feature = "json")]
+use crate::json;
+#[cfg(feature = "markdown")]
+use crate::markdown;
+#[cfg(feature = "ods")]
+use crate::ods;
+#[cfg(feature = "pdf")]
+use crate::pdf;
+#[cfg(feature = "rtf")]
+use crate::rtf;
+#[cfg(feature = "text")]
+use crate::text;
+#[cfg(feature = "xls")]
+use crate::xls;
+#[cfg(feature = "xlsx")]
+use crate::xlsx;
+#[cfg(feature = "xml")]
+use crate::xml;
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
