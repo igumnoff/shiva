@@ -151,20 +151,15 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                             dest_url, title, ..
                         } => {
                             let img_type = dest_url.to_string();
-                            let img_type = img_type.split('.').last().unwrap();
-                            let image_type = match img_type {
-                                "png" => ImageType::Png,
-                                "jpeg" => ImageType::Jpeg,
-                                _ => ImageType::Png,
-                            };
-
                             let bytes = image_loader(&dest_url)?;
-                            let img_el = Element::Image {
+                            let img_el = Element::Image(ImageData::new(
                                 bytes,
-                                title: title.to_string(),
-                                alt: title.to_string(),
-                                image_type,
-                            };
+                                title.to_string(),
+                                title.to_string(),
+                                img_type,
+                                "".to_string(),
+                                ImageDimension::default()
+                            ));
                             // Before image there is paragraph tag (likely because alt text is in paragraph )
                             current_element = None;
                             process_element_creation(&mut current_element, img_el, list_depth);
@@ -237,11 +232,8 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                                     _ => {}
                                 }
                             }
-                            Element::Image {
-                                alt,
-                                ..
-                            } => {
-                                *alt = text.to_string();
+                            Element::Image(image) => {
+                                image.set_image_alt(&text)
                             }
                             Element::Hyperlink {
                                 alt,
@@ -455,16 +447,11 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                         markdown.push_str(&format!("[{}]({} \"{}\")", title, url, alt));
                     }
                 }
-                Image {
-                    bytes,
-                    title,
-                    alt,
-                    image_type: _,
-                } => {
-                    let image_path = format!("image{}.png", image_num);
-                    markdown.push_str(&format!("![{}]({} \"{}\")", alt, image_path, title));
+                Image(image) => {
+                    let image_path = format!("image{}.{}", image_num, image.image_type());
+                    markdown.push_str(&format!("![{}]({} \"{}\")", image.alt(), image_path, image.title()));
                     markdown.push('\n');
-                    (saver.function)(&bytes, &image_path)?;
+                    (saver.function)(&image.bytes(), &image_path)?;
                     *image_num += 1;
                 }
                 Table { headers, rows } => {

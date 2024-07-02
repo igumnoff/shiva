@@ -142,15 +142,10 @@ impl TransformerTrait for Transformer {
                         markdown.push_str(&format!("[{}]({} \"{}\")", title, url, alt));
                     }
                 }
-                Image {
-                    bytes,
-                    title,
-                    alt,
-                    image_type: _,
-                } => {
+                Image(image) => {
                     let image_path = format!("image{}.png", image_num);
-                    markdown.push_str(&format!("![{}]({} \"{}\")", alt, image_path, title));
-                    images.insert(image_path.to_string(), bytes.clone());
+                    markdown.push_str(&format!("![{}]({} \"{}\")", image.alt(), image_path, image.title()));
+                    images.insert(image_path.to_string(), image.bytes().clone());
                     *image_num += 1;
                 }
                 Table { headers, rows } => {

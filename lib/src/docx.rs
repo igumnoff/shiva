@@ -1,4 +1,4 @@
-use crate::core::{Document, Element, ListItem, TableCell, TableRow, TransformerTrait};
+use crate::core::{Document, Element, ImageDimension, ListItem, TableCell, TableRow, TransformerTrait};
 
 use bytes::Bytes;
 use docx_rs::{read_docx, Docx, Hyperlink, HyperlinkType, Paragraph, ParagraphStyle,
@@ -414,8 +414,19 @@ impl TransformerTrait for Transformer {
                     doc = doc.add_paragraph(Paragraph::add_hyperlink(paragraph, hyperlink));
                 }
 
-                Element::Image { bytes, title: _, alt: _, image_type: _, } => {
-                    let mut pic = Pic::new(&bytes);
+                Element::Image(image) => {
+                    let mut pic = Pic::new(&image.bytes());
+
+                    match &image.size() {
+                        &ImageDimension { width: Some(width), height: Some(height) } => {
+                            let width = width.parse().unwrap_or(0);
+                            let height =  height.parse().unwrap_or(0);
+                            if width > 0 && height > 0 {
+                                pic = pic.size(width, height);
+                            }
+                        },
+                        _ => {}
+                    }
 
                     pic = re_size_picture(pic);
 
