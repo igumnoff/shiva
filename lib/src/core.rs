@@ -287,7 +287,8 @@ pub fn disk_image_saver(path: &str) -> impl Fn(&Bytes, &str) -> anyhow::Result<(
 
 #[wasm_bindgen]
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Eq, EnumString, Display, VariantArray, IntoStaticStr, EnumCount)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumString, Display, VariantArray, IntoStaticStr, EnumCount)]
+#[cfg_attr(feature = "json", derive(Serialize))]
 #[strum(serialize_all = "lowercase")]
 pub enum DocumentType {
     HTML = 0,
