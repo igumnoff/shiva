@@ -1,10 +1,13 @@
-use crate::core::{Document, Element, ImageDimension, ListItem, TableCell, TableRow, TransformerTrait};
+use crate::core::{
+    Document, Element, ImageDimension, ListItem, TableCell, TableRow, TransformerTrait,
+};
 
 use bytes::Bytes;
-use docx_rs::{read_docx, Docx, Hyperlink, HyperlinkType, Paragraph, ParagraphStyle,
-              Pic, Run, RunChild, TableRowChild, NumberingId, IndentLevel,
-              AbstractNumbering, Level, Start, NumberFormat, LevelText, LevelJc,
-              SpecialIndentType, Numbering};
+use docx_rs::{
+    read_docx, AbstractNumbering, Docx, Hyperlink, HyperlinkType, IndentLevel, Level, LevelJc,
+    LevelText, NumberFormat, Numbering, NumberingId, Paragraph, ParagraphStyle, Pic, Run, RunChild,
+    SpecialIndentType, Start, TableRowChild,
+};
 use std::io::Cursor;
 
 pub struct Transformer;
@@ -37,14 +40,12 @@ fn re_size_picture(pic: Pic) -> Pic {
 
     pic = pic.size(new_width, new_height);
     pic
-
 }
 
 //recursive function for processing nested elements in Element::List
 fn detect_element_in_list(doc: &mut Docx, element: &Element, numbered: bool, depth: usize) {
     match element {
         Element::Text { text, size } => {
-
             let mut paragraph =
                 Paragraph::new().add_run(Run::new().add_text(text).size(*size as usize * 2));
 
@@ -54,9 +55,10 @@ fn detect_element_in_list(doc: &mut Docx, element: &Element, numbered: bool, dep
                 // Add the "-" character at the beginning of the text, taking into account the nesting level
                 let indent = " ".repeat(depth * 4); // 4 spaces for each nesting level
                 let modified_text = format!("{}- {}", indent, text);
-                paragraph = Paragraph::new().add_run(Run::new().add_text(modified_text).size(*size as usize * 2));
+                paragraph = Paragraph::new()
+                    .add_run(Run::new().add_text(modified_text).size(*size as usize * 2));
             }
-             *doc = doc.clone().add_paragraph(paragraph);
+            *doc = doc.clone().add_paragraph(paragraph);
         }
 
         Element::Header { level, text } => {
@@ -104,20 +106,23 @@ fn detect_element_in_list(doc: &mut Docx, element: &Element, numbered: bool, dep
 impl TransformerTrait for Transformer {
     fn parse(document: &Bytes) -> anyhow::Result<Document> {
         fn extract_text(doc_element: &docx_rs::Paragraph) -> String {
+            let mut result = "".to_string();
             for c in &doc_element.children {
                 match c {
                     docx_rs::ParagraphChild::Run(run) => {
                         if run.children.is_empty() {
-                            return "".to_string();
+                            result.push_str("");
+                            return result;
                         }
                         if let RunChild::Text(t) = &run.children[0] {
-                            return t.text.to_string();
+                            result.push_str(&t.text);
                         }
                     }
                     _ => {}
                 }
             }
-            "".to_string()
+
+            return result;
         }
 
         let docx = read_docx(document)?;
@@ -343,8 +348,7 @@ impl TransformerTrait for Transformer {
             let sub_item_offset = level as i32 + 1;
             // let sub_item_offset = 1;
 
-        abstract_numbering = abstract_numbering
-            .add_level(
+            abstract_numbering = abstract_numbering.add_level(
                 Level::new(
                     level,
                     Start::new(1),
@@ -352,15 +356,19 @@ impl TransformerTrait for Transformer {
                     LevelText::new(level_text),
                     LevelJc::new("left"),
                 )
-                    .indent(Some(300 * sub_item_offset),
-                            Some(SpecialIndentType::Hanging(320)),
-                            None,
-                            None),
+                .indent(
+                    Some(300 * sub_item_offset),
+                    Some(SpecialIndentType::Hanging(320)),
+                    None,
+                    None,
+                ),
             );
-    }
+        }
         // endregion: ---abstract_numbering
 
-        doc = doc.add_abstract_numbering(abstract_numbering).add_numbering(Numbering::new(2, 2));
+        doc = doc
+            .add_abstract_numbering(abstract_numbering)
+            .add_numbering(Numbering::new(2, 2));
 
         for element in &document.elements {
             match element {
@@ -404,7 +412,12 @@ impl TransformerTrait for Transformer {
                     }
                 }
 
-                Element::Hyperlink { title, url, alt, size, } => {
+                Element::Hyperlink {
+                    title,
+                    url,
+                    alt,
+                    size,
+                } => {
                     let _ = alt;
                     let hyperlink = Hyperlink::new(url, HyperlinkType::External)
                         .add_run(Run::new().add_text(url).size(*size as usize * 2));
@@ -418,13 +431,16 @@ impl TransformerTrait for Transformer {
                     let mut pic = Pic::new(&image.bytes());
 
                     match &image.size() {
-                        &ImageDimension { width: Some(width), height: Some(height) } => {
+                        &ImageDimension {
+                            width: Some(width),
+                            height: Some(height),
+                        } => {
                             let width = width.parse().unwrap_or(0);
-                            let height =  height.parse().unwrap_or(0);
+                            let height = height.parse().unwrap_or(0);
                             if width > 0 && height > 0 {
                                 pic = pic.size(width, height);
                             }
-                        },
+                        }
                         _ => {}
                     }
 
@@ -507,6 +523,20 @@ mod tests {
         //write to file
         println!("--->>>{:<12} - start writing document_from_md.docx", "TEST");
         std::fs::write("test/data/document_from_md.docx", generated_result)?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse() -> anyhow::Result<()> {
+        //read from document.docx file from disk
+        let document = std::fs::read("test/data/document.docx")?;
+        let documents_bytes = Bytes::from(document);
+        let parsed = docx::Transformer::parse(&documents_bytes)?;
+
+        println!("Parsed - {:#?}", parsed);
+
+  
 
         Ok(())
     }

@@ -14,6 +14,54 @@
     <w:body>
         <w:p>
             <w:pPr>
+                <w:pStyle w:val="Normal" />
+                <w:jc w:val="right" />
+                <w:rPr>
+                    <w:szCs w:val="22" />
+                </w:rPr>
+            </w:pPr>
+            <w:r>
+                <w:rPr>
+                    <w:szCs w:val="22" />
+                </w:rPr>
+                <w:t xml:space="preserve">Warszawa, dnia </w:t>
+            </w:r>
+            <w:r>
+                <w:rPr>
+                    <w:b />
+                    <w:bCs />
+                    <w:szCs w:val="22" />
+                    <w:shd w:fill="FFFF00" w:val="clear" />
+                </w:rPr>
+                <w:t>{{</w:t>
+            </w:r>
+            <w:r>
+                <w:rPr>
+                    <w:b />
+                    <w:bCs />
+                    <w:szCs w:val="22" />
+                    <w:shd w:fill="FFFF00" w:val="clear" />
+                </w:rPr>
+                <w:t>DATA</w:t>
+            </w:r>
+            <w:r>
+                <w:rPr>
+                    <w:b />
+                    <w:bCs />
+                    <w:szCs w:val="22" />
+                    <w:shd w:fill="FFFF00" w:val="clear" />
+                </w:rPr>
+                <w:t>}}</w:t>
+            </w:r>
+            <w:r>
+                <w:rPr>
+                    <w:szCs w:val="22" />
+                </w:rPr>
+                <w:t xml:space="preserve"> r. </w:t>
+            </w:r>
+        </w:p>
+        <w:p>
+            <w:pPr>
                 <w:pStyle w:val="Heading1"/>
                 <w:numPr>
                     <w:ilvl w:val="0"/>
