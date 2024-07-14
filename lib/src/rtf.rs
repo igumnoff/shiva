@@ -1,4 +1,5 @@
 use std::io::Cursor;
+use bytes::Bytes;
 use image::GenericImageView;
 use crate::core::{Document, Element, TransformerTrait};
 use image::io::Reader as ImageReader;
@@ -7,9 +8,124 @@ use rtf_parser::lexer::Lexer;
 use rtf_parser::parser::Parser;
 
 
-
-
 pub struct Transformer;
+
+struct ImageSize {
+    output_width: u32,
+    output_height: u32,
+}
+
+fn re_size_picture(image_bytes: &Bytes) -> ImageSize {
+    //setting the maximum image size
+    let max_width = 9700; // 16.5 cm
+    let max_height = 18000; // 29.7 cm
+
+    let size_img = ImageReader::new(Cursor::new(image_bytes))
+        .with_guessed_format().expect("the image format is not defined")
+        .decode().expect("fail decode image");
+    let (width, height) = size_img.dimensions();
+
+    //reassigning the dimensions taking into account the coefficients
+    let width = width * 15;
+    let height = height * 15;
+
+    //scale the image if it exceeds the page size
+    let mut new_width = width;
+    let mut new_height = height;
+
+    //scale the image if it exceeds the page size
+    if width > max_width {
+        let ratio = max_width as f32 / width as f32;
+        new_width = (width as f32 * ratio) as u32;
+        new_height = (height as f32 * ratio) as u32;
+    }
+    if new_height > max_height {
+        let ratio = max_height as f32 / new_height as f32;
+        new_width = (new_width as f32 * ratio) as u32;
+        new_height = (new_height as f32 * ratio) as u32;
+    }
+
+    let output_width = new_width;
+    let output_height = new_height;
+
+    ImageSize {
+        output_width,
+        output_height
+    }
+}
+
+fn detect_element_in_list(
+    rtf_content: &mut String,
+    element: &Element,
+    numbered: bool,
+    parent_indices: &mut Vec<usize>,
+    depth: usize,
+) {
+    match element {
+        Element::Text { text, size } => {
+            let indent = " ".repeat(depth * 4); // 4 пробела для каждого уровня вложенности
+            let modified_text = if numbered {
+                let numbering = parent_indices.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(".");
+                format!("{}{} {}", indent, numbering, text)
+            } else {
+                format!("{}- {}", indent, text)
+            };
+            rtf_content.push_str(&format!(
+                "{{\\fs{} {}}} ",
+                *size as i32 * 2,
+                modified_text
+            ));
+            rtf_content.push_str("\\par ");
+        }
+
+        Element::Header { level, text } => {
+            let header_size = 30 + (level);
+            let indent = " ".repeat(depth * 4); // 4 пробела для каждого уровня вложенности
+            let modified_text = if numbered {
+                let numbering = parent_indices.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(".");
+                format!("{} {} ", numbering, text)
+            } else {
+                format!("{}- {}", indent, text)
+            };
+            rtf_content.push_str(&format!(
+                "{{\\fs{}\\b {} \\b0}}\\par ",
+                header_size,
+                modified_text
+            ));
+        }
+
+        Element::Hyperlink { title, url, alt: _, size } => {
+            rtf_content.push_str(&format!(
+                "{{\\field{{\\*\\fldinst HYPERLINK \"{}\" }}{{\\fldrslt {{\\ul\\cf1 {}}}}}}}",
+                url,
+                title
+            ));
+            rtf_content.push_str("\\par ");
+        }
+
+        Element::List { elements, numbered } => {
+            if *numbered {
+                parent_indices.push(0); // Добавляем новый уровень для вложенного списка
+            }
+            for list_item in elements {
+                if *numbered {
+                    *parent_indices.last_mut().unwrap() += 1; // Увеличиваем индекс текущего уровня
+                }
+                detect_element_in_list(rtf_content, &list_item.element, *numbered, parent_indices, depth + 1);
+            }
+            if *numbered {
+                parent_indices.pop(); // Удаляем уровень после обработки вложенного списка
+            }
+        }
+
+        _ => {
+            eprintln!("Unknown element in list");
+        }
+    }
+}
+
+
+
 
 impl TransformerTrait for Transformer {
     fn parse(
@@ -44,12 +160,9 @@ impl TransformerTrait for Transformer {
     }
     Ok(document)
     }
-    fn generate(
-        document: &Document,
-    ) -> anyhow::Result<
-        bytes::Bytes
-    > {
+    fn generate(document: &Document, ) -> anyhow::Result<bytes::Bytes> {
         let mut rtf_content = String::new();
+        let mut parent_indices = Vec::new();
 
         rtf_content.push_str("{\\rtf1\\ansi\\deff0"); //the standard title of an RTF document, which indicates that it is an RTF document using ANSI characters and the default font
         for element in &document.elements {
@@ -86,11 +199,37 @@ impl TransformerTrait for Transformer {
                     }
                     rtf_content.push_str("\\par ");
                 }
-                /*
-                                Element::List {elements, numbered} => {
-                                    todo!()
-                                }
-                */
+
+                Element::List { elements, numbered } => {
+                    if *numbered {
+                        parent_indices.push(0); // Начинаем с 0 для нового списка
+                    }
+                    for list_item in elements {
+                        if *numbered {
+                            *parent_indices.last_mut().unwrap() += 1; // Увеличиваем текущий уровень нумерации
+                        }
+
+                        // Если элемент является вложенным списком, уменьшаем индекс родительского уровня
+                        if let Element::List { .. } = list_item.element {
+                            if *numbered {
+                                *parent_indices.last_mut().unwrap() -= 1;
+                            }
+
+                        }
+                        detect_element_in_list(&mut rtf_content,
+                                               &list_item.element,
+                                               *numbered,
+                                               &mut parent_indices,
+                                               0);
+
+                    }
+                    if *numbered {
+                        parent_indices.pop(); // Удаляем уровень после обработки списка
+                    }
+                }
+
+
+
                 Element::Hyperlink { title, url, alt: _, size: _} => {
                     rtf_content.push_str(&format!(
                         "{{\\field{{\\*\\fldinst HYPERLINK \"{}\" }}{{\\fldrslt {{\\ul\\cf1 {}}}}}}}",
@@ -100,92 +239,65 @@ impl TransformerTrait for Transformer {
                     rtf_content.push_str("\\par ");
                 }
 
-                Element::Image { bytes, title: _, alt: _, image_type: _} => {
-                    //определяем размеры изображения
-                    //setting the maximum image size
-                    let max_width = 9700; // 16.5 cm
-                    let max_height = 18000; // 29.7 cm
+                Element::Image(image) => {
+                    let image_bytes = image.bytes();
 
-                    let size_img = ImageReader::new(Cursor::new(bytes))
-                        .with_guessed_format()?.decode()?;
-                    let (width, height) = size_img.dimensions();
+                    let image_size = re_size_picture(image_bytes);
 
-                    //переназначаем размеры с учётом коэффициентов
-                    let width = width * 15;
-                    let height = height * 15;
-
-                    //scale the image if it exceeds the page size
-                    let mut new_width = width;
-                    let mut new_height = height;
-
-                    //scale the image if it exceeds the page size
-                    if width > max_width {
-                        let ratio = max_width as f32 / width as f32;
-                        new_width = (width as f32 * ratio) as u32;
-                        new_height = (height as f32 * ratio) as u32;
-                    }
-                    if new_height > max_height {
-                        let ratio = max_height as f32 / new_height as f32;
-                        new_width = (new_width as f32 * ratio) as u32;
-                        new_height = (new_height as f32 * ratio) as u32;
-                    }
-
-                    let output_width_size = new_width;
-                    let output_height_size = new_height;
-
-
-                    let image = bytes.iter().map(|b| format!("{:02X}",
+                    let image = image_bytes.iter().map(|b| format!("{:02X}",
                                                              b)).collect::<String>();
-
 
                     rtf_content.push_str(&format!(
                         "{{{{\\pict\\jpegblip\\picwgoal{}\\pichgoal{} {} }}}}",
-                        output_width_size,
-                        output_height_size,
+                        image_size.output_width,
+                        image_size.output_height,
                         image
                     ));
                     rtf_content.push_str("\\par ");
                 }
 
+                /*
                 Element::Table { headers, rows } => {
-                    // Начало таблицы
-                    rtf_content.push_str("\\trowd \\trgaph100");
-
-                    // Добавление заголовков таблицы
+                    // Генерация заголовка таблицы
+                    rtf_content.push_str("{\\trowd\\trgaph108\\trleft-108");
                     for (i, header) in headers.iter().enumerate() {
-                        if let Element::Text { text, size } = &header.element {
-                            rtf_content.push_str(&format!(
-                                "\\cellx{} {{\\b\\fs{} {}}} ",
-                                (i + 1) * 1500, // Ширина ячейки
-                                size * 2, // Размер шрифта
-                                text // Текст заголовка
-                            ));
+                        let cell_index = (i + 1) * 1000;
+                        rtf_content.push_str(&format!("\\cellx{}", cell_index));
+                    }
+                    rtf_content.push_str("\\intbl\\row");
+
+                    rtf_content.push_str("\\pard\\intbl"); // закрываем первую строку (заголовок)
+
+                    for header in headers {
+                        if let Element::Text { text, .. } = &header.element {
+                            rtf_content.push_str(&format!(" {}", text));
                         }
                     }
-                    rtf_content.push_str("\\row ");
+                    rtf_content.push_str("\\cell\\row}"); // Закрытие заголовка таблицы
 
-                    // Добавление строк таблицы
+                    // Генерация строк таблицы
                     for row in rows {
-                        rtf_content.push_str("\\trowd \\trgaph100");
+                        rtf_content.push_str("{\\trowd\\trgaph108\\trleft-108");
                         for (i, cell) in row.cells.iter().enumerate() {
-                            if let Element::Text { text, size } = &cell.element {
-                                rtf_content.push_str(&format!(
-                                    "\\cellx{}\\fs{} {} ",
-                                    (i + 1) * 1500, // Ширина ячейки
-                                    size * 2, // Размер шрифта
-                                    text // Текст ячейки
-                                ));
+                            let cell_index = (i + 1) * 1000;
+                            rtf_content.push_str(&format!("\\cellx{}", cell_index));
+                        }
+                        rtf_content.push_str("\\intbl\\row");
+
+                        rtf_content.push_str("\\pard\\intbl"); // закрываем строку
+
+                        for cell in &row.cells {
+                            if let Element::Text { text, .. } = &cell.element {
+                                rtf_content.push_str(&format!(" {}", text));
                             }
                         }
-                        rtf_content.push_str("\\row ");
+                        rtf_content.push_str("\\cell\\row}"); // Закрытие строки таблицы
                     }
 
-                    // Конец таблицы
-                    rtf_content.push_str("\\pard ");
+                    rtf_content.push_str("\\pard\\intbl\\row}"); // Закрытие таблицы
                 }
 
-
-
+                 */
                 _ => {
                     eprintln!("Unknown element");
                 }

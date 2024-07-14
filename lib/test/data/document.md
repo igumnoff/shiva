@@ -37,7 +37,7 @@ blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla
 
 
 
-![Picture alt1](image2.png "Picture title1")
+![Picture alt1](big_image1.png "Picture title2")
 
 
 ## Second header
