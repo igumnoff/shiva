@@ -1,6 +1,8 @@
 use crate::core::{
     Document, Element, ImageDimension, ListItem, TableCell, TableRow, TransformerTrait,
 };
+use crate::core::*;
+
 
 use bytes::Bytes;
 use docx_rs::{
@@ -536,8 +538,31 @@ mod tests {
 
         println!("Parsed - {:#?}", parsed);
 
-  
-
+        let expected_result = Document {
+            elements: vec![
+                Element::Text {
+                    text: "Warszawa, dnia {{DATA}} r. ".to_string(),
+                    size: 16,
+                },
+                Element::Header {
+                    level: 1,
+                    text: "Header 1.".to_string(),
+                },
+                Element::Text {
+                    text: "".to_string(),
+                    size: 16,
+                },
+            ],
+            page_width: 210.0,
+            page_height: 297.0,
+            left_page_indent: 10.0,
+            right_page_indent: 10.0,
+            top_page_indent: 10.0,
+            bottom_page_indent: 10.0,
+            page_header: vec![],
+            page_footer: vec![],
+        };
+        assert_eq!(expected_result, parsed);
         Ok(())
     }
 }
