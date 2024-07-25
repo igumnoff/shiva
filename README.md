@@ -72,7 +72,7 @@
 Cargo.toml
 ```toml
 [dependencies]
-shiva = {  version = "1.1.0", features = ["html", "markdown", "text", "pdf", "json", 
+shiva = {  version = "1.1.1", features = ["html", "markdown", "text", "pdf", "json", 
     "csv", "rtf", "docx", "xml", "xls", "xlsx", "ods", "typst"] }
 ```
 
@@ -134,7 +134,7 @@ pub trait TransformerTrait {
 ```
 
 
-### Optional shiva::core::TransformerWithImageLoaderSaverTrait (If images store outside of document for example: HTML, Markdown)
+### Optional: shiva::core::TransformerWithImageLoaderSaverTrait (If images store outside of document for example: HTML, Markdown)
 
 ```rust
 pub trait TransformerWithImageLoaderSaverTrait {
