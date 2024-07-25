@@ -1,7 +1,6 @@
 use crate::core::{
     Document, Element, ImageDimension, ListItem, TableCell, TableRow, TransformerTrait,
 };
-use crate::core::*;
 
 
 use bytes::Bytes;
