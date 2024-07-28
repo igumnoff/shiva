@@ -1,7 +1,7 @@
 use std::io::Cursor;
 use bytes::Bytes;
 use image::GenericImageView;
-use crate::core::{Document, Element, TransformerTrait};
+use crate::core::{Document, Element, TableHeader, TableRow, TransformerTrait};
 use image::io::Reader as ImageReader;
 
 use rtf_parser::lexer::Lexer;
@@ -66,7 +66,7 @@ fn detect_element_in_list(
             let indent = " ".repeat(depth * 4); // 4 пробела для каждого уровня вложенности
             let modified_text = if numbered {
                 let numbering = parent_indices.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(".");
-                format!("{}{} {}", indent, numbering, text)
+                format!("{}{}. {}", indent, numbering, text)
             } else {
                 format!("{}- {}", indent, text)
             };
@@ -83,7 +83,7 @@ fn detect_element_in_list(
             let indent = " ".repeat(depth * 4); // 4 пробела для каждого уровня вложенности
             let modified_text = if numbered {
                 let numbering = parent_indices.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(".");
-                format!("{} {} ", numbering, text)
+                format!("{}. {} ", numbering, text)
             } else {
                 format!("{}- {}", indent, text)
             };
@@ -94,11 +94,43 @@ fn detect_element_in_list(
             ));
         }
 
-        Element::Hyperlink { title, url, alt: _, size } => {
-            rtf_content.push_str(&format!(
+        Element::Hyperlink { title, url, .. } => {
+            let indent = " ".repeat(depth * 4);
+            let modified_title = if numbered {
+                let numbering = parent_indices.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(".");
+                format!("{}{}. {}", indent, numbering, title)
+            } else {
+                format!("{}- {}", indent, title)
+            };
+                rtf_content.push_str(&format!(
                 "{{\\field{{\\*\\fldinst HYPERLINK \"{}\" }}{{\\fldrslt {{\\ul\\cf1 {}}}}}}}",
                 url,
-                title
+                modified_title
+            ));
+            rtf_content.push_str("\\par ");
+        }
+
+        Element::Image(image) => {
+            let image_bytes = image.bytes();
+            let image_size = re_size_picture(image_bytes);
+            let image = image_bytes.iter().map(|b| format!("{:02X}",
+                                                           b)).collect::<String>();
+
+            let indent = " ".repeat(depth * 4);
+            let modified_image_caption = if numbered {
+                let numbering = parent_indices.iter().map(|i| i.to_string()).collect::<Vec<String>>().join(".");
+                format!("{}{}. {}", indent, numbering, "Image")
+            } else {
+                format!("{}- Image", indent)
+            };
+
+            rtf_content.push_str(&format!("{{\\fs24 {}}}\\par ", modified_image_caption));
+
+            rtf_content.push_str(&format!(
+                "{{{{\\pict\\jpegblip\\picwgoal{}\\pichgoal{} {} }}}}",
+                image_size.output_width,
+                image_size.output_height,
+                image
             ));
             rtf_content.push_str("\\par ");
         }
@@ -119,7 +151,7 @@ fn detect_element_in_list(
         }
 
         _ => {
-            eprintln!("Unknown element in list");
+            eprintln!("Unknown element in list: {:?}", element);
         }
     }
 }
@@ -160,6 +192,7 @@ impl TransformerTrait for Transformer {
     }
     Ok(document)
     }
+
     fn generate(document: &Document, ) -> anyhow::Result<bytes::Bytes> {
         let mut rtf_content = String::new();
         let mut parent_indices = Vec::new();
@@ -228,8 +261,6 @@ impl TransformerTrait for Transformer {
                     }
                 }
 
-
-
                 Element::Hyperlink { title, url, alt: _, size: _} => {
                     rtf_content.push_str(&format!(
                         "{{\\field{{\\*\\fldinst HYPERLINK \"{}\" }}{{\\fldrslt {{\\ul\\cf1 {}}}}}}}",
@@ -256,50 +287,37 @@ impl TransformerTrait for Transformer {
                     rtf_content.push_str("\\par ");
                 }
 
-                /*
                 Element::Table { headers, rows } => {
-                    // Генерация заголовка таблицы
-                    rtf_content.push_str("{\\trowd\\trgaph108\\trleft-108");
-                    for (i, header) in headers.iter().enumerate() {
-                        let cell_index = (i + 1) * 1000;
-                        rtf_content.push_str(&format!("\\cellx{}", cell_index));
-                    }
-                    rtf_content.push_str("\\intbl\\row");
+                    let column_widths = calculate_column_widths(headers, rows);
+                    let mut current_x = 0;
 
-                    rtf_content.push_str("\\pard\\intbl"); // закрываем первую строку (заголовок)
+                    rtf_content.push_str("\\trowd\\trgaph108\\trleft-108");
+                    for (_, width) in column_widths.iter().enumerate() {
+                        current_x += width;
+                        rtf_content.push_str("\\clbrdrt\\brdrs\\brdrw10\\clbrdrl\\brdrs\\brdrw10\\clbrdrb\\brdrs\\brdrw10\\clbrdrr\\brdrs\\brdrw10");
+                        rtf_content.push_str(&format!("\\cellx{}", current_x));
+                    }
+                    rtf_content.push_str("\\intbl");
 
                     for header in headers {
-                        if let Element::Text { text, .. } = &header.element {
-                            rtf_content.push_str(&format!(" {}", text));
+                        if let Element::Text { text, size } = &header.element {
+                            rtf_content.push_str(&format!("{{\\fs{} {}}}\\cell", *size as i32 * 2, text));
                         }
                     }
-                    rtf_content.push_str("\\cell\\row}"); // Закрытие заголовка таблицы
+                    rtf_content.push_str("\\row");
 
-                    // Генерация строк таблицы
                     for row in rows {
-                        rtf_content.push_str("{\\trowd\\trgaph108\\trleft-108");
-                        for (i, cell) in row.cells.iter().enumerate() {
-                            let cell_index = (i + 1) * 1000;
-                            rtf_content.push_str(&format!("\\cellx{}", cell_index));
-                        }
-                        rtf_content.push_str("\\intbl\\row");
-
-                        rtf_content.push_str("\\pard\\intbl"); // закрываем строку
-
                         for cell in &row.cells {
-                            if let Element::Text { text, .. } = &cell.element {
-                                rtf_content.push_str(&format!(" {}", text));
+                            if let Element::Text { text, size } = &cell.element {
+                                rtf_content.push_str(&format!("{{\\fs{} {}}}\\cell", *size as i32 * 2, text));
                             }
                         }
-                        rtf_content.push_str("\\cell\\row}"); // Закрытие строки таблицы
+                        rtf_content.push_str("\\row");
                     }
-
-                    rtf_content.push_str("\\pard\\intbl\\row}"); // Закрытие таблицы
                 }
 
-                 */
-                _ => {
-                    eprintln!("Unknown element");
+                _other_element => {
+                    eprintln!("Unknown element in list: {:?}", element);
                 }
             }
         }
@@ -309,6 +327,39 @@ impl TransformerTrait for Transformer {
         Ok(bytes::Bytes::from(rtf_content.into_bytes()))
 
     }
+}
+
+fn calculate_column_widths(headers: &Vec<TableHeader>, rows: &Vec<TableRow>) -> Vec<i32> {
+    let max_width = 9700;
+    let mut column_widths: Vec<i32> = headers.iter().map(|_| 0).collect();
+    let mut column_content_lengths: Vec<usize> = headers.iter().map(|_| 0).collect();
+
+    for (i, header) in headers.iter().enumerate() {
+        if let Element::Text { text, .. } = &header.element {
+            column_content_lengths[i] = text.len().max(column_content_lengths[i]);
+        }
+    }
+
+    for row in rows {
+        for (i, cell) in row.cells.iter().enumerate() {
+            if let Element::Text { text, .. } = &cell.element {
+                column_content_lengths[i] = text.len().max(column_content_lengths[i]);
+            }
+        }
+    }
+
+    let total_length: usize = column_content_lengths.iter().sum();
+    let total_length = total_length as i32;
+
+    if total_length == 0 {
+        return column_widths;
+    }
+
+    for (i, &length) in column_content_lengths.iter().enumerate() {
+        column_widths[i] = (length as f32 / total_length as f32 * max_width as f32) as i32;
+    }
+
+    column_widths
 }
 
 #[cfg(test)]

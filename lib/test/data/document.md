@@ -37,15 +37,16 @@ blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla
 
 
 
-![Picture alt1](big_image1.png "Picture title2")
+![Picture alt1](big_image1.png "Picture title1")
 
 
 ## Second header
+| Column 1  | Column 2  | Column 3  | Column 4  | Column 5  | Column 6  | Column 7  | Column 8  |
+|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
+| Data 1    | Data 2    | Data 3    | Data 4    | Data 5    | Data 6    | Data 7    | Data 8    |
+| Data 9    | Data 10   | Data 11   | Data 12   | Data 13   | Data 14   | Data 15   | Data 16   |
+| Data 17   | Data 18   | Data 19   | Data 20   | Data 21   | Data 22   | Data 23   | Data 24   |
 
-| Syntax      | Description |
-| ----------- | ----------- |
-| Header      | Title       |
-| Paragraph   | Text        |
 
 Paragraph2  bla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla
 blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla
