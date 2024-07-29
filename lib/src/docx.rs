@@ -83,13 +83,23 @@ fn detect_element_in_list(doc: &mut Docx, element: &Element, numbered: bool, dep
             alt: _,
             size,
         } => {
+            let mut hyperlink_paragraph =
+                Paragraph::new().add_run(Run::new().add_text(title).size(*size as usize * 2));
+
+            if numbered {
+                hyperlink_paragraph = hyperlink_paragraph.numbering(NumberingId::new(2), IndentLevel::new(depth));
+            } else {
+                let indent = " ".repeat(depth * 4);
+                let modified_title = format!("{}- {}", indent, title);
+                hyperlink_paragraph = Paragraph::new().add_run(Run::new().add_text(modified_title).size(*size as usize * 2));
+            }
+
             let hyperlink = Hyperlink::new(url, HyperlinkType::External)
                 .add_run(Run::new().add_text(url).size(*size as usize * 2));
-            let paragraph =
-                Paragraph::new().add_run(Run::new().add_text(title).size(*size as usize * 2));
+
             *doc = doc
                 .clone()
-                .add_paragraph(Paragraph::add_hyperlink(paragraph, hyperlink));
+                .add_paragraph(Paragraph::add_hyperlink(hyperlink_paragraph, hyperlink));
         }
 
         Element::List { elements, numbered } => {
