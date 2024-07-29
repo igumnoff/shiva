@@ -25,7 +25,7 @@
 | JSON          | +     | +        |
 | XML           | +     | +        |
 | CSV           | +     | +        |
-| RTF           | +     | -        |
+| RTF           | +     | +        |
 | DOCX          | +     | +        |
 | XLS           | +     | -        |
 | XLSX          | +     | +        |
@@ -58,13 +58,15 @@
 | Markdown      | +      | +         | +    | +     | +     | +         | +          | +          |
 | HTML          | +      | +         | +    | +     | +     | +         | -          | -          |
 | PDF           | +      | +         | +    | +     | +     | +         | +          | +          |
+| DOCX          | +      | +         | +    | +     | +     | +         | -          | -          |
+| RTF           | +      | +         | +    | +     | +     | +         | -          | -          |
 | JSON          | +      | +         | +    | +     | -     | +         | +          | +          |
 | XML           | +      | +         | +    | +     | +     | +         | +          | +          |
 | CSV           | -      | -         | -    | +     | -     | -         | -          | -          |
 | XLSX          | -      | -         | -    | +     | -     | -         | -          | -          |
 | ODS           | -      | -         | -    | +     | -     | -         | -          | -          |
 | Typst         | +      | +         | +    | +     | +     | +         | +          | +          |
-| DOCX          | +      | +         | +    | +     | +     | +         | -          | -          |
+
 
 
 ## Usage Shiva library
@@ -72,7 +74,7 @@
 Cargo.toml
 ```toml
 [dependencies]
-shiva = {  version = "1.1.1", features = ["html", "markdown", "text", "pdf", "json", 
+shiva = {  version = "1.2.0", features = ["html", "markdown", "text", "pdf", "json", 
     "csv", "rtf", "docx", "xml", "xls", "xlsx", "ods", "typst"] }
 ```
 
