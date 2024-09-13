@@ -1,8 +1,10 @@
-use crate::core::Element::{Header, Hyperlink, Image, List, Paragraph, Table, Text};
+use crate::core::Element::{Header, Hyperlink,  List, Table, Text};
 use crate::core::*;
 use bytes::Bytes;
 use pulldown_cmark::{Event, HeadingLevel, Options, Parser, Tag, TagEnd, TextMergeStream};
-use regex::Regex;
+use std::cell::RefCell;
+use comrak::Arena;
+use comrak::arena_tree::Node;
 
 pub struct Transformer;
 
@@ -337,200 +339,256 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
         Ok(Document::new(elements))
     }
 
-    fn generate_with_saver<F>(document: &Document,  image_saver: F) -> anyhow::Result<Bytes>
-        where F: Fn(&Bytes, &str) -> anyhow::Result<()>, Self: Sized,
+    fn generate_with_saver<F>(document: &Document, image_saver: F) -> anyhow::Result<Bytes>
+        where
+            F: Fn(&Bytes, &str) -> anyhow::Result<()>,
     {
-        let mut image_num: i32 = 0;
+        use comrak::{format_commonmark, Arena, Options};
+        use std::cell::RefCell;
+        use comrak::nodes::LineColumn;
 
-        let image_saver = ImageSaver { function: image_saver };
+        let arena = Arena::new();
 
-        let mut markdown = String::new();
-        fn generate_element(
-            element: &Element,
-            markdown: &mut String,
-            list_depth: usize,
-            list_counters: &mut Vec<usize>,
-            list_types: &mut Vec<bool>,
-            image_num: &mut i32,
-            saver: &ImageSaver<impl Fn(&Bytes, &str) -> anyhow::Result<()>>,
-        ) -> anyhow::Result<()> {
-            let generate_list_item = |element: &ListItem, markdown: &mut String, list_depth: usize, list_counters: &mut Vec<usize>, list_types: &mut Vec<bool>, image_num: &mut i32| -> anyhow::Result<()> {
-                let prefix = if *list_types.last().unwrap() {
-                    let counter = list_counters.last_mut().unwrap();
+        let root = arena.alloc(Node::new(RefCell::new(Ast::new(
+            NodeValue::Document,
+            LineColumn { line: 0, column: 0 },
+        ))));
 
-                    if let Text { .. } = element.element {
-                        *counter += 1;
-                    }
-                    format!("{}. ", counter)
-                } else {
-                    "- ".to_string()
-                };
-                markdown.push_str(&"  ".repeat(list_depth - 1));
-                if let Text { .. } = element.element {
-                    markdown.push_str(&prefix);
-                }
-                generate_element(
-                    &element.element,
-                    markdown,
-                    list_depth,
-                    list_counters,
-                    list_types,
-                    image_num,
-                    saver,
-                )?;
-                if let Text { .. } = element.element {
-                    markdown.push('\n');
-                }
-                Ok(())
-            };
+        let image_num = RefCell::new(0);
 
-            match element {
-                Header { level, text } => {
-                    markdown.push_str(&"#".repeat(*level as usize));
-                    markdown.push(' ');
-                    markdown.push_str(text);
-                    markdown.push('\n');
-                    markdown.push('\n');
-                }
-                Paragraph { elements } => {
-                    for child in elements {
-                        generate_element(
-                            child,
-                            markdown,
-                            list_depth,
-                            list_counters,
-                            list_types,
-                            image_num,
-                            saver,
-                        )?;
-                    }
-                    markdown.push('\n');
-                    markdown.push('\n');
-                }
-                List { elements, numbered } => {
-                    list_counters.push(0);
-                    list_types.push(*numbered);
-                    for item in elements {
-                        generate_list_item(
-                            item,
-                            markdown,
-                            list_depth + 1,
-                            list_counters,
-                            list_types,
-                            image_num,
-                        )?;
-                    }
-                    list_counters.pop();
-                    list_types.pop();
+        let image_saver = ImageSaver {
+            function: &image_saver,
+        };
 
-                    if list_counters.is_empty() {
-                        markdown.push('\n');
-                    }
-                }
-                Text { text, size: _ } => {
-                    let re = Regex::new(r#"^(\n)*\s+$?"#)?;
-                    if !re.is_match(text) {
-                        // markdown.push('\n');
-                        markdown.push_str(text);
-                        if !text.ends_with(' ') {
-                            markdown.push(' ');
-                        }
-                        // markdown.push('\n');
-                    }
-                }
-                Hyperlink {
-                    title, url, alt, ..
-                } => {
-                    if url == alt && alt == url {
-                        markdown.push_str(&url.to_string());
-                    } else {
-                        markdown.push_str(&format!("[{}]({} \"{}\")", title, url, alt));
-                    }
-                }
-                Image(image) => {
-                    let image_path = format!("image{}.{}", image_num, image.image_type());
-                    markdown.push_str(&format!("![{}]({} \"{}\")", image.alt(), image_path, image.title()));
-                    markdown.push('\n');
-                    (saver.function)(&image.bytes(), &image_path)?;
-                    *image_num += 1;
-                }
-                Table { headers, rows } => {
-                    let mut max_lengths: Vec<usize> = Vec::new();
-
-                    for header in headers {
-                        if let Text { text, .. } = header.element.clone() {
-                            max_lengths.push(text.len());
-                        }
-                    }
-                    for row in rows {
-                        for (cell_index, cell) in row.cells.iter().enumerate() {
-                            if let Text { text, .. } = cell.element.clone() {
-                                if cell_index < max_lengths.len() {
-                                    max_lengths[cell_index] =
-                                        max_lengths[cell_index].max(text.len());
-                                }
-                            }
-                        }
-                    }
-
-                    for (index, header) in headers.iter().enumerate() {
-                        // let header_text = header.element.text_as_ref()?;
-                        if let Text { text, .. } = header.element.clone() {
-                            let padding = max_lengths[index] - text.len();
-                            markdown.push_str("| ");
-                            markdown.push_str(text.as_str());
-                            markdown.push_str(&" ".repeat(padding));
-                            markdown.push(' ');
-                        }
-                    }
-                    markdown.push_str("|\n");
-
-                    for max_length in &max_lengths {
-                        markdown.push('|');
-                        markdown.push_str(&"-".repeat(*max_length + 2));
-                    }
-                    markdown.push_str("|\n");
-
-                    for row in rows {
-                        for (cell_index, cell) in row.cells.iter().enumerate() {
-                            if let Text { text, .. } = cell.element.clone() {
-                                let padding = max_lengths[cell_index] - text.len();
-                                markdown.push_str("| ");
-                                markdown.push_str(text.as_str());
-                                markdown.push_str(&" ".repeat(padding));
-                                markdown.push(' ');
-                            }
-                        }
-                        markdown.push_str("|\n");
-                    }
-                    markdown.push('\n');
-                }
-            }
-            Ok(())
-        }
-
-        let mut list_counters: Vec<usize> = Vec::new();
-        let mut list_types: Vec<bool> = Vec::new();
-        let all_elements: Vec<Element> = document
+        let all_elements: Vec<&Element> = document
             .page_header
             .iter()
-            .cloned()
-            .chain(document.elements.iter().cloned())
-            .chain(document.page_footer.iter().cloned())
+            .chain(document.elements.iter())
+            .chain(document.page_footer.iter())
             .collect();
+
         for element in &all_elements {
-            generate_element(
-                element,
-                &mut markdown,
-                0,
-                &mut list_counters,
-                &mut list_types,
-                &mut image_num,
-                &image_saver,
-            )?;
+            let node = element_to_ast_node(&arena, element, &image_num, &image_saver)?;
+            root.append(node);
         }
 
-        Ok(Bytes::from(markdown))
+        let mut md = vec![];
+        format_commonmark(root, &Options::default(), &mut md)?;
+
+        Ok(Bytes::from(md))
+    }
+}
+
+use comrak::nodes::{
+    Ast, AstNode, LineColumn, NodeHeading, NodeLink, NodeList, NodeTable, NodeValue, TableAlignment,
+};
+
+fn element_to_ast_node<'a, F>(
+    arena: &'a Arena<AstNode<'a>>,
+    element: &Element,
+    image_num: &RefCell<i32>,
+    image_saver: &ImageSaver<F>,
+) -> anyhow::Result<&'a AstNode<'a>>
+    where
+        F: Fn(&Bytes, &str) -> anyhow::Result<()>,
+{
+    match element {
+        Element::Text { text, .. } => {
+            let node = arena.alloc(Node::new(RefCell::new(Ast::new(
+                NodeValue::Text(text.clone()),
+                LineColumn { line: 0, column: 0 },
+            ))));
+            Ok(node)
+        }
+
+        Element::Header { level, text } => {
+            let heading = arena.alloc(Node::new(RefCell::new(Ast::new(
+                NodeValue::Heading(NodeHeading {
+                    level: *level as u8,
+                    setext: false,
+                }),
+                LineColumn { line: 0, column: 0 },
+            ))));
+            let text_node = arena.alloc(Node::new(RefCell::new(Ast::new(
+                NodeValue::Text(text.clone()),
+                LineColumn { line: 0, column: 0 },
+            ))));
+            heading.append(text_node);
+            Ok(heading)
+        }
+
+        Element::Paragraph { elements } => {
+            let paragraph = arena.alloc(Node::new(RefCell::new(Ast::new(
+                NodeValue::Paragraph,
+                LineColumn { line: 0, column: 0 },
+            ))));
+            for child_element in elements {
+                let child_node =
+                    element_to_ast_node(arena, child_element, image_num, image_saver)?;
+                paragraph.append(child_node);
+            }
+            Ok(paragraph)
+        }
+
+        Element::List { elements, numbered } => {
+            use comrak::nodes::{ListDelimType, ListType};
+            let list_type = if *numbered {
+                ListType::Ordered
+            } else {
+                ListType::Bullet
+            };
+
+            let list_node = arena.alloc(Node::new(RefCell::new(Ast::new(
+                NodeValue::List(NodeList {
+                    list_type,
+                    start: if *numbered { 1 } else { 0 },
+                    delimiter: ListDelimType::Period,
+                    bullet_char: b'-',
+                    tight: true,
+                    marker_offset: 0,
+                    padding: 2,
+                }),
+                LineColumn { line: 0, column: 0 },
+            ))));
+
+            for list_item in elements {
+                let item_node = arena.alloc(Node::new(RefCell::new(Ast::new(
+                    NodeValue::Item(NodeList {
+                        tight: true,
+                        ..Default::default()
+                    }),
+                    LineColumn { line: 0, column: 0 },
+                ))));
+
+                let child_node = element_to_ast_node(arena, &list_item.element, image_num, image_saver)?;
+                if matches!(&child_node.data.borrow().value, NodeValue::List(_)) {
+                    // For nested lists, directly append the list node to the item
+                    item_node.append(child_node);
+                } else {
+                    // For non-list items, ensure they are wrapped in a paragraph if not already
+                    if !matches!(&child_node.data.borrow().value, NodeValue::Paragraph) {
+                        let paragraph_node = arena.alloc(Node::new(RefCell::new(Ast::new(
+                            NodeValue::Paragraph,
+                            LineColumn { line: 0, column: 0 },
+                        ))));
+                        paragraph_node.append(child_node);
+                        item_node.append(paragraph_node);
+                    } else {
+                        item_node.append(child_node);
+                    }
+                }
+
+                list_node.append(item_node);
+            }
+            Ok(list_node)
+        }
+
+
+        Element::Image(image_data) => {
+            *image_num.borrow_mut() += 1;
+            let image_extension = image_data.image_type().to_extension();
+            let image_filename = format!("image{}{}", image_num.borrow(), image_extension);
+
+            (image_saver.function)(image_data.bytes(), &image_filename)?;
+
+            let image_node = arena.alloc(Node::new(RefCell::new(Ast::new(
+                NodeValue::Image(NodeLink {
+                    url: image_filename.clone(),
+                    title: image_data.title().to_string(),
+                }),
+                LineColumn { line: 0, column: 0 },
+            ))));
+
+            let paragraph_node = arena.alloc(Node::new(RefCell::new(Ast::new(
+                NodeValue::Paragraph,
+                LineColumn { line: 0, column: 0 },
+            ))));
+            paragraph_node.append(image_node);
+
+            Ok(paragraph_node)
+        }
+
+
+        Element::Hyperlink {
+            title, url, alt, ..
+        } => {
+            let link_node = arena.alloc(Node::new(RefCell::new(Ast::new(
+                NodeValue::Link(NodeLink {
+                    url: url.clone(),
+                    title: alt.clone(),
+                }),
+                LineColumn { line: 0, column: 0 },
+            ))));
+            let text_node = arena.alloc(Node::new(RefCell::new(Ast::new(
+                NodeValue::Text(title.clone()),
+                LineColumn { line: 0, column: 0 },
+            ))));
+            link_node.append(text_node);
+            Ok(link_node)
+        }
+
+        Element::Table { headers, rows } => {
+            let num_columns = headers.len() as u32;
+            let num_rows = rows.len() as u32 + 1;
+
+            let alignments = vec![TableAlignment::None; num_columns as usize];
+
+            let table_node = arena.alloc(Node::new(RefCell::new(Ast::new(
+                NodeValue::Table(NodeTable {
+                    alignments,
+                    num_columns: num_columns as usize,
+                    num_rows: num_rows as usize,
+                    num_nonempty_cells: 0, // Adjust as needed
+                }),
+                LineColumn { line: 0, column: 0 },
+            ))));
+
+            // Header row
+            let header_row_node = arena.alloc(Node::new(RefCell::new(Ast::new(
+                NodeValue::TableRow(true), // Indicate header row
+                LineColumn { line: 0, column: 0 },
+            ))));
+            for header in headers {
+                let cell_node = arena.alloc(Node::new(RefCell::new(Ast::new(
+                    NodeValue::TableCell,
+                    LineColumn { line: 0, column: 0 },
+                ))));
+                let cell_content =
+                    element_to_ast_node(arena, &header.element, image_num, image_saver)?;
+                cell_node.append(cell_content);
+                header_row_node.append(cell_node);
+            }
+            table_node.append(header_row_node);
+
+            // Data rows
+            for row in rows {
+                let row_node = arena.alloc(Node::new(RefCell::new(Ast::new(
+                    NodeValue::TableRow(false), // Indicate data row
+                    LineColumn { line: 0, column: 0 },
+                ))));
+                for cell in &row.cells {
+                    let cell_node = arena.alloc(Node::new(RefCell::new(Ast::new(
+                        NodeValue::TableCell,
+                        LineColumn { line: 0, column: 0 },
+                    ))));
+                    let cell_content =
+                        element_to_ast_node(arena, &cell.element, image_num, image_saver)?;
+                    cell_node.append(cell_content);
+                    row_node.append(cell_node);
+                }
+                table_node.append(row_node);
+            }
+
+            Ok(table_node)
+        }
+
+        _ => {
+            let node = arena.alloc(Node::new(RefCell::new(Ast::new(
+                NodeValue::Text("".to_string()),
+                LineColumn { line: 0, column: 0 },
+            ))));
+            Ok(node)
+        }
     }
 }
 
