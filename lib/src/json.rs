@@ -1,14 +1,67 @@
-use crate::core::{Document, Element, TransformerTrait};
+use crate::core::{Document, Element, ImageAlignment, ImageData, ImageDimension, ImageType, ListItem, TableCell, TableHeader, TableRow, TransformerTrait};
 use bytes::Bytes;
-
+use serde_json::Value;
+use std::str::FromStr;
 pub struct Transformer;
 
 impl TransformerTrait for Transformer {
-    fn parse(document: &Bytes) -> anyhow::Result<Document> {
-        let doc: Document = serde_json::from_slice(document.as_ref())?;
-        Ok(doc)
-    }
-     fn generate(document: &Document) -> anyhow::Result<Bytes> {
+
+        fn parse(document: &Bytes) -> anyhow::Result<Document> {
+            // Преобразуем Bytes в строку
+            let data_str = std::str::from_utf8(document)?;
+            let json: Value = serde_json::from_str(data_str)?;
+
+            // Проверяем, что корневой элемент - объект
+            let root = json.as_object().ok_or_else(|| anyhow::anyhow!("Root element is not a JSON object"))?;
+
+            // Извлекаем элементы
+            let elements = parse_elements(&root.get("elements").ok_or_else(|| anyhow::anyhow!("Missing 'elements' field"))?.clone())?;
+
+            // Извлекаем параметры страницы
+            let page_width = root.get("page_width")
+                .and_then(|v| v.as_f64())
+                .ok_or_else(|| anyhow::anyhow!("Missing or invalid 'page_width'"))? as f32;
+
+            let page_height = root.get("page_height")
+                .and_then(|v| v.as_f64())
+                .ok_or_else(|| anyhow::anyhow!("Missing or invalid 'page_height'"))? as f32;
+
+            let left_page_indent = root.get("left_page_indent")
+                .and_then(|v| v.as_f64())
+                .ok_or_else(|| anyhow::anyhow!("Missing or invalid 'left_page_indent'"))? as f32;
+
+            let right_page_indent = root.get("right_page_indent")
+                .and_then(|v| v.as_f64())
+                .ok_or_else(|| anyhow::anyhow!("Missing or invalid 'right_page_indent'"))? as f32;
+
+            let top_page_indent = root.get("top_page_indent")
+                .and_then(|v| v.as_f64())
+                .ok_or_else(|| anyhow::anyhow!("Missing or invalid 'top_page_indent'"))? as f32;
+
+            let bottom_page_indent = root.get("bottom_page_indent")
+                .and_then(|v| v.as_f64())
+                .ok_or_else(|| anyhow::anyhow!("Missing or invalid 'bottom_page_indent'"))? as f32;
+
+            // Извлекаем заголовки и нижние колонтитулы страницы
+            let page_header = parse_elements(&root.get("page_header").unwrap_or(&Value::Array(vec![])))?;
+            let page_footer = parse_elements(&root.get("page_footer").unwrap_or(&Value::Array(vec![])))?;
+
+            Ok(Document {
+                elements,
+                page_width,
+                page_height,
+                left_page_indent,
+                right_page_indent,
+                top_page_indent,
+                bottom_page_indent,
+                page_header,
+                page_footer,
+            })
+        }
+
+
+
+    fn generate(document: &Document) -> anyhow::Result<Bytes> {
             use serde_json::{Value, Map};
             // Helper function to serialize an Element into serde_json::Value
             fn serialize_element(element: &Element) -> Value {
@@ -75,8 +128,10 @@ impl TransformerTrait for Transformer {
                         map.insert("bytes".to_string(), Value::String(base64::encode(&image_data.bytes())));
                         map.insert("title".to_string(), Value::String(image_data.title().to_string()));
                         map.insert("alt".to_string(), Value::String(image_data.alt().to_string()));
-                        map.insert("image_type".to_string(), Value::String(format!("{:?}", image_data.image_type().to_string())));
-                        map.insert("align".to_string(), Value::String(format!("{:?}", image_data.align())));
+                        map.insert("image_type".to_string(), Value::String(image_data.image_type().to_string()));
+
+
+                        map.insert("align".to_string(), Value::String(image_data.align().to_string().to_lowercase()));
 
                         let mut size_map = Map::new();
                         if let Some(width) = &image_data.size().width {
@@ -135,19 +190,186 @@ impl TransformerTrait for Transformer {
 
 }
 
+// Функция для разбора массива элементов
+fn parse_elements(value: &Value) -> anyhow::Result<Vec<Element>> {
+    let array = value.as_array().ok_or_else(|| anyhow::anyhow!("'elements' is not an array"))?;
+    let mut elements = Vec::new();
+
+    for item in array {
+        let element = parse_element(item)?;
+        elements.push(element);
+    }
+
+    Ok(elements)
+}
+
+// Функция для разбора отдельного элемента
+fn parse_element(value: &Value) -> anyhow::Result<Element> {
+    let obj = value.as_object().ok_or_else(|| anyhow::anyhow!("Element is not an object"))?;
+    let type_str = obj.get("type")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| anyhow::anyhow!("Element missing 'type' field"))?;
+
+    match type_str {
+        "Text" => {
+            let text = obj.get("text")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow::anyhow!("Text element missing 'text' field"))?
+                .to_string();
+            let size = obj.get("size")
+                .and_then(|v| v.as_u64())
+                .ok_or_else(|| anyhow::anyhow!("Text element missing or invalid 'size' field"))? as u8;
+            Ok(Element::Text { text, size })
+        },
+        "Header" => {
+            let level = obj.get("level")
+                .and_then(|v| v.as_u64())
+                .ok_or_else(|| anyhow::anyhow!("Header element missing or invalid 'level' field"))? as u8;
+            let text = obj.get("text")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow::anyhow!("Header element missing 'text' field"))?
+                .to_string();
+            Ok(Element::Header { level, text })
+        },
+        "Paragraph" => {
+            let elements = parse_elements(&obj.get("elements").ok_or_else(|| anyhow::anyhow!("Paragraph missing 'elements' field"))?.clone())?;
+            Ok(Element::Paragraph { elements })
+        },
+        "Table" => {
+            let headers = parse_table_headers(&obj.get("headers").ok_or_else(|| anyhow::anyhow!("Table missing 'headers' field"))?.clone())?;
+            let rows = parse_table_rows(&obj.get("rows").ok_or_else(|| anyhow::anyhow!("Table missing 'rows' field"))?.clone())?;
+            Ok(Element::Table { headers, rows })
+        },
+        "List" => {
+            let numbered = obj.get("numbered")
+                .and_then(|v| v.as_bool())
+                .ok_or_else(|| anyhow::anyhow!("List element missing or invalid 'numbered' field"))?;
+            let list_items = obj.get("elements")
+                .ok_or_else(|| anyhow::anyhow!("List element missing 'elements' field"))?;
+            let items_array = list_items.as_array().ok_or_else(|| anyhow::anyhow!("List 'elements' is not an array"))?;
+            let mut list_elements = Vec::new();
+            for item in items_array {
+                let list_item = parse_list_item(item)?;
+                list_elements.push(list_item);
+            }
+            Ok(Element::List { elements: list_elements, numbered })
+        },
+        "Image" => {
+            let bytes_str = obj.get("bytes")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow::anyhow!("Image element missing 'bytes' field"))?;
+            let bytes = Bytes::from(base64::decode(bytes_str)?);
+            let title = obj.get("title")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow::anyhow!("Image element missing 'title' field"))?
+                .to_string();
+            let alt = obj.get("alt")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow::anyhow!("Image element missing 'alt' field"))?
+                .to_string();
+            let image_type_str = obj.get("image_type")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow::anyhow!("Image element missing 'image_type' field"))?;
+            let image_type = ImageType::from_str(image_type_str)
+                .map_err(|_| anyhow::anyhow!("Invalid image_type: {}", image_type_str))?;
+            let align_str = obj.get("align")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow::anyhow!("Image element missing 'align' field"))?;
+            let align = ImageAlignment::from_str(align_str)
+                .map_err(|_| anyhow::anyhow!("Invalid align: {}", align_str))?;
+            let size_obj = obj.get("size").ok_or_else(|| anyhow::anyhow!("Image element missing 'size' field"))?;
+            let width = size_obj.get("width")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let height = size_obj.get("height")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let size = ImageDimension { width, height };
+            Ok(Element::Image(ImageData::new(
+                bytes,
+                title,
+                alt,
+                image_type.to_extension().to_string(), // Updated to use to_extension
+                align_str.to_string(),
+                size
+            ))
+            )
+        },
+        "Hyperlink" => {
+            let title = obj.get("title")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow::anyhow!("Hyperlink element missing 'title' field"))?
+                .to_string();
+            let url = obj.get("url")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow::anyhow!("Hyperlink element missing 'url' field"))?
+                .to_string();
+            let alt = obj.get("alt")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow::anyhow!("Hyperlink element missing 'alt' field"))?
+                .to_string();
+            let size = obj.get("size")
+                .and_then(|v| v.as_u64())
+                .ok_or_else(|| anyhow::anyhow!("Hyperlink element missing or invalid 'size' field"))? as u8;
+            Ok(Element::Hyperlink { title, url, alt, size })
+        },
+        _ => Err(anyhow::anyhow!("Unknown element type: {}", type_str)),
+    }
+}
+
+// Функция для разбора заголовков таблицы
+fn parse_table_headers(value: &Value) -> anyhow::Result<Vec<TableHeader>> {
+    let headers_array = value.as_array().ok_or_else(|| anyhow::anyhow!("'headers' is not an array"))?;
+    let mut headers = Vec::new();
+
+    for header in headers_array {
+        let header_obj = header.as_object().ok_or_else(|| anyhow::anyhow!("Header is not an object"))?;
+        let element = parse_element(&header_obj.get("element").ok_or_else(|| anyhow::anyhow!("Header missing 'element' field"))?.clone())?;
+        let width = header_obj.get("width")
+            .and_then(|v| v.as_f64())
+            .ok_or_else(|| anyhow::anyhow!("Header missing or invalid 'width' field"))? as f32;
+        headers.push(TableHeader { element, width });
+    }
+
+    Ok(headers)
+}
+
+// Функция для разбора строк таблицы
+fn parse_table_rows(value: &Value) -> anyhow::Result<Vec<TableRow>> {
+    let rows_array = value.as_array().ok_or_else(|| anyhow::anyhow!("'rows' is not an array"))?;
+    let mut rows = Vec::new();
+
+    for row in rows_array {
+        let row_obj = row.as_object().ok_or_else(|| anyhow::anyhow!("Row is not an object"))?;
+        let cells = row_obj.get("cells")
+            .ok_or_else(|| anyhow::anyhow!("Row missing 'cells' field"))?;
+        let cells_array = cells.as_array().ok_or_else(|| anyhow::anyhow!("Row 'cells' is not an array"))?;
+        let mut table_cells = Vec::new();
+        for cell in cells_array {
+            let cell_element = parse_element(cell)?;
+            table_cells.push(TableCell { element: cell_element });
+        }
+        rows.push(TableRow { cells: table_cells });
+    }
+
+    Ok(rows)
+}
+
+// Функция для разбора элементов списка
+fn parse_list_item(value: &Value) -> anyhow::Result<ListItem> {
+    let obj = value.as_object().ok_or_else(|| anyhow::anyhow!("ListItem is not an object"))?;
+    let element = parse_element(&obj.get("element").ok_or_else(|| anyhow::anyhow!("ListItem missing 'element' field"))?.clone())?;
+    Ok(ListItem { element })
+}
+
+
 #[cfg(test)]
 mod tests {
     use crate::core::{disk_image_loader, TransformerWithImageLoaderSaverTrait};
-    use crate::json::{Transformer, TransformerTrait};
+    use crate::json::{ TransformerTrait};
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        // let document = r#"{"elements":[{"Header":{"level":1,"text":"First header"}},{"Paragraph":{"elements":[{"Text":{"text":"Paragraph  bla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla","size":8}},{"Text":{"text":"blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla","size":8}}]}},{"List":{"elements":[{"element":{"Text":{"text":"List item 1","size":8}}},{"element":{"Text":{"text":"List item 2","size":8}}},{"element":{"Text":{"text":"List item 3","size":8}}},{"element":{"List":{"elements":[{"element":{"Text":{"text":"List item secode level 1","size":8}}},{"element":{"Text":{"text":"List item secode level 2","size":8}}}],"numbered":true}}},{"element":{"Text":{"text":"List item 4","size":8}}},{"element":{"List":{"elements":[{"element":{"Text":{"text":"List item secode level 3","size":8}}},{"element":{"Text":{"text":"List item secode level 4","size":8}}}],"numbered":true}}},{"element":{"Text":{"text":"List item 5","size":8}}},{"element":{"List":{"elements":[{"element":{"Text":{"text":"List item secode level 5","size":8}}}],"numbered":true}}}],"numbered":true}},{"List":{"elements":[{"element":{"Text":{"text":"List item one","size":8}}},{"element":{"List":{"elements":[{"element":{"Text":{"text":"List item two","size":8}}}],"numbered":false}}},{"element":{"Text":{"text":"List item three","size":8}}},{"element":{"List":{"elements":[{"element":{"Text":{"text":"List item four","size":8}}},{"element":{"Text":{"text":"List item five","size":8}}},{"element":{"List":{"elements":[{"element":{"Text":{"text":"List item zzz","size":8}}}],"numbered":false}}}],"numbered":false}}},{"element":{"Text":{"text":"List item six","size":8}}},{"element":{"List":{"elements":[{"element":{"Text":{"text":"List item seven","size":8}}}],"numbered":false}}}],"numbered":false}},{"Paragraph":{"elements":[{"Image":{"bytes":[],"title":"Picture title1","alt":"Picture alt1","image_type":"Png"}}]}},{"Paragraph":{"elements":[{"Text":{"text":"Bla bla bla ","size":8}},{"Image":{"bytes":[],"title":"Picture title2","alt":"Picture alt2","image_type":"Png"}},{"Text":{"text":" bla. ","size":8}},{"Hyperlink":{"title":"http://example.com","url":"http://example.com","alt":"http://example.com","size":8}},{"Text":{"text":"  ","size":8}},{"Hyperlink":{"title":"Example","url":"http://example.com","alt":"Example","size":8}},{"Text":{"text":" ","size":8}},{"Hyperlink":{"title":"Example","url":"http://example.com","alt":"Example tooltip","size":8}}]}},{"Header":{"level":2,"text":"Second header"}},{"Table":{"headers":[{"element":{"Text":{"text":"Syntax","size":8}},"width":10.0},{"element":{"Text":{"text":"Description","size":8}},"width":10.0}],"rows":[{"cells":[{"element":{"Text":{"text":"Header","size":8}}},{"element":{"Text":{"text":"Title","size":8}}}]},{"cells":[{"element":{"Text":{"text":"Paragraph","size":8}}},{"element":{"Text":{"text":"Text","size":8}}}]}]}},{"Paragraph":{"elements":[{"Text":{"text":"Paragraph2  bla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla","size":8}},{"Text":{"text":"blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla","size":8}}]}}],"page_width":210.0,"page_height":297.0,"left_page_indent":10.0,"right_page_indent":10.0,"top_page_indent":10.0,"bottom_page_indent":10.0,"page_header":[],"page_footer":[]}"#;
-        // let parsed = Transformer::parse(&document.as_bytes().into());
-        // let document_string = std::str::from_utf8(document.as_bytes())?;
-        // println!("{}", document_string);
-        // assert!(parsed.is_ok());
-        // let parsed_document = parsed.unwrap();
         let document = r#"
 # First header
 
@@ -185,7 +407,8 @@ blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla
 
 Paragraph2  bla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla
 blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
-        // println!("{:?}", document);
+        println!("{}", document);
+        println!("==========================");
         let parsed_r = crate::markdown::Transformer::parse_with_loader(&document.as_bytes().into(), disk_image_loader("test/data"));
         let parsed = parsed_r?;
         println!("==========================");
@@ -197,7 +420,15 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         let generated_bytes = generated_result?;
         let generated_text = std::str::from_utf8(&generated_bytes)?;
         println!("{}", generated_text);
-
+        println!("==========================");
+        let parsed_r2 = crate::json::Transformer::parse(&generated_bytes);
+        let parsed2 = parsed_r2?;
+        // generate markdown
+        let generated_result2 = crate::text::Transformer::generate(&parsed2);
+        assert!(generated_result2.is_ok());
+        let generated_bytes2 = generated_result2?;
+        let generated_text2 = std::str::from_utf8(&generated_bytes2)?;
+        println!("{}", generated_text2);
         Ok(())
     }
 }
