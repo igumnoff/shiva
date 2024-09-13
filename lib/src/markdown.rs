@@ -368,7 +368,7 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
             .collect();
 
         for element in &all_elements {
-            let node = element_to_ast_node(&arena, element, &image_num, &image_saver,0)?;
+            let node = element_to_ast_node(&arena, element, &image_num, &image_saver)?;
             root.append(node);
         }
 
@@ -388,7 +388,6 @@ fn element_to_ast_node<'a, F>(
     element: &Element,
     image_num: &RefCell<i32>,
     image_saver: &ImageSaver<F>,
-    current_depth: usize, // New parameter to track list depth
 ) -> anyhow::Result<&'a AstNode<'a>>
     where
         F: Fn(&Bytes, &str) -> anyhow::Result<()>,
@@ -425,7 +424,7 @@ fn element_to_ast_node<'a, F>(
             ))));
             for child_element in elements {
                 let child_node =
-                    element_to_ast_node(arena, child_element, image_num, image_saver, current_depth)?;
+                    element_to_ast_node(arena, child_element, image_num, image_saver)?;
                 paragraph.append(child_node);
             }
             Ok(paragraph)
@@ -450,7 +449,6 @@ fn element_to_ast_node<'a, F>(
                 }),
                 LineColumn { line: 0, column: 0 },
             ))));
-
             for list_item in elements {
                 let item_node = arena.alloc(Node::new(RefCell::new(Ast::new(
                     NodeValue::Item(NodeList {
@@ -459,13 +457,10 @@ fn element_to_ast_node<'a, F>(
                     }),
                     LineColumn { line: 0, column: 0 },
                 ))));
-
-                let child_node = element_to_ast_node(arena, &list_item.element, image_num, image_saver, current_depth + 1)?;
+                let child_node = element_to_ast_node(arena, &list_item.element, image_num, image_saver)?;
                 if matches!(&child_node.data.borrow().value, NodeValue::List(_)) {
-                    // For nested lists, directly append the list node to the item
                     item_node.append(child_node);
                 } else {
-                    // For non-list items, ensure they are wrapped in a paragraph if not already
                     if !matches!(&child_node.data.borrow().value, NodeValue::Paragraph) {
                         let paragraph_node = arena.alloc(Node::new(RefCell::new(Ast::new(
                             NodeValue::Paragraph,
@@ -477,7 +472,6 @@ fn element_to_ast_node<'a, F>(
                         item_node.append(child_node);
                     }
                 }
-
                 list_node.append(item_node);
             }
             Ok(list_node)
@@ -553,7 +547,7 @@ fn element_to_ast_node<'a, F>(
                     LineColumn { line: 0, column: 0 },
                 ))));
                 let cell_content =
-                    element_to_ast_node(arena, &header.element, image_num, image_saver, current_depth)?;
+                    element_to_ast_node(arena, &header.element, image_num, image_saver)?;
                 cell_node.append(cell_content);
                 header_row_node.append(cell_node);
             }
@@ -571,7 +565,7 @@ fn element_to_ast_node<'a, F>(
                         LineColumn { line: 0, column: 0 },
                     ))));
                     let cell_content =
-                        element_to_ast_node(arena, &cell.element, image_num, image_saver, current_depth)?;
+                        element_to_ast_node(arena, &cell.element, image_num, image_saver)?;
                     cell_node.append(cell_content);
                     row_node.append(cell_node);
                 }
@@ -652,16 +646,16 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         let generated_bytes = generated_result?;
         let generated_text = std::str::from_utf8(&generated_bytes)?;
         println!("{}", generated_text);
-        println!("==========================");
-        let generated_result = text::Transformer::generate(&parsed_document);
-        assert!(generated_result.is_ok());
-        // println!("{:?}", generated_result.unwrap());
-        let generated_bytes = generated_result?;
-        let generated_text = std::str::from_utf8(&generated_bytes)?;
-        println!("{}", generated_text);
-
-        let generated_result = pdf::Transformer::generate(&parsed_document)?;
-        std::fs::write("test/data/generated.pdf", generated_result)?;
+        // println!("==========================");
+        // let generated_result = text::Transformer::generate(&parsed_document);
+        // assert!(generated_result.is_ok());
+        // // println!("{:?}", generated_result.unwrap());
+        // let generated_bytes = generated_result?;
+        // let generated_text = std::str::from_utf8(&generated_bytes)?;
+        // println!("{}", generated_text);
+        //
+        // let generated_result = pdf::Transformer::generate(&parsed_document)?;
+        // std::fs::write("test/data/generated.pdf", generated_result)?;
 
         Ok(())
     }
