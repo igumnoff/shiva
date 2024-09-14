@@ -136,7 +136,7 @@ impl TransformerTrait for Transformer {
                 Element::Hyperlink {
                     title, url, alt, ..
                 } => {
-                    if url == alt && alt == url {
+                    if url == alt {
                         markdown.push_str(&url.to_string());
                     } else {
                         markdown.push_str(&format!("[{}]({} \"{}\")", title, url, alt));
@@ -205,40 +205,18 @@ impl TransformerTrait for Transformer {
         let mut list_counters: Vec<usize> = Vec::new();
         let mut list_types: Vec<bool> = Vec::new();
 
-        for element in &document.page_header {
-            generate_element(
-                element,
-                &mut markdown,
-                0,
-                &mut list_counters,
-                &mut list_types,
-                &mut images,
-                &mut image_num,
-            )?;
-        }
-
-        for element in &document.elements {
-            generate_element(
-                element,
-                &mut markdown,
-                0,
-                &mut list_counters,
-                &mut list_types,
-                &mut images,
-                &mut image_num,
-            )?;
-        }
-
-        for element in &document.page_footer {
-            generate_element(
-                element,
-                &mut markdown,
-                0,
-                &mut list_counters,
-                &mut list_types,
-                &mut images,
-                &mut image_num,
-            )?;
+        for band in &document.bands {
+            for element in &document.get_elements_by_band(band) {
+                generate_element(
+                    element,
+                    &mut markdown,
+                    0,
+                    &mut list_counters,
+                    &mut list_types,
+                    &mut images,
+                    &mut image_num,
+                )?;
+            }
         }
 
         Ok(Bytes::from(markdown))
@@ -291,8 +269,8 @@ Second header
         };
         footer_elements.push(footer);
         header_elements.push(header);
-        parsed_document.page_footer = footer_elements;
-        parsed_document.page_header = header_elements;
+        parsed_document.set_page_footer(footer_elements);
+        parsed_document.set_page_header(header_elements);
         let generated_result = Transformer::generate(&parsed_document);
         assert!(generated_result.is_ok());
         // println!("{:?}", generated_result.unwrap());

@@ -4,7 +4,7 @@ use quick_xml::{ events::{ BytesDecl, BytesEnd, BytesStart, BytesText, Event }, 
 use std::str::{from_utf8};
 
 use crate::core::{
-    ImageDimension, Document, Element, ImageAlignment, ImageData, ImageType, ListItem, TableCell, TableHeader, TableRow, TransformerTrait
+    Document, Element, ImageAlignment, ImageData, ImageDimension, ImageType, ListItem, PageDimensions, PageFormat, TableCell, TableHeader, TableRow, TransformerTrait
 };
 
 use serde::{ Deserialize, Serialize };
@@ -574,12 +574,15 @@ impl TransformerTrait for Transformer {
             Ok(elements)
         }
 
-        let mut page_width = 210.0;
-        let mut page_height = 297.0;
-        let mut left_page_indent = 10.0;
-        let mut right_page_indent = 10.0;
-        let mut top_page_indent = 10.0;
-        let mut bottom_page_indent = 10.0;
+        // Initialize dimensions
+        let PageDimensions {
+            mut page_width,
+            mut page_height,
+            mut page_margin_top,
+            mut page_margin_bottom,
+            mut page_margin_left,
+            mut page_margin_right,
+        } = PageFormat::default().dimensions();
         let mut page_header: Vec<Element> = vec![];
         let mut page_footer: Vec<Element> = vec![];
 
@@ -588,43 +591,31 @@ impl TransformerTrait for Transformer {
                 "page_width" => {
                     if let Some(value) = &child.text {
                         page_width = value.parse()?;
-                    } else {
-                        println!("Error: No value");
                     }
                 }
                 "page_height" => {
                     if let Some(value) = &child.text {
                         page_height = value.parse()?;
-                    } else {
-                        println!("Error: No value");
                     }
                 }
                 "left_page_indent" => {
                     if let Some(value) = &child.text {
-                        left_page_indent = value.parse()?;
-                    } else {
-                        println!("Error: No value");
+                        page_margin_left = value.parse()?;
                     }
                 }
                 "right_page_indent" => {
                     if let Some(value) = &child.text {
-                        right_page_indent = value.parse()?;
-                    } else {
-                        println!("Error: No value");
+                        page_margin_right = value.parse()?;
                     }
                 }
                 "top_page_indent" => {
                     if let Some(value) = &child.text {
-                        top_page_indent = value.parse()?;
-                    } else {
-                        println!("Error: No value");
+                        page_margin_top = value.parse()?;
                     }
                 }
                 "bottom_page_indent" => {
                     if let Some(value) = &child.text {
-                        bottom_page_indent = value.parse()?;
-                    } else {
-                        println!("Error: No value");
+                        page_margin_bottom = value.parse()?;
                     }
                 }
                 "page_header" => {
@@ -682,18 +673,17 @@ impl TransformerTrait for Transformer {
                 _ => {}
             }
         }
-
-        Ok(Document {
-            elements,
+        let page_custom_format = PageFormat::Custom(PageDimensions {
             page_width,
             page_height,
-            left_page_indent,
-            right_page_indent,
-            top_page_indent,
-            bottom_page_indent,
-            page_header: page_header.clone(),
-            page_footer: page_footer.clone(),
-        })
+            page_margin_top,
+            page_margin_bottom,
+            page_margin_left,
+            page_margin_right,
+        });
+
+        let document = Document::new_with_dimensions(page_header, elements, page_footer, page_custom_format);
+        Ok(document)
     }
 
     fn generate(document: &Document) -> Result<Bytes> {
@@ -869,32 +859,32 @@ impl TransformerTrait for Transformer {
             Ok(())
         }
 
-        for element in &document.elements {
+        for element in &document.get_detail() {
             serialize_element(element, &mut writer)?;
         }
         writer.write_event(Event::End(BytesEnd::new("elements")))?;
 
         writer.write_event(Event::Start(BytesStart::new("page_width")))?;
-        writer.write_event(Event::Text(BytesText::new(&document.page_width.to_string())))?;
+        writer.write_event(Event::Text(BytesText::new(&document.page_format.dimensions().page_width.to_string())))?;
         writer.write_event(Event::End(BytesEnd::new("page_width")))?;
         writer.write_event(Event::Start(BytesStart::new("page_height")))?;
-        writer.write_event(Event::Text(BytesText::new(&document.page_height.to_string())))?;
+        writer.write_event(Event::Text(BytesText::new(&document.page_format.dimensions().page_height.to_string())))?;
         writer.write_event(Event::End(BytesEnd::new("page_height")))?;
         writer.write_event(Event::Start(BytesStart::new("left_page_indent")))?;
-        writer.write_event(Event::Text(BytesText::new(&document.left_page_indent.to_string())))?;
+        writer.write_event(Event::Text(BytesText::new(&document.page_format.dimensions().page_margin_left.to_string())))?;
         writer.write_event(Event::End(BytesEnd::new("left_page_indent")))?;
         writer.write_event(Event::Start(BytesStart::new("right_page_indent")))?;
-        writer.write_event(Event::Text(BytesText::new(&document.right_page_indent.to_string())))?;
+        writer.write_event(Event::Text(BytesText::new(&document.page_format.dimensions().page_margin_right.to_string())))?;
         writer.write_event(Event::End(BytesEnd::new("right_page_indent")))?;
         writer.write_event(Event::Start(BytesStart::new("top_page_indent")))?;
-        writer.write_event(Event::Text(BytesText::new(&document.top_page_indent.to_string())))?;
+        writer.write_event(Event::Text(BytesText::new(&document.page_format.dimensions().page_margin_top.to_string())))?;
         writer.write_event(Event::End(BytesEnd::new("top_page_indent")))?;
         writer.write_event(Event::Start(BytesStart::new("bottom_page_indent")))?;
-        writer.write_event(Event::Text(BytesText::new(&document.bottom_page_indent.to_string())))?;
+        writer.write_event(Event::Text(BytesText::new(&document.page_format.dimensions().page_margin_bottom.to_string())))?;
         writer.write_event(Event::End(BytesEnd::new("bottom_page_indent")))?;
 
         writer.write_event(Event::Start(BytesStart::new("page_header")))?;
-        for page_header_element in document.page_header.iter() {
+        for page_header_element in document.get_page_header().iter() {
             match page_header_element {
                 Element::Text { text, size } => {
                     writer.write_event(Event::Start(BytesStart::new("Text")))?;
@@ -912,7 +902,7 @@ impl TransformerTrait for Transformer {
         writer.write_event(Event::End(BytesEnd::new("page_header")))?;
 
         writer.write_event(Event::Start(BytesStart::new("page_footer")))?;
-        for page_footer_element in document.page_footer.iter() {
+        for page_footer_element in document.get_page_footer().iter() {
             match page_footer_element {
                 Element::Text { text, size } => {
                     writer.write_event(Event::Start(BytesStart::new("Text")))?;
