@@ -71,7 +71,7 @@ impl TransformerTrait for Transformer {
     }
 
     fn generate(document: &Document) -> anyhow::Result<Bytes> {
-        let elements = document.elements.clone();
+        let elements = document.get_all_elements();
 
         let mut data: Vec<Vec<String>> = Vec::new();
 
@@ -80,8 +80,8 @@ impl TransformerTrait for Transformer {
                 // Create a new vector for the header row
                 let mut header_line = Vec::new();
                 for header in headers {
-                    if let Text { text, size: _ } = header.element {
-                        header_line.push(text)
+                    if let Text { text, size: _ } = &header.element {
+                        header_line.push(text.clone())
                     }
                 }
                 // Push header row to data
@@ -90,9 +90,9 @@ impl TransformerTrait for Transformer {
                 // Iterate over each row
                 for row in rows {
                     let mut curr_line = Vec::new(); // This must be inside the loop
-                    for cell in row.cells {
-                        if let Text { text, size: _ } = cell.element {
-                            curr_line.push(text)
+                    for cell in &row.cells {
+                        if let Text { text, size: _ } = &cell.element {
+                            curr_line.push(text.clone())
                         }
                     }
                     // Push each row to data

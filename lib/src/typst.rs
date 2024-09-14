@@ -403,14 +403,14 @@ pub fn generate_document(document: &Document) -> anyhow::Result<(TypstString, Ha
 
     // Converting both headers and footers into a string repr of them in Typst
     let mut header_text = String::new();
-    document.page_header.iter().for_each(|el| match el {
+    document.get_page_header().iter().for_each(|el| match el {
         Text { text, size: _ } => {
             header_text.push_str(text);
         }
         _ => {}
     });
     let mut footer_text = String::new();
-    document.page_footer.iter().for_each(|el| match el {
+    document.get_page_footer().iter().for_each(|el| match el {
         Text { text, size: _ } => {
             footer_text.push_str(text);
         }
@@ -425,7 +425,7 @@ pub fn generate_document(document: &Document) -> anyhow::Result<(TypstString, Ha
 
     // Converting Document repr to one of typst string
     source.push_str(&footer_header_text);
-    for element in &document.elements {
+    for element in &document.get_all_elements() {
         process_element(&mut source, &mut img_map, element)?;
     }
 

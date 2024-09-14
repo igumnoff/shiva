@@ -174,14 +174,14 @@ impl TransformerTrait for Transformer {
         let mut level = 1;
         for styleblock in Parser::new(tokens).parse().unwrap().body.as_slice() {
             if styleblock.painter.font_size >= 30 && styleblock.painter.bold == true {
-                document.elements.push(Element::Header {
+                document.add_element(Element::Header {
                     level: level,
                     text: styleblock.text.to_owned(),
                 });
                 level += 1
             } else {
                 {
-                    document.elements.push(Element::Paragraph {
+                    document.add_element(Element::Paragraph {
                         elements: vec![Element::Text {
                             text: styleblock.text.to_owned(),
                             size: styleblock.painter.font_size as u8,
@@ -198,7 +198,7 @@ impl TransformerTrait for Transformer {
         let mut parent_indices = Vec::new();
 
         rtf_content.push_str("{\\rtf1\\ansi\\deff0"); //the standard title of an RTF document, which indicates that it is an RTF document using ANSI characters and the default font
-        for element in &document.elements {
+        for element in &document.get_all_elements() {
             match element {
 
                 Element::Header { level, text} => {
