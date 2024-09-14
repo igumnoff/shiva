@@ -32,33 +32,152 @@ use crate::xlsx;
 #[cfg(feature = "xml")]
 use crate::xml;
 
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+pub struct PageDimensions {
+    pub page_width: f32,
+    pub page_height: f32,
+    pub page_margin_top: f32,
+    pub page_margin_bottom: f32,
+    pub page_margin_left: f32,
+    pub page_margin_right: f32,
+}
+
+#[derive(Default, Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+pub enum PageFormat {
+    /// A4 format (210 x 297 mm).
+    /// Default page format.
+    /// Also utilized by formats that does not have a predefined page format(XML, CSV, JSON...)
+    #[default]
+    A4,
+    Letter,
+    Legal,
+    Tabloid,
+    Custom(PageDimensions),
+}
+
+impl PageFormat {
+    pub fn dimensions(&self) -> PageDimensions {
+        match self {
+            PageFormat::A4 => PageDimensions {
+                page_width: 210.0,
+                page_height: 297.0,
+                page_margin_top: 10.0,
+                page_margin_bottom: 10.0,
+                page_margin_left: 10.0,
+                page_margin_right: 10.0,
+            },
+            PageFormat::Letter => PageDimensions {
+                page_width: 216.0,
+                page_height: 279.0,
+                page_margin_top: 10.0,
+                page_margin_bottom: 10.0,
+                page_margin_left: 10.0,
+                page_margin_right: 10.0,
+            },
+            PageFormat::Legal => PageDimensions {
+                page_width: 216.0,
+                page_height: 356.0,
+                page_margin_top: 10.0,
+                page_margin_bottom: 10.0,
+                page_margin_left: 10.0,
+                page_margin_right: 10.0,
+            },
+            PageFormat::Tabloid => PageDimensions {
+                page_width: 279.0,
+                page_height: 432.0,
+                page_margin_top: 10.0,
+                page_margin_bottom: 10.0,
+                page_margin_left: 10.0,
+                page_margin_right: 10.0,
+            },
+            PageFormat::Custom(dimensions) => dimensions.clone(),
+        }
+    }
+}
+
+#[derive(Default, Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+pub enum PageOrientation {
+    #[default]
+    Portrait,
+    Landscape,
+}
+
+/// Band is a section of a document(Title, PageHeader, ColumnHeader, Detail, ColumnFooter, PageFooter, Summary).
+/// 
+/// Each band contains a list of elements (Text, Table, List, Image, Hyperlink...).
+/// 
+/// Bands are used to organize the content of a document.
+/// 
+/// Documents in general have a predefined set of bands, but custom bands can be created.
+/// 
+/// PageHeader, Detail, PageFooter are the most common bands and is used to display the header, main content, and footer of documents of any type(XML, CSV, JSON...).
+/// 
+/// The logic to handle custom bands is up to the user/file format
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+pub enum Band {
+    /// This band happens only once at the beginning of the document and is not repeated.
+    Title(Vec<Element>),
+
+    /// This band happens only once at the beginning of the document and is repeated every page.
+    /// Title and summary bands are mutually exclusive
+    /// The PageHeader band is also used to display the header of documents of any type, commonly used in conjunction with the Detail and PageFooter band
+    PageHeader(Vec<Element>),
+
+    /// This band is printed at the beginning of each detail section.
+    /// Usually, labels containing the column names of a tabular report are inserted in this band.
+    ColumnHeader(Vec<Element>),
+
+    /// This band is repeated for every single read record.
+    /// It contains the main content of the document
+    /// The detail band is the most common band and is used to display the main content of the document of any type
+    Detail(Vec<Element>),
+
+    /// This band is printed at the end of each detail section.
+    ColumnFooter(Vec<Element>),
+
+    /// This band happens only once at the end of the document and is repeated every page.
+    PageFooter(Vec<Element>),
+
+    /// This band happens only once at the end of the document and is not repeated.
+    Summary(Vec<Element>),
+
+    /// This is a custom band, receiving a unique name and a list of elements
+    /// The logic to handle this band is up to the user/file format
+    Custom(String, Vec<Element>),
+}
+
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct Document {
-    pub elements: Vec<Element>,
-    pub page_width: f32,
-    pub page_height: f32,
-    pub left_page_indent: f32,
-    pub right_page_indent: f32,
-    pub top_page_indent: f32,
-    pub bottom_page_indent: f32,
-    pub page_header: Vec<Element>,
-    pub page_footer: Vec<Element>,
-}
+    /// Bands are the different sections of a document(Title, PageHeader, ColumnHeader, Detail, ColumnFooter, PageFooter, Summary)
+    /// Each band contains a list of elements (Text, Table, List, Image, Hyperlink...)
+    pub bands: Vec<Band>,
 
+    /// Page format (A4, Letter, Legal, Tabloid, Custom) Default is A4.
+    pub page_format: PageFormat,
+
+    /// Page orientation (Portrait, Landscape) Default is Portrait.
+    pub orientation: PageOrientation,
+}
 
 impl Document {
     pub fn new(elements: Vec<Element>) -> Document {
         Document {
-            elements,
-            page_width: 210.0,
-            page_height: 297.0,
-            left_page_indent: 10.0,
-            right_page_indent: 10.0,
-            top_page_indent: 10.0,
-            bottom_page_indent: 10.0,
-            page_header: vec![],
-            page_footer: vec![],
+            bands: vec![Band::Detail(elements)],
+            page_format: PageFormat::default(),
+            orientation: PageOrientation::default(),
+        }
+    }
+
+    pub fn new_with_dimensions(page_header: Vec<Element>, elements: Vec<Element>, page_footer: Vec<Element>, page_format: PageFormat) -> Document {
+        Document {
+            bands: vec![Band::PageHeader(page_header), Band::Detail(elements), Band::PageFooter(page_footer)],
+            page_format,
+            orientation: PageOrientation::default(),
         }
     }
 
@@ -67,7 +186,9 @@ impl Document {
             #[cfg(feature = "markdown")]
             DocumentType::Markdown => markdown::Transformer::parse(input_bytes)?,
             #[cfg(not(feature = "markdown"))]
-            DocumentType::Markdown => return Err(anyhow::anyhow!("Markdown feature is not enabled")),
+            DocumentType::Markdown => {
+                return Err(anyhow::anyhow!("Markdown feature is not enabled"))
+            }
             #[cfg(feature = "html")]
             DocumentType::HTML => html::Transformer::parse(input_bytes)?,
             #[cfg(not(feature = "html"))]
@@ -121,7 +242,9 @@ impl Document {
             #[cfg(feature = "markdown")]
             DocumentType::Markdown => markdown::Transformer::generate(self)?,
             #[cfg(not(feature = "markdown"))]
-            DocumentType::Markdown => return Err(anyhow::anyhow!("Markdown feature is not enabled")),
+            DocumentType::Markdown => {
+                return Err(anyhow::anyhow!("Markdown feature is not enabled"))
+            }
             #[cfg(feature = "html")]
             DocumentType::HTML => html::Transformer::generate(self)?,
             #[cfg(not(feature = "html"))]
@@ -168,6 +291,192 @@ impl Document {
             DocumentType::ODS => return Err(anyhow::anyhow!("ODS feature is not enabled")),
         };
         Ok(output)
+    }
+
+    /// Returns all elements from all bands
+    pub fn get_all_elements(&self) -> Vec<&Element> {
+        let mut elements = Vec::new();
+        for band in &self.bands {
+            match band {
+                Band::Title(e) => elements.extend(e.iter()),
+                Band::PageHeader(e) => elements.extend(e.iter()),
+                Band::ColumnHeader(e) => elements.extend(e.iter()),
+                Band::Detail(e) => elements.extend(e.iter()),
+                Band::ColumnFooter(e) => elements.extend(e.iter()),
+                Band::PageFooter(e) => elements.extend(e.iter()),
+                Band::Summary(e) => elements.extend(e.iter()),
+                Band::Custom(_, e) => elements.extend(e.iter()),
+            }
+        }
+        elements
+    }    
+
+    /// Returns all elements from a specific band
+    pub fn get_elements_by_band(&self, band: &Band) -> Vec<&Element> {
+        let mut elements = Vec::new();
+        for b in &self.bands {
+            if b == band {
+                match b {
+                    Band::Title(e) => elements.extend(e.iter()),
+                    Band::PageHeader(e) => elements.extend(e.iter()),
+                    Band::ColumnHeader(e) => elements.extend(e.iter()),
+                    Band::Detail(e) => elements.extend(e.iter()),
+                    Band::ColumnFooter(e) => elements.extend(e.iter()),
+                    Band::PageFooter(e) => elements.extend(e.iter()),
+                    Band::Summary(e) => elements.extend(e.iter()),
+                    Band::Custom(_, e) => elements.extend(e.iter()),
+                }
+            }
+        }
+        elements
+    }
+
+    /// Returns all elements from the title band
+    pub fn get_title(&self) -> Vec<&Element> {
+        self.get_elements_by_band(&Band::Title(Vec::new()))
+    }
+
+    /// Returns all elements from the page header band
+    pub fn get_page_header(&self) -> Vec<&Element> {
+        self.get_elements_by_band(&Band::PageHeader(Vec::new()))
+    }
+
+    /// Returns all elements from the column header band
+    pub fn get_column_header(&self) -> Vec<&Element> {
+        self.get_elements_by_band(&Band::ColumnHeader(Vec::new()))
+    }
+
+    /// Returns all elements from the detail band
+    pub fn get_detail(&self) -> Vec<&Element> {
+        self.get_elements_by_band(&Band::Detail(Vec::new()))
+    }
+
+    /// Returns all elements from the column footer band
+    pub fn get_column_footer(&self) -> Vec<&Element> {
+        self.get_elements_by_band(&Band::ColumnFooter(Vec::new()))
+    }
+
+    /// Returns all elements from the page footer band
+    pub fn get_page_footer(&self) -> Vec<&Element> {
+        self.get_elements_by_band(&Band::PageFooter(Vec::new()))
+    }
+
+    /// Returns all elements from the summary band
+    pub fn get_summary(&self) -> Vec<&Element> {
+        self.get_elements_by_band(&Band::Summary(Vec::new()))
+    }
+
+    /// Returns all elements from a custom band
+    pub fn get_custom_band(&self, name: &str) -> Vec<&Element> {
+        self.get_elements_by_band(&Band::Custom(name.to_string(), Vec::new()))
+    }
+
+    /// Returns all bands
+    pub fn get_bands(&self) -> Vec<Band> {
+        self.bands.clone()
+    }
+
+    pub fn set_page_format(&mut self, page_format: PageFormat) {
+        self.page_format = page_format;
+    }
+
+    pub fn set_orientation(&mut self, orientation: PageOrientation) {
+        self.orientation = orientation;
+    }
+
+    pub fn set_title(&mut self, elements: Vec<Element>) {
+        self.bands.push(Band::Title(elements));
+    }
+
+    pub fn set_page_header(&mut self, elements: Vec<Element>) {
+        self.bands.push(Band::PageHeader(elements));
+    }
+
+    pub fn set_column_header(&mut self, elements: Vec<Element>) {
+        self.bands.push(Band::ColumnHeader(elements));
+    }
+
+    pub fn set_detail(&mut self, elements: Vec<Element>) {
+        self.bands.push(Band::Detail(elements));
+    }
+
+    pub fn set_column_footer(&mut self, elements: Vec<Element>) {
+        self.bands.push(Band::ColumnFooter(elements));
+    }
+
+    pub fn set_page_footer(&mut self, elements: Vec<Element>) {
+        self.bands.push(Band::PageFooter(elements));
+    }
+
+    pub fn set_summary(&mut self, elements: Vec<Element>) {
+        self.bands.push(Band::Summary(elements));
+    }
+
+    pub fn set_custom_band(&mut self, name: String, elements: Vec<Element>) {
+        self.bands.push(Band::Custom(name, elements));
+    }
+
+    /// Adds an element to the detail band
+    /// This is useful when you want to add elements to the document without specifying the band
+    /// The detail band is the most common band and is used to display the main content of the document of any type
+    pub fn add_detail(&mut self, element: Element) {
+        for band in &mut self.bands {
+            if let Band::Detail(e) = band { e.push(element.clone()) }
+        }
+    }
+
+    /// Just a wrapper around add_detail
+    /// This is useful when you want to add elements to the document without specifying the band
+    pub fn add_element(&mut self, element: Element) {
+        self.add_detail(element);
+    }
+
+    pub fn add_page_header(&mut self, element: Element) {
+        for band in &mut self.bands {
+            if let Band::PageHeader(e) = band { e.push(element.clone()) }
+        }
+    }
+
+    pub fn add_column_header(&mut self, element: Element) {
+        for band in &mut self.bands {
+            if let Band::ColumnHeader(e) = band { e.push(element.clone()) }
+        }
+    }
+
+    pub fn add_column_footer(&mut self, element: Element) {
+        for band in &mut self.bands {
+            if let Band::ColumnFooter(e) = band { e.push(element.clone()) }
+        }
+    }
+
+    pub fn add_page_footer(&mut self, element: Element) {
+        for band in &mut self.bands {
+            if let Band::PageFooter(e) = band { e.push(element.clone()) }
+        }
+    }
+
+    pub fn add_summary(&mut self, element: Element) {
+        for band in &mut self.bands {
+            if let Band::Summary(e) = band { e.push(element.clone()) }
+        }
+    }
+
+    pub fn add_custom_band(&mut self, name: &str, element: Element) {
+        for band in &mut self.bands {
+            if let Band::Custom(n, e) = band {
+                if n == name {
+                    e.push(element.clone());
+                }
+            }
+        }
+    }
+
+    pub fn remove_band(&mut self, band: Band) {
+        self.bands.retain(|b| b != &band);
+    }
+
+    pub fn remove_all_bands(&mut self) {
+        self.bands.clear();
     }
 }
 
@@ -256,7 +565,7 @@ pub struct ImageData {
     alt: String,
     image_type: ImageType,
     align: ImageAlignment,
-    size: ImageDimension
+    size: ImageDimension,
 }
 
 /**
@@ -277,7 +586,7 @@ impl ImageData {
             alt,
             image_type: ImageType::default(),
             align: ImageAlignment::default(),
-            size
+            size,
         };
         image_data.set_image_type(&src_or_type);
         image_data.set_image_alignment(&alignment);
@@ -350,10 +659,9 @@ impl ImageData {
         &self.align
     }
 
-    pub fn size(&self) -> &ImageDimension{
+    pub fn size(&self) -> &ImageDimension {
         &self.size
     }
-
 }
 
 #[derive(Debug, Clone, PartialEq, Default, Display, EnumString, VariantArray)]
@@ -364,7 +672,7 @@ pub enum ImageType {
     Png,
     Jpeg,
     Gif,
-    SVG
+    SVG,
 }
 
 impl ImageType {
@@ -396,8 +704,7 @@ pub struct ImageDimension {
     pub height: Option<String>,
 }
 
-
-pub fn disk_image_loader(path: &str) -> impl Fn(&str) -> anyhow::Result<Bytes>  {
+pub fn disk_image_loader(path: &str) -> impl Fn(&str) -> anyhow::Result<Bytes> {
     let path = path.to_string();
     let image_loader = move |image: &str| -> anyhow::Result<Bytes> {
         let image_path = format!("{}/{}", path, image);
@@ -408,8 +715,7 @@ pub fn disk_image_loader(path: &str) -> impl Fn(&str) -> anyhow::Result<Bytes>  
     image_loader
 }
 
-
-pub fn disk_image_saver(path: &str) -> impl Fn(&Bytes, &str) -> anyhow::Result<()>  {
+pub fn disk_image_saver(path: &str) -> impl Fn(&Bytes, &str) -> anyhow::Result<()> {
     let path = path.to_string();
     let image_saver = move |bytes: &Bytes, image: &str| -> anyhow::Result<()> {
         let image_path = format!("{}/{}", path, image);

@@ -1,4 +1,4 @@
-use crate::core::{Document, Element, ImageAlignment, ImageData, ImageDimension, ImageType, ListItem, TableCell, TableHeader, TableRow, TransformerTrait};
+use crate::core::{Document, Element, ImageAlignment, ImageData, ImageDimension, ImageType, ListItem, PageDimensions, PageFormat, TableCell, TableHeader, TableRow, TransformerTrait};
 use bytes::Bytes;
 use serde_json::Value;
 use std::str::FromStr;
@@ -14,49 +14,52 @@ impl TransformerTrait for Transformer {
             // Проверяем, что корневой элемент - объект
             let root = json.as_object().ok_or_else(|| anyhow::anyhow!("Root element is not a JSON object"))?;
 
+            // Initialize dimensions
+            let PageDimensions {
+                mut page_width,
+                mut page_height,
+                mut page_margin_top,
+                mut page_margin_bottom,
+                mut page_margin_left,
+                mut page_margin_right,
+            } = PageFormat::default().dimensions();
+            
+            // Mapping of JSON keys to corresponding dimensions
+            let mappings = vec![
+                ("page_width", &mut page_width),
+                ("page_height", &mut page_height),
+                ("top_page_indent", &mut page_margin_top),
+                ("bottom_page_indent", &mut page_margin_bottom),
+                ("left_page_indent", &mut page_margin_left),
+                ("right_page_indent", &mut page_margin_right),
+            ];
+                
+            // Iterate through the mappings and update values if they exist
+            for (key, target) in mappings {
+                if let Some(value) = root.get(key).and_then(|v| v.as_f64()) {
+                    *target = value as f32;
+                } else {
+                    return Err(anyhow::anyhow!("Missing or invalid '{}'", key));
+                }
+            }
+                
             // Извлекаем элементы
             let elements = parse_elements(&root.get("elements").ok_or_else(|| anyhow::anyhow!("Missing 'elements' field"))?.clone())?;
-
-            // Извлекаем параметры страницы
-            let page_width = root.get("page_width")
-                .and_then(|v| v.as_f64())
-                .ok_or_else(|| anyhow::anyhow!("Missing or invalid 'page_width'"))? as f32;
-
-            let page_height = root.get("page_height")
-                .and_then(|v| v.as_f64())
-                .ok_or_else(|| anyhow::anyhow!("Missing or invalid 'page_height'"))? as f32;
-
-            let left_page_indent = root.get("left_page_indent")
-                .and_then(|v| v.as_f64())
-                .ok_or_else(|| anyhow::anyhow!("Missing or invalid 'left_page_indent'"))? as f32;
-
-            let right_page_indent = root.get("right_page_indent")
-                .and_then(|v| v.as_f64())
-                .ok_or_else(|| anyhow::anyhow!("Missing or invalid 'right_page_indent'"))? as f32;
-
-            let top_page_indent = root.get("top_page_indent")
-                .and_then(|v| v.as_f64())
-                .ok_or_else(|| anyhow::anyhow!("Missing or invalid 'top_page_indent'"))? as f32;
-
-            let bottom_page_indent = root.get("bottom_page_indent")
-                .and_then(|v| v.as_f64())
-                .ok_or_else(|| anyhow::anyhow!("Missing or invalid 'bottom_page_indent'"))? as f32;
-
             // Извлекаем заголовки и нижние колонтитулы страницы
             let page_header = parse_elements(&root.get("page_header").unwrap_or(&Value::Array(vec![])))?;
             let page_footer = parse_elements(&root.get("page_footer").unwrap_or(&Value::Array(vec![])))?;
 
-            Ok(Document {
-                elements,
+            let page_custom_format = PageFormat::Custom(PageDimensions {
                 page_width,
                 page_height,
-                left_page_indent,
-                right_page_indent,
-                top_page_indent,
-                bottom_page_indent,
-                page_header,
-                page_footer,
-            })
+                page_margin_top,
+                page_margin_bottom,
+                page_margin_left,
+                page_margin_right,
+            });
+    
+            let document = Document::new_with_dimensions(page_header, elements, page_footer, page_custom_format);
+            Ok(document)
         }
 
 
@@ -159,23 +162,23 @@ impl TransformerTrait for Transformer {
             let mut doc_map = Map::new();
 
             // Serialize elements
-            let elements_json: Vec<Value> = document.elements.iter().map(serialize_element).collect();
+            let elements_json: Vec<Value> = document.get_detail().into_iter().map(serialize_element).collect();
             doc_map.insert("elements".to_string(), Value::Array(elements_json));
 
             // Serialize page dimensions and indents
-            doc_map.insert("page_width".to_string(), Value::Number(serde_json::Number::from_f64(document.page_width as f64).unwrap()));
-            doc_map.insert("page_height".to_string(), Value::Number(serde_json::Number::from_f64(document.page_height as f64).unwrap()));
-            doc_map.insert("left_page_indent".to_string(), Value::Number(serde_json::Number::from_f64(document.left_page_indent as f64).unwrap()));
-            doc_map.insert("right_page_indent".to_string(), Value::Number(serde_json::Number::from_f64(document.right_page_indent as f64).unwrap()));
-            doc_map.insert("top_page_indent".to_string(), Value::Number(serde_json::Number::from_f64(document.top_page_indent as f64).unwrap()));
-            doc_map.insert("bottom_page_indent".to_string(), Value::Number(serde_json::Number::from_f64(document.bottom_page_indent as f64).unwrap()));
+            doc_map.insert("page_width".to_string(), Value::Number(serde_json::Number::from_f64(document.page_format.dimensions().page_width as f64).unwrap()));
+            doc_map.insert("page_height".to_string(), Value::Number(serde_json::Number::from_f64(document.page_format.dimensions().page_height as f64).unwrap()));
+            doc_map.insert("left_page_indent".to_string(), Value::Number(serde_json::Number::from_f64(document.page_format.dimensions().page_margin_left as f64).unwrap()));
+            doc_map.insert("right_page_indent".to_string(), Value::Number(serde_json::Number::from_f64(document.page_format.dimensions().page_margin_right as f64).unwrap()));
+            doc_map.insert("top_page_indent".to_string(), Value::Number(serde_json::Number::from_f64(document.page_format.dimensions().page_margin_top as f64).unwrap()));
+            doc_map.insert("bottom_page_indent".to_string(), Value::Number(serde_json::Number::from_f64(document.page_format.dimensions().page_margin_bottom as f64).unwrap()));
 
             // Serialize page headers
-            let page_header_json: Vec<Value> = document.page_header.iter().map(serialize_element).collect();
+            let page_header_json: Vec<Value> = document.get_page_header().into_iter().map(serialize_element).collect();
             doc_map.insert("page_header".to_string(), Value::Array(page_header_json));
 
             // Serialize page footers
-            let page_footer_json: Vec<Value> = document.page_footer.iter().map(serialize_element).collect();
+            let page_footer_json: Vec<Value> = document.get_page_footer().into_iter().map(serialize_element).collect();
             doc_map.insert("page_footer".to_string(), Value::Array(page_footer_json));
 
             // Create the final JSON value

@@ -70,34 +70,31 @@ impl TransformerTrait for Transformer {
     {
         let mut workbook = Workbook::new();
         fn generate_element(element: &Element, workbook: &mut Workbook) -> anyhow::Result<()> {
-            match element {
-                Table { headers, rows } => {
-                    let worksheet = workbook.add_worksheet();
-                    let mut row_index = 1;
+            if let Table { headers, rows } = element {
+                let worksheet = workbook.add_worksheet();
+                let mut row_index = 1;
+                let mut col_index = 0;
+                for header in headers {
+                    if let Text { text, .. } = header.element.clone() {
+                        worksheet.write_string(0, col_index, text)?;
+                        col_index += 1;
+                    }
+                }
+
+                for row in rows {
                     let mut col_index = 0;
-                    for header in headers {
-                        if let Text { text, .. } = header.element.clone() {
-                            worksheet.write_string(0, col_index, text)?;
+                    for cell in row.cells.iter() {
+                        if let Text { text, .. } = cell.element.clone() {
+                            worksheet.write_string(row_index, col_index, text)?;
                             col_index += 1;
                         }
                     }
-
-                    for row in rows {
-                        let mut col_index = 0;
-                        for (_cell_index, cell) in row.cells.iter().enumerate() {
-                            if let Text { text, .. } = cell.element.clone() {
-                                worksheet.write_string(row_index, col_index, text)?;
-                                col_index += 1;
-                            }
-                        }
-                        row_index += 1;
-                    }
+                    row_index += 1;
                 }
-                _ => {}
             }
             Ok(())
         }
-        for element in &document.elements {
+        for element in &document.get_detail() {
             generate_element(element, &mut workbook)?;
         }
         let xlsx_data = workbook.save_to_buffer()?;

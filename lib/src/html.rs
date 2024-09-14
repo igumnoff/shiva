@@ -36,8 +36,9 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
         let mut image_num: i32 = 0;
         let image_saver = ImageSaver { function: image_saver };
 
+        //TODO: Is this needed? Commented out for now! header_text and footer_text are not read anywhere
         let mut header_text = String::new();
-        document.page_header.iter().for_each(|el| match el {
+        document.get_page_header().iter().for_each(|el| match el {
             Text { text, size: _ } => {
                 header_text.push_str(text);
             }
@@ -45,7 +46,7 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
         });
         let mut footer_text = String::new();
         
-        document.page_footer.iter().for_each(|el| match el {
+        document.get_page_footer().iter().for_each(|el| match el {
             Text { text, size: _ } => {
                 footer_text.push_str(text);
             }
@@ -54,13 +55,7 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
 
         html.push_str("<!DOCTYPE html>\n<html>\n<body>\n");
 
-        let all_elements: Vec<Element> = document
-        .page_header
-        .iter()
-        .cloned()
-        .chain(document.elements.iter().cloned())
-        .chain(document.page_footer.iter().cloned())
-        .collect();
+        let all_elements: Vec<&Element> = document.get_all_elements();
 
         for element in &all_elements {
             match element {
@@ -413,6 +408,9 @@ fn retrieve_deep_text(node: NodeRef<Node>, tag_name: &str) -> String {
 mod tests {
     use crate::core::*;
     use crate::html::*;
+    use crate::json;
+    use crate::markdown;
+    use crate::text;
 
     #[test]
     fn test_image_loader_saver() -> anyhow::Result<()> {
@@ -427,6 +425,26 @@ mod tests {
         println!("{:#?}", document);
         let result = Transformer::generate_with_saver(&document, disk_image_saver("test/data"))?;
         println!("{}", String::from_utf8(result.to_vec())?);
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_html() -> anyhow::Result<()> {
+        let document_html = r#"
+        
+<!DOCTYPE html>
+<html>
+<body>
+<h1>Image test</h1>
+<p>
+<img src="small.png" alt="Picture alt2" title="Picture title2" />
+</p>
+</body>
+</html>
+        "#;
+        let document = Transformer::parse_with_loader(&Bytes::from(document_html), disk_image_loader("test/data"))?;
+        let markdown = markdown::Transformer::generate(&document)?;
+        println!("{}", String::from_utf8(markdown.to_vec())?);
         Ok(())
     }
 }

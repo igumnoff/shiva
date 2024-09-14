@@ -360,14 +360,9 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
             function: &image_saver,
         };
 
-        let all_elements: Vec<&Element> = document
-            .page_header
-            .iter()
-            .chain(document.elements.iter())
-            .chain(document.page_footer.iter())
-            .collect();
+        let all_elements: Vec<&Element> = document.get_all_elements();
 
-        for element in &all_elements {
+        for element in all_elements {
             let node = element_to_ast_node(&arena, element, &image_num, &image_saver)?;
             root.append(node);
         }
@@ -670,30 +665,21 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
 ### Third Header
             "#;
 
-        let result_doc = Document {
-            elements: vec![
-                Header {
-                    level: 1,
-                    text: "First header".to_string(),
-                },
-                Header {
-                    level: 2,
-                    text: "Second Header".to_string(),
-                },
-                Header {
-                    level: 3,
-                    text: "Third Header".to_string(),
-                },
-            ],
-            page_width: 210.0,
-            page_height: 297.0,
-            left_page_indent: 10.0,
-            right_page_indent: 10.0,
-            top_page_indent: 10.0,
-            bottom_page_indent: 10.0,
-            page_header: vec![],
-            page_footer: vec![],
-        };
+        let elements = vec![
+            Header {
+                level: 1,
+                text: "First header".to_string(),
+            },
+            Header {
+                level: 2,
+                text: "Second Header".to_string(),
+            },
+            Header {
+                level: 3,
+                text: "Third Header".to_string(),
+            },
+        ];
+        let result_doc = Document::new(elements);
 
         let parsed = Transformer::parse(&document.as_bytes().into()).unwrap();
 
@@ -709,70 +695,60 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
 | Header      | Title       |
 | Paragraph   | Text        |
           "#;
-
-        let result_doc = Document {
-            elements: vec![Table {
-                headers: vec![
-                    TableHeader {
-                        element: Text {
-                            text: "Syntax".to_string(),
-                            size: 14,
+        let elements = vec![Table {
+            headers: vec![
+                TableHeader {
+                    element: Text {
+                        text: "Syntax".to_string(),
+                        size: 14,
+                    },
+                    width: 30.0,
+                },
+                TableHeader {
+                    element: Text {
+                        text: "Description".to_string(),
+                        size: 14,
+                    },
+                    width: 30.0,
+                },
+            ],
+            rows: vec![
+                TableRow {
+                    cells: vec![
+                        TableCell {
+                            element: Text {
+                                text: "Header".to_string(),
+                                size: 14,
+                            },
                         },
-                        width: 30.0,
-                    },
-                    TableHeader {
-                        element: Text {
-                            text: "Description".to_string(),
-                            size: 14,
+                        TableCell {
+                            element: Text {
+                                text: "Title".to_string(),
+                                size: 14,
+                            },
                         },
-                        width: 30.0,
-                    },
-                ],
-                rows: vec![
-                    TableRow {
-                        cells: vec![
-                            TableCell {
-                                element: Text {
-                                    text: "Header".to_string(),
-                                    size: 14,
-                                },
+                    ],
+                },
+                TableRow {
+                    cells: vec![
+                        TableCell {
+                            element: Text {
+                                text: "Paragraph".to_string(),
+                                size: 14,
                             },
-                            TableCell {
-                                element: Text {
-                                    text: "Title".to_string(),
-                                    size: 14,
-                                },
+                        },
+                        TableCell {
+                            element: Text {
+                                text: "Text".to_string(),
+                                size: 14,
                             },
-                        ],
-                    },
-                    TableRow {
-                        cells: vec![
-                            TableCell {
-                                element: Text {
-                                    text: "Paragraph".to_string(),
-                                    size: 14,
-                                },
-                            },
-                            TableCell {
-                                element: Text {
-                                    text: "Text".to_string(),
-                                    size: 14,
-                                },
-                            },
-                        ],
-                    },
-                ],
-            }],
-            page_width: 210.0,
-            page_height: 297.0,
-            left_page_indent: 10.0,
-            right_page_indent: 10.0,
-            top_page_indent: 10.0,
-            bottom_page_indent: 10.0,
-            page_header: vec![],
-            page_footer: vec![],
-        };
+                        },
+                    ],
+                },
+            ],
+        }];
 
+        let result_doc = Document::new(elements);
         let parsed = Transformer::parse_with_loader(&document.as_bytes().into(), disk_image_loader("test/data")).unwrap();
 
         assert_eq!(parsed, result_doc)
