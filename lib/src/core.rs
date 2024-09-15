@@ -150,6 +150,21 @@ pub enum Band {
     Custom(String, Vec<Element>),
 }
 
+impl Band {
+    pub fn elements(&self) -> &Vec<Element> {
+        match self {
+            Band::Title(e) => e,
+            Band::PageHeader(e) => e,
+            Band::ColumnHeader(e) => e,
+            Band::Detail(e) => e,
+            Band::ColumnFooter(e) => e,
+            Band::PageFooter(e) => e,
+            Band::Summary(e) => e,
+            Band::Custom(_, e) => e,
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct Document {
@@ -297,16 +312,7 @@ impl Document {
     pub fn get_all_elements(&self) -> Vec<&Element> {
         let mut elements = Vec::new();
         for band in &self.bands {
-            match band {
-                Band::Title(e) => elements.extend(e.iter()),
-                Band::PageHeader(e) => elements.extend(e.iter()),
-                Band::ColumnHeader(e) => elements.extend(e.iter()),
-                Band::Detail(e) => elements.extend(e.iter()),
-                Band::ColumnFooter(e) => elements.extend(e.iter()),
-                Band::PageFooter(e) => elements.extend(e.iter()),
-                Band::Summary(e) => elements.extend(e.iter()),
-                Band::Custom(_, e) => elements.extend(e.iter()),
-            }
+            elements.extend(band.elements());
         }
         elements
     }    
@@ -316,16 +322,7 @@ impl Document {
         let mut elements = Vec::new();
         for b in &self.bands {
             if b == band {
-                match b {
-                    Band::Title(e) => elements.extend(e.iter()),
-                    Band::PageHeader(e) => elements.extend(e.iter()),
-                    Band::ColumnHeader(e) => elements.extend(e.iter()),
-                    Band::Detail(e) => elements.extend(e.iter()),
-                    Band::ColumnFooter(e) => elements.extend(e.iter()),
-                    Band::PageFooter(e) => elements.extend(e.iter()),
-                    Band::Summary(e) => elements.extend(e.iter()),
-                    Band::Custom(_, e) => elements.extend(e.iter()),
-                }
+                elements.extend(b.elements());
             }
         }
         elements
