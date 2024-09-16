@@ -374,6 +374,8 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
 
         let mut md = vec![];
 
+        println!("{:#?}", root);
+
         format_commonmark(root, &Options::default(), &mut md)?;
 
         Ok(Bytes::from(md))
@@ -411,7 +413,7 @@ fn create_item_node<'a>(arena: &'a Arena<AstNode<'a>>, numbered: bool) -> &'a As
             start: 0,
             tight: false,
             ..Default::default()
-        }),
+        }), // Empty list item
         LineColumn { line: 0, column: 0 },
     ))));
 
@@ -438,18 +440,19 @@ fn create_list_node<'a>(arena: &'a Arena<AstNode<'a>>, numbered: bool) -> &'a As
 
     node
 }
+fn create_text_node<'a>(arena: &'a Arena<AstNode<'a>>, text: &str) -> &'a AstNode<'a> {
+    let paragraph_node = arena.alloc(Node::new(RefCell::new(Ast::new(
+        NodeValue::Paragraph,
+        LineColumn { line: 0, column: 0 },
+    ))));
 
-fn text_to_paragraph(element: Element) -> Element {
-    if let Element::Text { text, .. } = element {
-        Element::Paragraph {
-            elements: vec![Element::Text {
-                text: text.to_string(),
-                size: 14,
-            }],
-        }
-    } else {
-        element
-    }
+    let text_node = arena.alloc(Node::new(RefCell::new(Ast::new(
+        NodeValue::Text(text.to_string()),
+        LineColumn { line: 0, column: 0 },
+    ))));
+
+    paragraph_node.append(text_node);
+    paragraph_node
 }
 
 fn element_to_ast_node<'a, F>(
@@ -508,34 +511,26 @@ where
                         let first = elements.first();
                         let second = elements.get(1);
 
-                        if let (Some(parent), Some(children)) = (first, second) {
+                        if let (Some(first), Some(second)) = (first, second) {
                             let children_node = element_to_ast_node(
                                 arena,
-                                &children.element,
+                                &second.element,
                                 image_num,
                                 image_saver,
                             )?;
 
-                            let parent_element = text_to_paragraph(parent.element.clone());
+                            let list_parent_item_content =
+                                element_to_ast_node(arena, &first.element, image_num, image_saver)?;
 
-                            let list_item_content = element_to_ast_node(
-                                arena,
-                                &parent_element,
-                                image_num,
-                                image_saver,
-                            )?;
-
-                            item_node.append(list_item_content);
+                            item_node.append(list_parent_item_content);
                             item_node.append(children_node);
 
                             list_node.append(item_node);
                         }
                     }
                 } else {
-                    let list_item_element = text_to_paragraph(list_item.element.clone());
-
                     let list_item_content =
-                        element_to_ast_node(arena, &list_item_element, image_num, image_saver)?;
+                        element_to_ast_node(arena, &list_item.element, image_num, image_saver)?;
 
                     item_node.append(list_item_content);
                     list_node.append(item_node);
@@ -661,28 +656,49 @@ mod tests {
     #[test]
     fn test() -> anyhow::Result<()> {
         let document = r#"
-asdf
+# First header
+
+Paragraph  bla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla
+blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla
 
 1. List item 1
 2. List item 2
 3. List item 3
-    1. List item secode level 1
-    2. List item secode level 2
+   1. List item secode level 1
+   2. List item secode level 2
 4. List item 4
-    1. List item secode level 3
-    2. List item secode level 4
+   1. List item secode level 3
+   2. List item secode level 4
 5. List item 5
-    1. List item secode level 5
+   1. List item secode level 5
 
+- List item one
+- List item two
+- List item three
+- List item four
+- List item five
+    - List item zzz
+- List item six
+- List item seven
 
-"#;
+![Picture alt1](picture.png "Picture title1")
+
+## Second header
+
+| Syntax      | Description |
+| ----------- | ----------- |
+| Header      | Title       |
+| Paragraph   | Text        |
+
+Paragraph2  bla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla
+blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         // println!("{:?}", document);
         let parsed = Transformer::parse_with_loader(
             &document.as_bytes().into(),
             disk_image_loader("test/data"),
         );
         let document_string = std::str::from_utf8(document.as_bytes())?;
-        // println!("{}", document_string);
+        println!("{}", document_string);
         assert!(parsed.is_ok());
         let parsed_document = parsed.unwrap();
 
@@ -714,35 +730,9 @@ asdf
                                     element: List {
                                         elements: vec![
                                             ListItem {
-                                                element: List {
-                                                    elements: vec![
-                                                        ListItem {
-                                                            element: Text {
-                                                                text: "List item se code level 1".to_string(),
-                                                                size: 14,
-                                                            },
-                                                        },
-                                                        ListItem {
-                                                            element: List {
-                                                                elements: vec![
-                                                                    ListItem {
-                                                                        element: Text {
-                                                                            text: "List item third level 1".to_string(),
-                                                                            size: 14,
-                                                                        },
-                                                                    },
-                                                                    ListItem {
-                                                                        element: Text {
-                                                                            text: "List item third level 2".to_string(),
-                                                                            size: 14,
-                                                                        },
-                                                                    },
-                                                                ],
-                                                                numbered: true,
-                                                            },
-                                                        },
-                                                    ],
-                                                    numbered: true,
+                                                element: Text {
+                                                    text: "List item secode level 1".to_string(),
+                                                    size: 14,
                                                 },
                                             },
                                             ListItem {

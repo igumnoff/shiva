@@ -1,0 +1,1177 @@
+
+running 3 tests
+
+1. List item 1
+2. List item 2
+3. List item 3
+   1. List item secode level 1
+   2. List item secode level 2
+4. List item 4
+   1. List item secode level 3
+   2. List item secode level 4
+5. List item 5
+   1. List item secode level 5
+
+test markdown::tests::test_parse_header ... ==========================
+==========================
+ok
+test markdown::tests::test_parse_table ... ok
+Node {
+    data: RefCell {
+        value: Ast {
+            value: Document,
+            sourcepos: Sourcepos {
+                start: LineColumn {
+                    line: 0,
+                    column: 0,
+                },
+                end: LineColumn {
+                    line: 0,
+                    column: 0,
+                },
+            },
+            internal_offset: 0,
+            content: "",
+            open: true,
+            last_line_blank: false,
+            table_visited: false,
+            line_offsets: [],
+        },
+    },
+    children: [
+        Node {
+            data: RefCell {
+                value: Ast {
+                    value: List(
+                        NodeList {
+                            list_type: Ordered,
+                            marker_offset: 0,
+                            padding: 0,
+                            start: 1,
+                            delimiter: Period,
+                            bullet_char: 45,
+                            tight: false,
+                        },
+                    ),
+                    sourcepos: Sourcepos {
+                        start: LineColumn {
+                            line: 0,
+                            column: 0,
+                        },
+                        end: LineColumn {
+                            line: 0,
+                            column: 0,
+                        },
+                    },
+                    internal_offset: 0,
+                    content: "",
+                    open: true,
+                    last_line_blank: false,
+                    table_visited: false,
+                    line_offsets: [],
+                },
+            },
+            children: [
+                Node {
+                    data: RefCell {
+                        value: Ast {
+                            value: Item(
+                                NodeList {
+                                    list_type: Ordered,
+                                    marker_offset: 0,
+                                    padding: 0,
+                                    start: 0,
+                                    delimiter: Period,
+                                    bullet_char: 0,
+                                    tight: false,
+                                },
+                            ),
+                            sourcepos: Sourcepos {
+                                start: LineColumn {
+                                    line: 0,
+                                    column: 0,
+                                },
+                                end: LineColumn {
+                                    line: 0,
+                                    column: 0,
+                                },
+                            },
+                            internal_offset: 0,
+                            content: "",
+                            open: true,
+                            last_line_blank: false,
+                            table_visited: false,
+                            line_offsets: [],
+                        },
+                    },
+                    children: [
+                        Node {
+                            data: RefCell {
+                                value: Ast {
+                                    value: Paragraph,
+                                    sourcepos: Sourcepos {
+                                        start: LineColumn {
+                                            line: 0,
+                                            column: 0,
+                                        },
+                                        end: LineColumn {
+                                            line: 0,
+                                            column: 0,
+                                        },
+                                    },
+                                    internal_offset: 0,
+                                    content: "",
+                                    open: true,
+                                    last_line_blank: false,
+                                    table_visited: false,
+                                    line_offsets: [],
+                                },
+                            },
+                            children: [
+                                Node {
+                                    data: RefCell {
+                                        value: Ast {
+                                            value: Text(
+                                                "List item 1",
+                                            ),
+                                            sourcepos: Sourcepos {
+                                                start: LineColumn {
+                                                    line: 0,
+                                                    column: 0,
+                                                },
+                                                end: LineColumn {
+                                                    line: 0,
+                                                    column: 0,
+                                                },
+                                            },
+                                            internal_offset: 0,
+                                            content: "",
+                                            open: true,
+                                            last_line_blank: false,
+                                            table_visited: false,
+                                            line_offsets: [],
+                                        },
+                                    },
+                                    children: [],
+                                },
+                            ],
+                        },
+                    ],
+                },
+                Node {
+                    data: RefCell {
+                        value: Ast {
+                            value: Item(
+                                NodeList {
+                                    list_type: Ordered,
+                                    marker_offset: 0,
+                                    padding: 0,
+                                    start: 0,
+                                    delimiter: Period,
+                                    bullet_char: 0,
+                                    tight: false,
+                                },
+                            ),
+                            sourcepos: Sourcepos {
+                                start: LineColumn {
+                                    line: 0,
+                                    column: 0,
+                                },
+                                end: LineColumn {
+                                    line: 0,
+                                    column: 0,
+                                },
+                            },
+                            internal_offset: 0,
+                            content: "",
+                            open: true,
+                            last_line_blank: false,
+                            table_visited: false,
+                            line_offsets: [],
+                        },
+                    },
+                    children: [
+                        Node {
+                            data: RefCell {
+                                value: Ast {
+                                    value: Paragraph,
+                                    sourcepos: Sourcepos {
+                                        start: LineColumn {
+                                            line: 0,
+                                            column: 0,
+                                        },
+                                        end: LineColumn {
+                                            line: 0,
+                                            column: 0,
+                                        },
+                                    },
+                                    internal_offset: 0,
+                                    content: "",
+                                    open: true,
+                                    last_line_blank: false,
+                                    table_visited: false,
+                                    line_offsets: [],
+                                },
+                            },
+                            children: [
+                                Node {
+                                    data: RefCell {
+                                        value: Ast {
+                                            value: Text(
+                                                "List item 2",
+                                            ),
+                                            sourcepos: Sourcepos {
+                                                start: LineColumn {
+                                                    line: 0,
+                                                    column: 0,
+                                                },
+                                                end: LineColumn {
+                                                    line: 0,
+                                                    column: 0,
+                                                },
+                                            },
+                                            internal_offset: 0,
+                                            content: "",
+                                            open: true,
+                                            last_line_blank: false,
+                                            table_visited: false,
+                                            line_offsets: [],
+                                        },
+                                    },
+                                    children: [],
+                                },
+                            ],
+                        },
+                    ],
+                },
+                Node {
+                    data: RefCell {
+                        value: Ast {
+                            value: Item(
+                                NodeList {
+                                    list_type: Ordered,
+                                    marker_offset: 0,
+                                    padding: 0,
+                                    start: 0,
+                                    delimiter: Period,
+                                    bullet_char: 0,
+                                    tight: false,
+                                },
+                            ),
+                            sourcepos: Sourcepos {
+                                start: LineColumn {
+                                    line: 0,
+                                    column: 0,
+                                },
+                                end: LineColumn {
+                                    line: 0,
+                                    column: 0,
+                                },
+                            },
+                            internal_offset: 0,
+                            content: "",
+                            open: true,
+                            last_line_blank: false,
+                            table_visited: false,
+                            line_offsets: [],
+                        },
+                    },
+                    children: [
+                        Node {
+                            data: RefCell {
+                                value: Ast {
+                                    value: Paragraph,
+                                    sourcepos: Sourcepos {
+                                        start: LineColumn {
+                                            line: 0,
+                                            column: 0,
+                                        },
+                                        end: LineColumn {
+                                            line: 0,
+                                            column: 0,
+                                        },
+                                    },
+                                    internal_offset: 0,
+                                    content: "",
+                                    open: true,
+                                    last_line_blank: false,
+                                    table_visited: false,
+                                    line_offsets: [],
+                                },
+                            },
+                            children: [
+                                Node {
+                                    data: RefCell {
+                                        value: Ast {
+                                            value: Text(
+                                                "List item 3",
+                                            ),
+                                            sourcepos: Sourcepos {
+                                                start: LineColumn {
+                                                    line: 0,
+                                                    column: 0,
+                                                },
+                                                end: LineColumn {
+                                                    line: 0,
+                                                    column: 0,
+                                                },
+                                            },
+                                            internal_offset: 0,
+                                            content: "",
+                                            open: true,
+                                            last_line_blank: false,
+                                            table_visited: false,
+                                            line_offsets: [],
+                                        },
+                                    },
+                                    children: [],
+                                },
+                            ],
+                        },
+                    ],
+                },
+                Node {
+                    data: RefCell {
+                        value: Ast {
+                            value: Item(
+                                NodeList {
+                                    list_type: Ordered,
+                                    marker_offset: 0,
+                                    padding: 0,
+                                    start: 0,
+                                    delimiter: Period,
+                                    bullet_char: 0,
+                                    tight: false,
+                                },
+                            ),
+                            sourcepos: Sourcepos {
+                                start: LineColumn {
+                                    line: 0,
+                                    column: 0,
+                                },
+                                end: LineColumn {
+                                    line: 0,
+                                    column: 0,
+                                },
+                            },
+                            internal_offset: 0,
+                            content: "",
+                            open: true,
+                            last_line_blank: false,
+                            table_visited: false,
+                            line_offsets: [],
+                        },
+                    },
+                    children: [
+                        Node {
+                            data: RefCell {
+                                value: Ast {
+                                    value: List(
+                                        NodeList {
+                                            list_type: Ordered,
+                                            marker_offset: 0,
+                                            padding: 0,
+                                            start: 1,
+                                            delimiter: Period,
+                                            bullet_char: 45,
+                                            tight: false,
+                                        },
+                                    ),
+                                    sourcepos: Sourcepos {
+                                        start: LineColumn {
+                                            line: 0,
+                                            column: 0,
+                                        },
+                                        end: LineColumn {
+                                            line: 0,
+                                            column: 0,
+                                        },
+                                    },
+                                    internal_offset: 0,
+                                    content: "",
+                                    open: true,
+                                    last_line_blank: false,
+                                    table_visited: false,
+                                    line_offsets: [],
+                                },
+                            },
+                            children: [
+                                Node {
+                                    data: RefCell {
+                                        value: Ast {
+                                            value: Item(
+                                                NodeList {
+                                                    list_type: Ordered,
+                                                    marker_offset: 0,
+                                                    padding: 0,
+                                                    start: 0,
+                                                    delimiter: Period,
+                                                    bullet_char: 0,
+                                                    tight: false,
+                                                },
+                                            ),
+                                            sourcepos: Sourcepos {
+                                                start: LineColumn {
+                                                    line: 0,
+                                                    column: 0,
+                                                },
+                                                end: LineColumn {
+                                                    line: 0,
+                                                    column: 0,
+                                                },
+                                            },
+                                            internal_offset: 0,
+                                            content: "",
+                                            open: true,
+                                            last_line_blank: false,
+                                            table_visited: false,
+                                            line_offsets: [],
+                                        },
+                                    },
+                                    children: [
+                                        Node {
+                                            data: RefCell {
+                                                value: Ast {
+                                                    value: Paragraph,
+                                                    sourcepos: Sourcepos {
+                                                        start: LineColumn {
+                                                            line: 0,
+                                                            column: 0,
+                                                        },
+                                                        end: LineColumn {
+                                                            line: 0,
+                                                            column: 0,
+                                                        },
+                                                    },
+                                                    internal_offset: 0,
+                                                    content: "",
+                                                    open: true,
+                                                    last_line_blank: false,
+                                                    table_visited: false,
+                                                    line_offsets: [],
+                                                },
+                                            },
+                                            children: [
+                                                Node {
+                                                    data: RefCell {
+                                                        value: Ast {
+                                                            value: Text(
+                                                                "List item secode level 1",
+                                                            ),
+                                                            sourcepos: Sourcepos {
+                                                                start: LineColumn {
+                                                                    line: 0,
+                                                                    column: 0,
+                                                                },
+                                                                end: LineColumn {
+                                                                    line: 0,
+                                                                    column: 0,
+                                                                },
+                                                            },
+                                                            internal_offset: 0,
+                                                            content: "",
+                                                            open: true,
+                                                            last_line_blank: false,
+                                                            table_visited: false,
+                                                            line_offsets: [],
+                                                        },
+                                                    },
+                                                    children: [],
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                                Node {
+                                    data: RefCell {
+                                        value: Ast {
+                                            value: Item(
+                                                NodeList {
+                                                    list_type: Ordered,
+                                                    marker_offset: 0,
+                                                    padding: 0,
+                                                    start: 0,
+                                                    delimiter: Period,
+                                                    bullet_char: 0,
+                                                    tight: false,
+                                                },
+                                            ),
+                                            sourcepos: Sourcepos {
+                                                start: LineColumn {
+                                                    line: 0,
+                                                    column: 0,
+                                                },
+                                                end: LineColumn {
+                                                    line: 0,
+                                                    column: 0,
+                                                },
+                                            },
+                                            internal_offset: 0,
+                                            content: "",
+                                            open: true,
+                                            last_line_blank: false,
+                                            table_visited: false,
+                                            line_offsets: [],
+                                        },
+                                    },
+                                    children: [
+                                        Node {
+                                            data: RefCell {
+                                                value: Ast {
+                                                    value: Paragraph,
+                                                    sourcepos: Sourcepos {
+                                                        start: LineColumn {
+                                                            line: 0,
+                                                            column: 0,
+                                                        },
+                                                        end: LineColumn {
+                                                            line: 0,
+                                                            column: 0,
+                                                        },
+                                                    },
+                                                    internal_offset: 0,
+                                                    content: "",
+                                                    open: true,
+                                                    last_line_blank: false,
+                                                    table_visited: false,
+                                                    line_offsets: [],
+                                                },
+                                            },
+                                            children: [
+                                                Node {
+                                                    data: RefCell {
+                                                        value: Ast {
+                                                            value: Text(
+                                                                "List item secode level 2",
+                                                            ),
+                                                            sourcepos: Sourcepos {
+                                                                start: LineColumn {
+                                                                    line: 0,
+                                                                    column: 0,
+                                                                },
+                                                                end: LineColumn {
+                                                                    line: 0,
+                                                                    column: 0,
+                                                                },
+                                                            },
+                                                            internal_offset: 0,
+                                                            content: "",
+                                                            open: true,
+                                                            last_line_blank: false,
+                                                            table_visited: false,
+                                                            line_offsets: [],
+                                                        },
+                                                    },
+                                                    children: [],
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+                Node {
+                    data: RefCell {
+                        value: Ast {
+                            value: Item(
+                                NodeList {
+                                    list_type: Ordered,
+                                    marker_offset: 0,
+                                    padding: 0,
+                                    start: 0,
+                                    delimiter: Period,
+                                    bullet_char: 0,
+                                    tight: false,
+                                },
+                            ),
+                            sourcepos: Sourcepos {
+                                start: LineColumn {
+                                    line: 0,
+                                    column: 0,
+                                },
+                                end: LineColumn {
+                                    line: 0,
+                                    column: 0,
+                                },
+                            },
+                            internal_offset: 0,
+                            content: "",
+                            open: true,
+                            last_line_blank: false,
+                            table_visited: false,
+                            line_offsets: [],
+                        },
+                    },
+                    children: [
+                        Node {
+                            data: RefCell {
+                                value: Ast {
+                                    value: Paragraph,
+                                    sourcepos: Sourcepos {
+                                        start: LineColumn {
+                                            line: 0,
+                                            column: 0,
+                                        },
+                                        end: LineColumn {
+                                            line: 0,
+                                            column: 0,
+                                        },
+                                    },
+                                    internal_offset: 0,
+                                    content: "",
+                                    open: true,
+                                    last_line_blank: false,
+                                    table_visited: false,
+                                    line_offsets: [],
+                                },
+                            },
+                            children: [
+                                Node {
+                                    data: RefCell {
+                                        value: Ast {
+                                            value: Text(
+                                                "List item 4",
+                                            ),
+                                            sourcepos: Sourcepos {
+                                                start: LineColumn {
+                                                    line: 0,
+                                                    column: 0,
+                                                },
+                                                end: LineColumn {
+                                                    line: 0,
+                                                    column: 0,
+                                                },
+                                            },
+                                            internal_offset: 0,
+                                            content: "",
+                                            open: true,
+                                            last_line_blank: false,
+                                            table_visited: false,
+                                            line_offsets: [],
+                                        },
+                                    },
+                                    children: [],
+                                },
+                            ],
+                        },
+                    ],
+                },
+                Node {
+                    data: RefCell {
+                        value: Ast {
+                            value: Item(
+                                NodeList {
+                                    list_type: Ordered,
+                                    marker_offset: 0,
+                                    padding: 0,
+                                    start: 0,
+                                    delimiter: Period,
+                                    bullet_char: 0,
+                                    tight: false,
+                                },
+                            ),
+                            sourcepos: Sourcepos {
+                                start: LineColumn {
+                                    line: 0,
+                                    column: 0,
+                                },
+                                end: LineColumn {
+                                    line: 0,
+                                    column: 0,
+                                },
+                            },
+                            internal_offset: 0,
+                            content: "",
+                            open: true,
+                            last_line_blank: false,
+                            table_visited: false,
+                            line_offsets: [],
+                        },
+                    },
+                    children: [
+                        Node {
+                            data: RefCell {
+                                value: Ast {
+                                    value: List(
+                                        NodeList {
+                                            list_type: Ordered,
+                                            marker_offset: 0,
+                                            padding: 0,
+                                            start: 1,
+                                            delimiter: Period,
+                                            bullet_char: 45,
+                                            tight: false,
+                                        },
+                                    ),
+                                    sourcepos: Sourcepos {
+                                        start: LineColumn {
+                                            line: 0,
+                                            column: 0,
+                                        },
+                                        end: LineColumn {
+                                            line: 0,
+                                            column: 0,
+                                        },
+                                    },
+                                    internal_offset: 0,
+                                    content: "",
+                                    open: true,
+                                    last_line_blank: false,
+                                    table_visited: false,
+                                    line_offsets: [],
+                                },
+                            },
+                            children: [
+                                Node {
+                                    data: RefCell {
+                                        value: Ast {
+                                            value: Item(
+                                                NodeList {
+                                                    list_type: Ordered,
+                                                    marker_offset: 0,
+                                                    padding: 0,
+                                                    start: 0,
+                                                    delimiter: Period,
+                                                    bullet_char: 0,
+                                                    tight: false,
+                                                },
+                                            ),
+                                            sourcepos: Sourcepos {
+                                                start: LineColumn {
+                                                    line: 0,
+                                                    column: 0,
+                                                },
+                                                end: LineColumn {
+                                                    line: 0,
+                                                    column: 0,
+                                                },
+                                            },
+                                            internal_offset: 0,
+                                            content: "",
+                                            open: true,
+                                            last_line_blank: false,
+                                            table_visited: false,
+                                            line_offsets: [],
+                                        },
+                                    },
+                                    children: [
+                                        Node {
+                                            data: RefCell {
+                                                value: Ast {
+                                                    value: Paragraph,
+                                                    sourcepos: Sourcepos {
+                                                        start: LineColumn {
+                                                            line: 0,
+                                                            column: 0,
+                                                        },
+                                                        end: LineColumn {
+                                                            line: 0,
+                                                            column: 0,
+                                                        },
+                                                    },
+                                                    internal_offset: 0,
+                                                    content: "",
+                                                    open: true,
+                                                    last_line_blank: false,
+                                                    table_visited: false,
+                                                    line_offsets: [],
+                                                },
+                                            },
+                                            children: [
+                                                Node {
+                                                    data: RefCell {
+                                                        value: Ast {
+                                                            value: Text(
+                                                                "List item secode level 3",
+                                                            ),
+                                                            sourcepos: Sourcepos {
+                                                                start: LineColumn {
+                                                                    line: 0,
+                                                                    column: 0,
+                                                                },
+                                                                end: LineColumn {
+                                                                    line: 0,
+                                                                    column: 0,
+                                                                },
+                                                            },
+                                                            internal_offset: 0,
+                                                            content: "",
+                                                            open: true,
+                                                            last_line_blank: false,
+                                                            table_visited: false,
+                                                            line_offsets: [],
+                                                        },
+                                                    },
+                                                    children: [],
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                                Node {
+                                    data: RefCell {
+                                        value: Ast {
+                                            value: Item(
+                                                NodeList {
+                                                    list_type: Ordered,
+                                                    marker_offset: 0,
+                                                    padding: 0,
+                                                    start: 0,
+                                                    delimiter: Period,
+                                                    bullet_char: 0,
+                                                    tight: false,
+                                                },
+                                            ),
+                                            sourcepos: Sourcepos {
+                                                start: LineColumn {
+                                                    line: 0,
+                                                    column: 0,
+                                                },
+                                                end: LineColumn {
+                                                    line: 0,
+                                                    column: 0,
+                                                },
+                                            },
+                                            internal_offset: 0,
+                                            content: "",
+                                            open: true,
+                                            last_line_blank: false,
+                                            table_visited: false,
+                                            line_offsets: [],
+                                        },
+                                    },
+                                    children: [
+                                        Node {
+                                            data: RefCell {
+                                                value: Ast {
+                                                    value: Paragraph,
+                                                    sourcepos: Sourcepos {
+                                                        start: LineColumn {
+                                                            line: 0,
+                                                            column: 0,
+                                                        },
+                                                        end: LineColumn {
+                                                            line: 0,
+                                                            column: 0,
+                                                        },
+                                                    },
+                                                    internal_offset: 0,
+                                                    content: "",
+                                                    open: true,
+                                                    last_line_blank: false,
+                                                    table_visited: false,
+                                                    line_offsets: [],
+                                                },
+                                            },
+                                            children: [
+                                                Node {
+                                                    data: RefCell {
+                                                        value: Ast {
+                                                            value: Text(
+                                                                "List item secode level 4",
+                                                            ),
+                                                            sourcepos: Sourcepos {
+                                                                start: LineColumn {
+                                                                    line: 0,
+                                                                    column: 0,
+                                                                },
+                                                                end: LineColumn {
+                                                                    line: 0,
+                                                                    column: 0,
+                                                                },
+                                                            },
+                                                            internal_offset: 0,
+                                                            content: "",
+                                                            open: true,
+                                                            last_line_blank: false,
+                                                            table_visited: false,
+                                                            line_offsets: [],
+                                                        },
+                                                    },
+                                                    children: [],
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+                Node {
+                    data: RefCell {
+                        value: Ast {
+                            value: Item(
+                                NodeList {
+                                    list_type: Ordered,
+                                    marker_offset: 0,
+                                    padding: 0,
+                                    start: 0,
+                                    delimiter: Period,
+                                    bullet_char: 0,
+                                    tight: false,
+                                },
+                            ),
+                            sourcepos: Sourcepos {
+                                start: LineColumn {
+                                    line: 0,
+                                    column: 0,
+                                },
+                                end: LineColumn {
+                                    line: 0,
+                                    column: 0,
+                                },
+                            },
+                            internal_offset: 0,
+                            content: "",
+                            open: true,
+                            last_line_blank: false,
+                            table_visited: false,
+                            line_offsets: [],
+                        },
+                    },
+                    children: [
+                        Node {
+                            data: RefCell {
+                                value: Ast {
+                                    value: Paragraph,
+                                    sourcepos: Sourcepos {
+                                        start: LineColumn {
+                                            line: 0,
+                                            column: 0,
+                                        },
+                                        end: LineColumn {
+                                            line: 0,
+                                            column: 0,
+                                        },
+                                    },
+                                    internal_offset: 0,
+                                    content: "",
+                                    open: true,
+                                    last_line_blank: false,
+                                    table_visited: false,
+                                    line_offsets: [],
+                                },
+                            },
+                            children: [
+                                Node {
+                                    data: RefCell {
+                                        value: Ast {
+                                            value: Text(
+                                                "List item 5",
+                                            ),
+                                            sourcepos: Sourcepos {
+                                                start: LineColumn {
+                                                    line: 0,
+                                                    column: 0,
+                                                },
+                                                end: LineColumn {
+                                                    line: 0,
+                                                    column: 0,
+                                                },
+                                            },
+                                            internal_offset: 0,
+                                            content: "",
+                                            open: true,
+                                            last_line_blank: false,
+                                            table_visited: false,
+                                            line_offsets: [],
+                                        },
+                                    },
+                                    children: [],
+                                },
+                            ],
+                        },
+                    ],
+                },
+                Node {
+                    data: RefCell {
+                        value: Ast {
+                            value: Item(
+                                NodeList {
+                                    list_type: Ordered,
+                                    marker_offset: 0,
+                                    padding: 0,
+                                    start: 0,
+                                    delimiter: Period,
+                                    bullet_char: 0,
+                                    tight: false,
+                                },
+                            ),
+                            sourcepos: Sourcepos {
+                                start: LineColumn {
+                                    line: 0,
+                                    column: 0,
+                                },
+                                end: LineColumn {
+                                    line: 0,
+                                    column: 0,
+                                },
+                            },
+                            internal_offset: 0,
+                            content: "",
+                            open: true,
+                            last_line_blank: false,
+                            table_visited: false,
+                            line_offsets: [],
+                        },
+                    },
+                    children: [
+                        Node {
+                            data: RefCell {
+                                value: Ast {
+                                    value: List(
+                                        NodeList {
+                                            list_type: Ordered,
+                                            marker_offset: 0,
+                                            padding: 0,
+                                            start: 1,
+                                            delimiter: Period,
+                                            bullet_char: 45,
+                                            tight: false,
+                                        },
+                                    ),
+                                    sourcepos: Sourcepos {
+                                        start: LineColumn {
+                                            line: 0,
+                                            column: 0,
+                                        },
+                                        end: LineColumn {
+                                            line: 0,
+                                            column: 0,
+                                        },
+                                    },
+                                    internal_offset: 0,
+                                    content: "",
+                                    open: true,
+                                    last_line_blank: false,
+                                    table_visited: false,
+                                    line_offsets: [],
+                                },
+                            },
+                            children: [
+                                Node {
+                                    data: RefCell {
+                                        value: Ast {
+                                            value: Item(
+                                                NodeList {
+                                                    list_type: Ordered,
+                                                    marker_offset: 0,
+                                                    padding: 0,
+                                                    start: 0,
+                                                    delimiter: Period,
+                                                    bullet_char: 0,
+                                                    tight: false,
+                                                },
+                                            ),
+                                            sourcepos: Sourcepos {
+                                                start: LineColumn {
+                                                    line: 0,
+                                                    column: 0,
+                                                },
+                                                end: LineColumn {
+                                                    line: 0,
+                                                    column: 0,
+                                                },
+                                            },
+                                            internal_offset: 0,
+                                            content: "",
+                                            open: true,
+                                            last_line_blank: false,
+                                            table_visited: false,
+                                            line_offsets: [],
+                                        },
+                                    },
+                                    children: [
+                                        Node {
+                                            data: RefCell {
+                                                value: Ast {
+                                                    value: Paragraph,
+                                                    sourcepos: Sourcepos {
+                                                        start: LineColumn {
+                                                            line: 0,
+                                                            column: 0,
+                                                        },
+                                                        end: LineColumn {
+                                                            line: 0,
+                                                            column: 0,
+                                                        },
+                                                    },
+                                                    internal_offset: 0,
+                                                    content: "",
+                                                    open: true,
+                                                    last_line_blank: false,
+                                                    table_visited: false,
+                                                    line_offsets: [],
+                                                },
+                                            },
+                                            children: [
+                                                Node {
+                                                    data: RefCell {
+                                                        value: Ast {
+                                                            value: Text(
+                                                                "List item secode level 5",
+                                                            ),
+                                                            sourcepos: Sourcepos {
+                                                                start: LineColumn {
+                                                                    line: 0,
+                                                                    column: 0,
+                                                                },
+                                                                end: LineColumn {
+                                                                    line: 0,
+                                                                    column: 0,
+                                                                },
+                                                            },
+                                                            internal_offset: 0,
+                                                            content: "",
+                                                            open: true,
+                                                            last_line_blank: false,
+                                                            table_visited: false,
+                                                            line_offsets: [],
+                                                        },
+                                                    },
+                                                    children: [],
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        },
+    ],
+}
+1.  List item 1
+
+2.  List item 2
+
+3.  List item 3
+
+4.  1.  List item secode level 1
+    
+    2.  List item secode level 2
+
+5.  List item 4
+
+6.  1.  List item secode level 3
+    
+    2.  List item secode level 4
+
+7.  List item 5
+
+8.  1.  List item secode level 5
+
+test markdown::tests::test ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 31 filtered out; finished in 0.01s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

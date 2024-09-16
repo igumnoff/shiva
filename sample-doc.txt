@@ -1,0 +1,67 @@
+        let sample_doc = Document {
+            elements: vec![
+                Header {
+                    level: 1,
+                    text: "First header".to_string(),
+                },
+                List {
+                    elements: vec![
+                        ListItem {
+                            element: Text {
+                                text: "List item 1".to_string(),
+                                size: 14,
+                            },
+                        },
+                        ListItem {
+                            element: Text {
+                                text: "List item 2".to_string(),
+                                size: 14,
+                            },
+                        },
+                        ListItem {
+                            element: List {
+                                elements: vec![
+                                    ListItem {
+                                        element: Text {
+                                            text: "List item 3".to_string(),
+                                            size: 14,
+                                        },
+                                    },
+                                    ListItem {
+                                        element: List {
+                                            elements: vec![
+                                                ListItem {
+                                                    element: Text {
+                                                        text: "List item secode level 1"
+                                                            .to_string(),
+                                                        size: 14,
+                                                    },
+                                                },
+                                                ListItem {
+                                                    element: Text {
+                                                        text: "List item se code level 2"
+                                                            .to_string(),
+                                                        size: 14,
+                                                    },
+                                                },
+                                            ],
+                                            numbered: true,
+                                        },
+                                    },
+                                ],
+                                numbered: true,
+                            },
+                        },
+                    ],
+                    numbered: true,
+                },
+            ],
+            page_width: 210.0,
+            page_height: 297.0,
+            left_page_indent: 10.0,
+            right_page_indent: 10.0,
+            top_page_indent: 10.0,
+            bottom_page_indent: 10.0,
+            page_header: vec![],
+            page_footer: vec![],
+        };
