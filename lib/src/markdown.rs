@@ -723,6 +723,7 @@ asdf
         2. List item third level 2
             1. List item fourth level 1
             2. List item fourth level 2
+    3. List item second level 3
 
 - List item one
 - List item two
@@ -740,7 +741,7 @@ asdf
             disk_image_loader("test/data"),
         );
         let document_string = std::str::from_utf8(document.as_bytes())?;
-        // println!("{}", document_string);
+        println!("{}", document_string);
         assert!(parsed.is_ok());
         let parsed_document = parsed.unwrap();
 
@@ -830,7 +831,7 @@ asdf
             page_footer: vec![],
         };
         println!("==========================");
-        // println!("{:#?}", parsed_document);
+        println!("{:#?}", parsed_document);
         println!("==========================");
         let generated_result =
             Transformer::generate_with_saver(&parsed_document, disk_image_saver("test/data"));
@@ -853,7 +854,7 @@ asdf
         Ok(())
     }
 
-    // #[test]
+    #[test]
     fn test_parse_header() {
         let document = r#"
 # First header
@@ -893,7 +894,7 @@ asdf
         assert_eq!(parsed, result_doc)
     }
 
-    // #[test]
+    #[test]
     fn test_parse_table() {
         let document = r#"
 | Syntax      | Description |
