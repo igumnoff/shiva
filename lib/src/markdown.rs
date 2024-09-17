@@ -3,6 +3,7 @@ use crate::core::*;
 use bytes::Bytes;
 use comrak::arena_tree::Node;
 use comrak::Arena;
+use docx_rs::ElementReader;
 use pulldown_cmark::{Event, HeadingLevel, Options, Parser, Tag, TagEnd, TextMergeStream};
 use std::borrow::Cow;
 use std::cell::RefCell;
@@ -101,12 +102,6 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
             }
         }
 
-        fn add_list_item(list: &mut Element, item: ListItem) {
-            if let Element::List { elements, .. } = list {
-                elements.push(item);
-            }
-        }
-
         let document_str = std::str::from_utf8(document)?;
         let mut doc_elements: Vec<Element> = Vec::new();
 
@@ -128,11 +123,13 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                 Event::Start(tag) => {
                     match tag {
                         Tag::Paragraph => {
-                            process_element_creation(
-                                &mut current_element,
-                                Element::Paragraph { elements: vec![] },
-                                &mut list_depth,
-                            );
+                            if !matches!(current_element, Some(Element::List { .. })) {
+                                process_element_creation(
+                                    &mut current_element,
+                                    Element::Paragraph { elements: vec![] },
+                                    &mut list_depth,
+                                );
+                            }
                         }
                         Tag::Heading { level, .. } => {
                             let level = match level {
@@ -337,20 +334,20 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                 }
                 Event::End(tag) => match tag {
                     TagEnd::Paragraph | TagEnd::Heading(_) | TagEnd::Link | TagEnd::Image => {
-                        let curr_el = current_element.take();
-                        if let Some(curr_el) = curr_el {
-                            match curr_el {
-                                List { .. } => current_element = Some(curr_el),
-                                _ => {
-                                    doc_elements.push(curr_el);
+                        if !matches!(current_element, Some(Element::List { .. })) {
+                            let curr_el = current_element.take();
+                            if let Some(curr_el) = curr_el {
+                                match curr_el {
+                                    List { .. } => current_element = Some(curr_el),
+                                    _ => {
+                                        doc_elements.push(curr_el);
+                                    }
                                 }
                             }
                         }
                     }
                     TagEnd::List(_) => {
                         list_depth -= 2;
-
-                        println!("list dept {}", list_depth);
                         if list_depth <= 0 {
                             list_depth = 0;
                             let curr_el = current_element.take();
@@ -449,7 +446,7 @@ fn create_item_node<'a>(arena: &'a Arena<AstNode<'a>>, numbered: bool) -> &'a As
                 comrak::nodes::ListType::Bullet
             },
             start: 0,
-            tight: false,
+            tight: true,
             ..Default::default()
         }),
         LineColumn { line: 0, column: 0 },
@@ -467,7 +464,7 @@ fn create_list_node<'a>(arena: &'a Arena<AstNode<'a>>, numbered: bool) -> &'a As
                 comrak::nodes::ListType::Bullet
             },
             start: 1,
-            tight: false,
+            tight: true,
             bullet_char: b'-',
             marker_offset: 0,
             delimiter: comrak::nodes::ListDelimType::Period,
@@ -576,7 +573,6 @@ where
 
                     let list_item_content =
                         element_to_ast_node(arena, &list_item_element, image_num, image_saver)?;
-
                     item_node.append(list_item_content);
                     list_node.append(item_node);
                 }
@@ -693,10 +689,10 @@ where
 
 #[cfg(test)]
 mod tests {
+    use serde_xml_rs::to_string;
+
     use crate::core::*;
     use crate::markdown::*;
-    use crate::pdf;
-    use crate::text;
 
     #[test]
     fn test() -> anyhow::Result<()> {
@@ -737,7 +733,6 @@ blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla
 
 Paragraph2  bla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla
 blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
-        // println!("{:?}", document);
         let parsed = Transformer::parse_with_loader(
             &document.as_bytes().into(),
             disk_image_loader("test/data"),
@@ -747,112 +742,15 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         assert!(parsed.is_ok());
         let parsed_document = parsed.unwrap();
 
-        let sample_doc = Document {
-            elements: vec![List {
-                elements: vec![
-                    ListItem {
-                        element: Text {
-                            text: "List item 1".to_string(),
-                            size: 14,
-                        },
-                    },
-                    ListItem {
-                        element: Text {
-                            text: "List item 2".to_string(),
-                            size: 14,
-                        },
-                    },
-                    ListItem {
-                        element: List {
-                            elements: vec![
-                                ListItem {
-                                    element: Text {
-                                        text: "List item 3".to_string(),
-                                        size: 14,
-                                    },
-                                },
-                                ListItem {
-                                    element: List {
-                                        elements: vec![
-                                            ListItem {
-                                                element: List {
-                                                    elements: vec![
-                                                        ListItem {
-                                                            element: Text {
-                                                                text: "List item se code level 1".to_string(),
-                                                                size: 14,
-                                                            },
-                                                        },
-                                                        ListItem {
-                                                            element: List {
-                                                                elements: vec![
-                                                                    ListItem {
-                                                                        element: Text {
-                                                                            text: "List item third level 1".to_string(),
-                                                                            size: 14,
-                                                                        },
-                                                                    },
-                                                                    ListItem {
-                                                                        element: Text {
-                                                                            text: "List item third level 2".to_string(),
-                                                                            size: 14,
-                                                                        },
-                                                                    },
-                                                                ],
-                                                                numbered: true,
-                                                            },
-                                                        },
-                                                    ],
-                                                    numbered: true,
-                                                },
-                                            },
-                                            ListItem {
-                                                element: Text {
-                                                    text: "List item se code level 2".to_string(),
-                                                    size: 14,
-                                                },
-                                            },
-                                        ],
-                                        numbered: true,
-                                    },
-                                },
-                            ],
-                            numbered: true,
-                        },
-                    },
-                ],
-                numbered: true,
-            }],
-            page_width: 210.0,
-            page_height: 297.0,
-            left_page_indent: 10.0,
-            right_page_indent: 10.0,
-            top_page_indent: 10.0,
-            bottom_page_indent: 10.0,
-            page_header: vec![],
-            page_footer: vec![],
-        };
         println!("==========================");
         println!("{:#?}", parsed_document);
         println!("==========================");
         let generated_result =
             Transformer::generate_with_saver(&parsed_document, disk_image_saver("test/data"));
         assert!(generated_result.is_ok());
-        // println!("{:?}", generated_result.unwrap());
         let generated_bytes = generated_result?;
         let generated_text = std::str::from_utf8(&generated_bytes)?;
         println!("{}", generated_text);
-        // println!("==========================");
-        // let generated_result = text::Transformer::generate(&parsed_document);
-        // assert!(generated_result.is_ok());
-        // // println!("{:?}", generated_result.unwrap());
-        // let generated_bytes = generated_result?;
-        // let generated_text = std::str::from_utf8(&generated_bytes)?;
-        // println!("{}", generated_text);
-        //
-        // let generated_result = pdf::Transformer::generate(&parsed_document)?;
-        // std::fs::write("test/data/generated.pdf", generated_result)?;
-
         Ok(())
     }
 
