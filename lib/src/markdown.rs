@@ -701,29 +701,21 @@ mod tests {
     #[test]
     fn test() -> anyhow::Result<()> {
         let document = r#"
-asdf
+# First header
+
+Paragraph  bla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla
+blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla
 
 1. List item 1
 2. List item 2
 3. List item 3
-    1. List item second level 1
-    2. List item second level 2
-        1. List item third level 1
-        2. List item third level 2
-            1. List item fourth level 1
-            2. List item fourth level 2
-# title
-
-1. List item 1
-2. List item 2
-3. List item 3
-    1. List item second level 1
-    2. List item second level 2
-        1. List item third level 1
-        2. List item third level 2
-            1. List item fourth level 1
-            2. List item fourth level 2
-    3. List item second level 3
+   1. List item secode level 1
+   2. List item secode level 2
+4. List item 4
+   1. List item secode level 3
+   2. List item secode level 4
+5. List item 5
+   1. List item secode level 5
 
 - List item one
 - List item two
@@ -734,7 +726,17 @@ asdf
 - List item six
 - List item seven
 
-"#;
+![Picture alt1](picture.png "Picture title1")
+
+## Second header
+
+| Syntax      | Description |
+| ----------- | ----------- |
+| Header      | Title       |
+| Paragraph   | Text        |
+
+Paragraph2  bla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla
+blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         // println!("{:?}", document);
         let parsed = Transformer::parse_with_loader(
             &document.as_bytes().into(),
