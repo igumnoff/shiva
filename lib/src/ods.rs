@@ -102,7 +102,7 @@ impl TransformerTrait for Transformer {
             Ok(())
         }
         let mut sheet_index = 1;
-        for element in &document.elements {
+        for element in &document.get_all_elements() {
             generate_element(element, &mut workbook, sheet_index)?;
             sheet_index += 1;
         }

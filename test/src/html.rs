@@ -24,8 +24,8 @@ mod tests {
               "#;
 
         let parsed: Document = Transformer::parse(&html_document.as_bytes().into())?;
-        assert_eq!(parsed.elements.len(), 6);
-        let elements: Vec<Element> = parsed.elements;
+        assert_eq!(parsed.get_all_elements().len(), 6);
+        let elements: Vec<&Element> = parsed.get_all_elements();
         match &elements[0] {
             Header { level: _, text } => {
                 assert_eq!(text, "First header");
@@ -49,45 +49,34 @@ mod tests {
 <h6>Sixth header</h6>
 </body>
 </html>"#;
-
-        let html_document: Document = Document {
-            elements: [
-                Header {
-                    level: 1,
-                    text: "First header".to_string(),
-                },
-                Header {
-                    level: 2,
-                    text: "Second header".to_string(),
-                },
-                Header {
-                    level: 3,
-                    text: "Third header".to_string(),
-                },
-                Header {
-                    level: 4,
-                    text: "Fourth header".to_string(),
-                },
-                Header {
-                    level: 5,
-                    text: "Fifth header".to_string(),
-                },
-                Header {
-                    level: 6,
-                    text: "Sixth header".to_string(),
-                },
-            ]
-            .to_vec(),
-            page_width: 210.0,
-            page_height: 297.0,
-            left_page_indent: 10.0,
-            right_page_indent: 10.0,
-            top_page_indent: 10.0,
-            bottom_page_indent: 10.0,
-            page_header: [].to_vec(),
-            page_footer: [].to_vec(),
-        };
-
+        let elements = [
+            Header {
+                level: 1,
+                text: "First header".to_string(),
+            },
+            Header {
+                level: 2,
+                text: "Second header".to_string(),
+            },
+            Header {
+                level: 3,
+                text: "Third header".to_string(),
+            },
+            Header {
+                level: 4,
+                text: "Fourth header".to_string(),
+            },
+            Header {
+                level: 5,
+                text: "Fifth header".to_string(),
+            },
+            Header {
+                level: 6,
+                text: "Sixth header".to_string(),
+            },
+        ]
+        .to_vec();
+        let html_document: Document = Document::new(elements);
         let generated_result = Transformer::generate(&html_document);
         assert!(generated_result.is_ok());
         let generated_bytes = generated_result?;
@@ -114,8 +103,8 @@ mod tests {
 "#;
 
         let parsed: Document = Transformer::parse(&html_document.as_bytes().into())?;
-        assert_eq!(parsed.elements.len(), 6);
-        let elements: Vec<Element> = parsed.elements;
+        assert_eq!(parsed.get_all_elements().len(), 6);
+        let elements: Vec<&Element> = parsed.get_all_elements();
         match &elements[0] {
             Paragraph { elements } => match &elements[0] {
                 Text { text, size: _ } => {
@@ -141,61 +130,52 @@ mod tests {
 <p>Sixth Paragraph</p>
 </body>
 </html>"#;
-        let html_document: Document = Document {
-            elements: [
-                Paragraph {
-                    elements: [Text {
-                        text: "First Paragraph".to_string(),
-                        size: 8,
-                    }]
-                    .to_vec(),
-                },
-                Paragraph {
-                    elements: [Text {
-                        text: "Second Paragraph".to_string(),
-                        size: 8,
-                    }]
-                    .to_vec(),
-                },
-                Paragraph {
-                    elements: [Text {
-                        text: "Third Paragraph".to_string(),
-                        size: 8,
-                    }]
-                    .to_vec(),
-                },
-                Paragraph {
-                    elements: [Text {
-                        text: "Fourth Paragraph".to_string(),
-                        size: 8,
-                    }]
-                    .to_vec(),
-                },
-                Paragraph {
-                    elements: [Text {
-                        text: "Fifth Paragraph".to_string(),
-                        size: 8,
-                    }]
-                    .to_vec(),
-                },
-                Paragraph {
-                    elements: [Text {
-                        text: "Sixth Paragraph".to_string(),
-                        size: 8,
-                    }]
-                    .to_vec(),
-                },
-            ]
-            .to_vec(),
-            page_width: 210.0,
-            page_height: 297.0,
-            left_page_indent: 10.0,
-            right_page_indent: 10.0,
-            top_page_indent: 10.0,
-            bottom_page_indent: 10.0,
-            page_header: [].to_vec(),
-            page_footer: [].to_vec(),
-        };
+        let elements = [
+            Paragraph {
+                elements: [Text {
+                    text: "First Paragraph".to_string(),
+                    size: 8,
+                }]
+                .to_vec(),
+            },
+            Paragraph {
+                elements: [Text {
+                    text: "Second Paragraph".to_string(),
+                    size: 8,
+                }]
+                .to_vec(),
+            },
+            Paragraph {
+                elements: [Text {
+                    text: "Third Paragraph".to_string(),
+                    size: 8,
+                }]
+                .to_vec(),
+            },
+            Paragraph {
+                elements: [Text {
+                    text: "Fourth Paragraph".to_string(),
+                    size: 8,
+                }]
+                .to_vec(),
+            },
+            Paragraph {
+                elements: [Text {
+                    text: "Fifth Paragraph".to_string(),
+                    size: 8,
+                }]
+                .to_vec(),
+            },
+            Paragraph {
+                elements: [Text {
+                    text: "Sixth Paragraph".to_string(),
+                    size: 8,
+                }]
+                .to_vec(),
+            },
+        ]
+        .to_vec();
+        let html_document: Document = Document::new(elements);
         let generated_result = Transformer::generate(&html_document);
         assert!(generated_result.is_ok());
         let generated_bytes = generated_result?;
@@ -226,7 +206,7 @@ mod tests {
 </html>"#;
 
         let parsed: Document = Transformer::parse(&html_document.as_bytes().into())?;
-        let elements: Vec<Element> = parsed.elements;
+        let elements: Vec<&Element> = parsed.get_all_elements();
         match &elements[0] {
             List {
                 elements,
@@ -258,9 +238,7 @@ mod tests {
 </ul>
 </body>
 </html>"#;
-
-        let html_document: Document = Document {
-            elements: [
+        let elements = [
                 List {
                     elements: vec![{
                         ListItem {
@@ -288,16 +266,8 @@ mod tests {
                     numbered: false,
                 },
             ]
-            .to_vec(),
-            page_width: 210.0,
-            page_height: 297.0,
-            left_page_indent: 10.0,
-            right_page_indent: 10.0,
-            top_page_indent: 10.0,
-            bottom_page_indent: 10.0,
-            page_header: [].to_vec(),
-            page_footer: [].to_vec(),
-        };
+            .to_vec();
+        let html_document: Document = Document::new(elements);
         let generated_result = Transformer::generate(&html_document);
         assert!(generated_result.is_ok());
         let generated_bytes = generated_result?;
@@ -330,7 +300,7 @@ mod tests {
 </html>"#;
 
         let parsed: Document = Transformer::parse(&html_document.as_bytes().into())?;
-        let elements: Vec<Element> = parsed.elements;
+        let elements: Vec<&Element> = parsed.get_all_elements();
         match &elements[0] {
             Table { headers, rows } => {
                 match &headers[0] {
@@ -378,94 +348,84 @@ mod tests {
 </table>
 </body>
 </html>"#;
-
-        let html_document: Document = Document {
-            elements: [Table {
-                headers: vec![
-                    {
-                        TableHeader {
-                            element: {
-                                Text {
-                                    size: 8,
-                                    text: "Syntax".to_string(),
-                                }
-                            },
-                            width: 10.0,
-                        }
-                    },
-                    {
-                        TableHeader {
-                            element: {
-                                Text {
-                                    size: 8,
-                                    text: "Description".to_string(),
-                                }
-                            },
-                            width: 10.0,
-                        }
-                    },
-                ],
-                rows: vec![
-                    TableRow {
-                        cells: vec![
-                            {
-                                TableCell {
-                                    element: {
-                                        Text {
-                                            size: 8,
-                                            text: "Header".to_string(),
-                                        }
-                                    },
-                                }
-                            },
-                            {
-                                TableCell {
-                                    element: {
-                                        Text {
-                                            size: 8,
-                                            text: "Title".to_string(),
-                                        }
-                                    },
-                                }
-                            },
-                        ],
-                    },
-                    TableRow {
-                        cells: vec![
-                            {
-                                TableCell {
-                                    element: {
-                                        Text {
-                                            size: 8,
-                                            text: "Paragraph".to_string(),
-                                        }
-                                    },
-                                }
-                            },
-                            {
-                                TableCell {
-                                    element: {
-                                        Text {
-                                            size: 8,
-                                            text: "Text".to_string(),
-                                        }
-                                    },
-                                }
-                            },
-                        ],
-                    },
-                ],
-            }]
-            .to_vec(),
-            page_width: 210.0,
-            page_height: 297.0,
-            left_page_indent: 10.0,
-            right_page_indent: 10.0,
-            top_page_indent: 10.0,
-            bottom_page_indent: 10.0,
-            page_header: [].to_vec(),
-            page_footer: [].to_vec(),
-        };
+        let elements = [Table {
+            headers: vec![
+                {
+                    TableHeader {
+                        element: {
+                            Text {
+                                size: 8,
+                                text: "Syntax".to_string(),
+                            }
+                        },
+                        width: 10.0,
+                    }
+                },
+                {
+                    TableHeader {
+                        element: {
+                            Text {
+                                size: 8,
+                                text: "Description".to_string(),
+                            }
+                        },
+                        width: 10.0,
+                    }
+                },
+            ],
+            rows: vec![
+                TableRow {
+                    cells: vec![
+                        {
+                            TableCell {
+                                element: {
+                                    Text {
+                                        size: 8,
+                                        text: "Header".to_string(),
+                                    }
+                                },
+                            }
+                        },
+                        {
+                            TableCell {
+                                element: {
+                                    Text {
+                                        size: 8,
+                                        text: "Title".to_string(),
+                                    }
+                                },
+                            }
+                        },
+                    ],
+                },
+                TableRow {
+                    cells: vec![
+                        {
+                            TableCell {
+                                element: {
+                                    Text {
+                                        size: 8,
+                                        text: "Paragraph".to_string(),
+                                    }
+                                },
+                            }
+                        },
+                        {
+                            TableCell {
+                                element: {
+                                    Text {
+                                        size: 8,
+                                        text: "Text".to_string(),
+                                    }
+                                },
+                            }
+                        },
+                    ],
+                },
+            ],
+        }]
+        .to_vec();
+        let html_document: Document = Document::new(elements);
         let generated_result = Transformer::generate(&html_document);
         assert!(generated_result.is_ok());
         let generated_bytes = generated_result?;
@@ -491,7 +451,7 @@ mod tests {
         assert!(parsed.is_ok());
         assert!(parsed.is_ok());
         let parsed: Document = parsed?;
-        let elements: Vec<Element> = parsed.elements;
+        let elements: Vec<&Element> = parsed.get_all_elements();
         match &elements[0] {
             Paragraph { elements } => match &elements[0] {
                 Image(image) => {
@@ -515,44 +475,34 @@ mod tests {
 
         let image_path = format!("image{}.png", 1);
         let image_bytes = std::fs::read(image_path).unwrap_or_default();
-
-        let html_document: Document = Document {
-            elements: [Paragraph {
-                elements: vec![
-                    {
-                        Text {
-                            size: 8,
-                            text: "bla".to_string(),
-                        }
-                    },
-                    {
-                        Image(ImageData::new(
-                            Bytes::from(image_bytes),
-                            "Picture title2".to_string(),
-                            "Picture alt2".to_string(),
-                            ImageType::default().to_string(),
-                            ImageAlignment::default().to_string(),
-                            ImageDimension::default(),
-                        ))
-                    },
-                    {
-                        Text {
-                            size: 8,
-                            text: "bla bla".to_string(),
-                        }
-                    },
-                ],
-            }]
-            .to_vec(),
-            page_width: 210.0,
-            page_height: 297.0,
-            left_page_indent: 10.0,
-            right_page_indent: 10.0,
-            top_page_indent: 10.0,
-            bottom_page_indent: 10.0,
-            page_header: [].to_vec(),
-            page_footer: [].to_vec(),
-        };
+        let elements = [Paragraph {
+            elements: vec![
+                {
+                    Text {
+                        size: 8,
+                        text: "bla".to_string(),
+                    }
+                },
+                {
+                    Image(ImageData::new(
+                        Bytes::from(image_bytes),
+                        "Picture title2".to_string(),
+                        "Picture alt2".to_string(),
+                        ImageType::default().to_string(),
+                        ImageAlignment::default().to_string(),
+                        ImageDimension::default(),
+                    ))
+                },
+                {
+                    Text {
+                        size: 8,
+                        text: "bla bla".to_string(),
+                    }
+                },
+            ],
+        }]
+        .to_vec();
+        let html_document: Document = Document::new(elements);
         let generated_result = Transformer::generate(&html_document);
         assert!(generated_result.is_ok());
         let generated_bytes = generated_result?;
@@ -576,7 +526,7 @@ mod tests {
         assert!(parsed.is_ok());
         assert!(parsed.is_ok());
         let parsed: Document = parsed?;
-        let elements: Vec<Element> = parsed.elements;
+        let elements: Vec<&Element> = parsed.get_all_elements();
 
         match &elements[0] {
             Hyperlink {
@@ -603,44 +553,35 @@ mod tests {
 </body>
 </html>"#;
 
-        let html_document: Document = Document {
-            elements: [Paragraph {
-                elements: [
-                    Hyperlink {
-                        title: "http://example.com".to_string(),
-                        url: "http://example.com".to_string(),
-                        size: 8,
-                        alt: "http://example.com".to_string(),
-                    },
-                    Text {
-                        size: 8,
-                        text: "  ".to_string(),
-                    },
-                    Hyperlink {
-                        title: "Example".to_string(),
-                        url: "http://example.com".to_string(),
-                        size: 8,
-                        alt: "Example".to_string(),
-                    },
-                    Hyperlink {
-                        title: "Example".to_string(),
-                        url: "http://example.com".to_string(),
-                        size: 8,
-                        alt: "Example tooltip".to_string(),
-                    },
-                ]
-                .to_vec(),
-            }]
+        let elements = [Paragraph {
+            elements: [
+                Hyperlink {
+                    title: "http://example.com".to_string(),
+                    url: "http://example.com".to_string(),
+                    size: 8,
+                    alt: "http://example.com".to_string(),
+                },
+                Text {
+                    size: 8,
+                    text: "  ".to_string(),
+                },
+                Hyperlink {
+                    title: "Example".to_string(),
+                    url: "http://example.com".to_string(),
+                    size: 8,
+                    alt: "Example".to_string(),
+                },
+                Hyperlink {
+                    title: "Example".to_string(),
+                    url: "http://example.com".to_string(),
+                    size: 8,
+                    alt: "Example tooltip".to_string(),
+                },
+            ]
             .to_vec(),
-            page_width: 210.0,
-            page_height: 297.0,
-            left_page_indent: 10.0,
-            right_page_indent: 10.0,
-            top_page_indent: 10.0,
-            bottom_page_indent: 10.0,
-            page_header: [].to_vec(),
-            page_footer: [].to_vec(),
-        };
+        }]
+        .to_vec();
+        let html_document: Document = Document::new(elements);
         let generated_result = Transformer::generate(&html_document);
         assert!(generated_result.is_ok());
         let generated_bytes = generated_result?;
@@ -671,7 +612,7 @@ mod tests {
         };
 
         header_elements.push(header);
-        parsed.page_header = header_elements.clone();
+        parsed.set_page_header(header_elements.clone());
 
         Ok(())
     }
@@ -704,7 +645,7 @@ mod tests {
         };
 
         header_elements.push(header);
-        parsed.page_header = header_elements.clone();
+        parsed.set_page_header(header_elements.clone());
 
         let generated_result = Transformer::generate(&parsed);
         assert!(generated_result.is_ok());
@@ -736,7 +677,7 @@ mod tests {
         };
 
         footer_elements.push(footer);
-        parsed.page_footer = footer_elements.clone();
+        parsed.set_page_footer(footer_elements.clone());
 
         Ok(())
     }
@@ -769,7 +710,7 @@ mod tests {
         };
 
         footer_elements.push(footer);
-        parsed.page_footer = footer_elements.clone();
+        parsed.set_page_footer(footer_elements.clone());
 
         let generated_result = Transformer::generate(&parsed);
         assert!(generated_result.is_ok());

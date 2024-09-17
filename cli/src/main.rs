@@ -1,38 +1,97 @@
 use bytes::Bytes;
-use clap::Parser;
+use clap::{Parser, ValueHint};
 use shiva::core::{Document, DocumentType};
+use std::path::Path;
 use std::str::FromStr;
 
 #[derive(Parser, Debug)]
-#[command(name="shiva", author, version, about, long_about = None)]
+#[command(
+    name = "shiva",
+    author,
+    version,
+    about = "CLI Shiva: Converting documents from any format to any",
+    long_about = None
+)]
 struct Args {
-    #[arg(long)]
+    #[arg(
+        value_name = "INPUT_FILE",
+        help = &format!(
+            "Input file (possible formats: {})",
+            DocumentType::variants_as_str().join(", ")
+        ),
+        value_hint = ValueHint::FilePath
+    )]
     input_file: String,
 
-    #[arg(long)]
+    #[arg(
+        value_name = "OUTPUT_FILE",
+        help = &format!(
+            "Output file (possible formats: {})",
+            DocumentType::variants_as_str().join(", ")
+        ),
+        value_hint = ValueHint::FilePath
+    )]
     output_file: String,
-
-    #[arg(long, value_parser = DocumentType::variants_as_str() )]
-    input_format: String,
-
-    #[arg(long, value_parser = DocumentType::variants_as_str() )]
-    output_format: String,
 }
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    let input_vec = std::fs::read(
-        args.input_file
-    )?;
+    let input_path = Path::new(&args.input_file);
+    let output_path = Path::new(&args.output_file);
+
+    let supported_formats = DocumentType::variants_as_str();
+
+    let input_format = match input_path.extension() {
+        Some(ext) => ext.to_str().ok_or_else(|| {
+            anyhow::anyhow!(
+                "Invalid extension of the input file. Supported formats are: {}",
+                supported_formats.join(", ")
+            )
+        })?,
+        None => return Err(anyhow::anyhow!(
+            "The input file has no extension. Supported formats are: {}",
+            supported_formats.join(", ")
+        )),
+    };
+
+    let output_format = match output_path.extension() {
+        Some(ext) => ext.to_str().ok_or_else(|| {
+            anyhow::anyhow!(
+                "Invalid output file extension. Supported formats are: {}",
+                supported_formats.join(", ")
+            )
+        })?,
+        None => return Err(anyhow::anyhow!(
+            "The output file has no extension. Supported formats are: {}",
+            supported_formats.join(", ")
+        )),
+    };
+
+    let input_doc_type = DocumentType::from_str(input_format).map_err(|_| {
+        anyhow::anyhow!(
+            "Unsupported input file format '{}'. Supported formats are: {}",
+            input_format,
+            supported_formats.join(", ")
+        )
+    })?;
+
+    let output_doc_type = DocumentType::from_str(output_format).map_err(|_| {
+        anyhow::anyhow!(
+            "Unsupported output file format '{}'. Supported formats are: {}",
+            output_format,
+            supported_formats.join(", ")
+        )
+    })?;
+
+    let input_vec = std::fs::read(&args.input_file)?;
     let input_bytes = Bytes::from(input_vec);
 
-    let document = Document::parse(&input_bytes, DocumentType::from_str(args.input_format.as_str())?);
+    let document = Document::parse(&input_bytes, input_doc_type)?;
 
-    let output = document?.generate(DocumentType::from_str(args.output_format.as_str())?)?;
+    let output = document.generate(output_doc_type)?;
 
-    let file_name = args.output_file;
-    std::fs::write(file_name, output)?;
+    std::fs::write(&args.output_file, output)?;
 
     Ok(())
 }

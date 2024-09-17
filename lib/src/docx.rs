@@ -381,7 +381,8 @@ impl TransformerTrait for Transformer {
             .add_abstract_numbering(abstract_numbering)
             .add_numbering(Numbering::new(2, 2));
 
-        for element in &document.elements {
+        // TODO: Consider to refactor this code to use the new #Band Enum (header, footer, etc)
+        for element in &document.get_all_elements() {
             match element {
                 Element::Header { level, text } => {
                     let size = match level {
@@ -546,9 +547,7 @@ mod tests {
         let parsed = docx::Transformer::parse(&documents_bytes)?;
 
         println!("Parsed - {:#?}", parsed);
-
-        let expected_result = Document {
-            elements: vec![
+        let elements = vec![
                 Element::Text {
                     text: "Warszawa, dnia {{DATA}} r. ".to_string(),
                     size: 16,
@@ -561,16 +560,8 @@ mod tests {
                     text: "".to_string(),
                     size: 16,
                 },
-            ],
-            page_width: 210.0,
-            page_height: 297.0,
-            left_page_indent: 10.0,
-            right_page_indent: 10.0,
-            top_page_indent: 10.0,
-            bottom_page_indent: 10.0,
-            page_header: vec![],
-            page_footer: vec![],
-        };
+            ];
+        let expected_result = Document::new(elements);
         assert_eq!(expected_result, parsed);
         Ok(())
     }
