@@ -47,7 +47,6 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                 Some(element) => match element {
                     Element::List { elements, numbered } => {
                         let mut list_elements = elements;
-                        println!("{}, {:#?}", list_depth, list_elements);
 
                         for _ in 1..*list_depth {
                             let last_index = list_elements.len() - 1;
@@ -350,7 +349,10 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                     }
                     TagEnd::List(_) => {
                         list_depth -= 2;
+
+                        println!("list dept {}", list_depth);
                         if list_depth <= 0 {
+                            list_depth = 0;
                             let curr_el = current_element.take();
                             if let Some(curr_el) = curr_el {
                                 doc_elements.push(curr_el);
@@ -710,6 +712,27 @@ asdf
         2. List item third level 2
             1. List item fourth level 1
             2. List item fourth level 2
+# title
+
+1. List item 1
+2. List item 2
+3. List item 3
+    1. List item second level 1
+    2. List item second level 2
+        1. List item third level 1
+        2. List item third level 2
+            1. List item fourth level 1
+            2. List item fourth level 2
+
+- List item one
+- List item two
+- List item three
+- List item four
+- List item five
+    - List item zzz
+- List item six
+- List item seven
+
 "#;
         // println!("{:?}", document);
         let parsed = Transformer::parse_with_loader(
