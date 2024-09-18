@@ -1,10 +1,12 @@
-use crate::core::Element::{Header, Hyperlink,  List, Table, Text};
+use crate::core::Element::{Header, Hyperlink, List, Table, Text};
 use crate::core::*;
 use bytes::Bytes;
-use pulldown_cmark::{Event, HeadingLevel, Options, Parser, Tag, TagEnd, TextMergeStream};
-use std::cell::RefCell;
-use comrak::Arena;
 use comrak::arena_tree::Node;
+use comrak::Arena;
+use docx_rs::ElementReader;
+use pulldown_cmark::{Event, HeadingLevel, Options, Parser, Tag, TagEnd, TextMergeStream};
+use std::borrow::Cow;
+use std::cell::RefCell;
 
 pub struct Transformer;
 
@@ -18,41 +20,52 @@ impl TransformerTrait for Transformer {
     }
 }
 
-struct ImageSaver<F> where F: Fn(&Bytes, &str) -> anyhow::Result<()> {
+struct ImageSaver<F>
+where
+    F: Fn(&Bytes, &str) -> anyhow::Result<()>,
+{
     pub function: F,
 }
 impl TransformerWithImageLoaderSaverTrait for Transformer {
     fn parse_with_loader<F>(document: &Bytes, image_loader: F) -> anyhow::Result<Document>
-        where F: Fn(&str) -> anyhow::Result<Bytes>,Self: Sized,
+    where
+        F: Fn(&str) -> anyhow::Result<Bytes>,
+        Self: Sized,
     {
+        fn create_element_list(children: Option<Vec<ListItem>>, numbered: bool) -> Element {
+            Element::List {
+                elements: children.unwrap_or(vec![]),
+                numbered,
+            }
+        }
+
         fn process_element_creation(
             current_element: &mut Option<Element>,
-            el: Element,
-            list_depth: i32,
+            mut new_el: Element,
+            list_depth: &mut i32,
         ) {
-            match current_element {
+            match current_element.as_mut() {
                 Some(element) => match element {
-                    Element::List { elements, .. } => {
-                        let mut li_vec_to_insert = elements;
+                    Element::List { elements, numbered } => {
+                        let mut list_elements = elements;
 
-                        for _ in 1..list_depth {
-                            let last_index = li_vec_to_insert.len() - 1;
+                        for _ in 1..*list_depth {
+                            let last_index = list_elements.len() - 1;
                             if let Element::List {
                                 elements: ref mut inner_els,
                                 ..
-                            } = li_vec_to_insert[last_index].element
+                            } = list_elements[last_index].element
                             {
-                                li_vec_to_insert = inner_els;
+                                list_elements = inner_els;
                             } else {
                                 panic!("Expected a nested list structure at the specified depth");
                             }
                         }
-
-                        match &el {
+                        match &new_el {
                             Element::Hyperlink { .. } | Element::Header { .. } => {
-                                if let Some(ListItem { element }) = li_vec_to_insert.last() {
+                                if let Some(ListItem { element }) = list_elements.last() {
                                     if let Text { .. } = element {
-                                        li_vec_to_insert.pop();
+                                        list_elements.pop();
                                     }
                                 }
                             }
@@ -60,19 +73,37 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                             _ => {}
                         }
 
-                        let li = ListItem { element: el };
-                        li_vec_to_insert.push(li);
+                        if matches!(new_el, Element::List { .. }) {
+                            let list_item_children = ListItem {
+                                element: create_element_list(None, *numbered),
+                            };
+
+                            if let Element::List {
+                                ref mut elements, ..
+                            } = new_el
+                            {
+                                let list_item_el = list_elements
+                                    .pop()
+                                    .expect("should have a list item as last element");
+                                elements.push(list_item_el);
+                                elements.push(list_item_children);
+                                *list_depth += 1;
+                            }
+                        }
+
+                        let li = ListItem { element: new_el };
+                        list_elements.push(li);
                     }
                     _ => {}
                 },
                 None => {
-                    *current_element = Some(el);
+                    *current_element = Some(new_el);
                 }
             }
         }
 
         let document_str = std::str::from_utf8(document)?;
-        let mut elements: Vec<Element> = Vec::new();
+        let mut doc_elements: Vec<Element> = Vec::new();
 
         let mut options = Options::empty();
         options.insert(Options::ENABLE_TABLES);
@@ -84,20 +115,21 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
         let parser = Parser::new_ext(document_str, options);
         let md_iterator = TextMergeStream::new(parser);
 
-        let mut list_depth = 0;
         let mut current_element: Option<Element> = None;
-
+        let mut list_depth = 0;
         let mut table_element: Option<(bool, Element)> = None;
         for event in md_iterator {
             match event {
                 Event::Start(tag) => {
                     match tag {
                         Tag::Paragraph => {
-                            process_element_creation(
-                                &mut current_element,
-                                Element::Paragraph { elements: vec![] },
-                                list_depth,
-                            );
+                            if !matches!(current_element, Some(Element::List { .. })) {
+                                process_element_creation(
+                                    &mut current_element,
+                                    Element::Paragraph { elements: vec![] },
+                                    &mut list_depth,
+                                );
+                            }
                         }
                         Tag::Heading { level, .. } => {
                             let level = match level {
@@ -114,7 +146,7 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                                     level,
                                     text: "".to_string(),
                                 },
-                                list_depth,
+                                &mut list_depth,
                             );
                         }
                         Tag::List(numbered) => {
@@ -125,7 +157,12 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                                 numbered,
                             };
 
-                            process_element_creation(&mut current_element, list_el, list_depth);
+                            process_element_creation(
+                                &mut current_element,
+                                list_el,
+                                &mut list_depth,
+                            );
+
                             list_depth += 1;
                         }
                         Tag::Item => {
@@ -134,7 +171,11 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                                 size: 14,
                             };
 
-                            process_element_creation(&mut current_element, list_li, list_depth);
+                            process_element_creation(
+                                &mut current_element,
+                                list_li,
+                                &mut list_depth,
+                            );
                         }
                         Tag::Table(_) => {
                             let table_el = Table {
@@ -160,11 +201,11 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                                 title.to_string(),
                                 img_type,
                                 "".to_string(),
-                                ImageDimension::default()
+                                ImageDimension::default(),
                             ));
                             // Before image there is paragraph tag (likely because alt text is in paragraph )
                             current_element = None;
-                            process_element_creation(&mut current_element, img_el, list_depth);
+                            process_element_creation(&mut current_element, img_el, &mut list_depth);
                         }
                         Tag::Link {
                             dest_url, title, ..
@@ -178,7 +219,7 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                             process_element_creation(
                                 &mut current_element,
                                 link_element,
-                                list_depth,
+                                &mut list_depth,
                             );
                         }
 
@@ -201,7 +242,6 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                             }
                             Element::List { elements, .. } => {
                                 let mut li_vec_to_insert = elements;
-
                                 for _ in 1..list_depth {
                                     let last_index = li_vec_to_insert.len() - 1;
                                     if let Element::List {
@@ -234,13 +274,8 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                                     _ => {}
                                 }
                             }
-                            Element::Image(image) => {
-                                image.set_image_alt(&text)
-                            }
-                            Element::Hyperlink {
-                                alt,
-                                ..
-                            } => {
+                            Element::Image(image) => image.set_image_alt(&text),
+                            Element::Hyperlink { alt, .. } => {
                                 *alt = alt.to_string();
                             }
                             _ => {}
@@ -299,23 +334,25 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                 }
                 Event::End(tag) => match tag {
                     TagEnd::Paragraph | TagEnd::Heading(_) | TagEnd::Link | TagEnd::Image => {
-                        let curr_el = current_element.take();
-                        if let Some(curr_el) = curr_el {
-                            match curr_el {
-                                List { .. } => current_element = Some(curr_el),
-                                _ => {
-                                    elements.push(curr_el);
+                        if !matches!(current_element, Some(Element::List { .. })) {
+                            let curr_el = current_element.take();
+                            if let Some(curr_el) = curr_el {
+                                match curr_el {
+                                    List { .. } => current_element = Some(curr_el),
+                                    _ => {
+                                        doc_elements.push(curr_el);
+                                    }
                                 }
                             }
                         }
                     }
                     TagEnd::List(_) => {
-                        list_depth -= 1;
-
-                        if list_depth == 0 {
+                        list_depth -= 2;
+                        if list_depth <= 0 {
+                            list_depth = 0;
                             let curr_el = current_element.take();
                             if let Some(curr_el) = curr_el {
-                                elements.push(curr_el);
+                                doc_elements.push(curr_el);
                             }
                         }
                     }
@@ -326,7 +363,7 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                     }
                     TagEnd::Table => {
                         if let Some((_, t_el)) = table_element.take() {
-                            elements.push(t_el);
+                            doc_elements.push(t_el);
                         }
                     }
                     _ => {}
@@ -336,16 +373,16 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
             }
         }
 
-        Ok(Document::new(elements))
+        Ok(Document::new(doc_elements))
     }
 
     fn generate_with_saver<F>(document: &Document, image_saver: F) -> anyhow::Result<Bytes>
-        where
-            F: Fn(&Bytes, &str) -> anyhow::Result<()>,
+    where
+        F: Fn(&Bytes, &str) -> anyhow::Result<()>,
     {
+        use comrak::nodes::LineColumn;
         use comrak::{format_commonmark, Arena, Options};
         use std::cell::RefCell;
-        use comrak::nodes::LineColumn;
 
         let arena = Arena::new();
 
@@ -368,6 +405,7 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
         }
 
         let mut md = vec![];
+
         format_commonmark(root, &Options::default(), &mut md)?;
 
         Ok(Bytes::from(md))
@@ -378,14 +416,82 @@ use comrak::nodes::{
     Ast, AstNode, LineColumn, NodeHeading, NodeLink, NodeList, NodeTable, NodeValue, TableAlignment,
 };
 
+fn is_parent_list(list_item: &ListItem) -> bool {
+    if let Element::List { elements, .. } = &list_item.element {
+        let first = elements.first();
+        let second = elements.get(1);
+
+        if let (Some(first), Some(last)) = (first, second) {
+            let is_text = matches!(first.element, Element::Text { .. });
+            let is_list = matches!(last.element, Element::List { .. });
+
+            return is_text && is_list;
+        }
+    }
+
+    false
+}
+
+fn create_item_node<'a>(arena: &'a Arena<AstNode<'a>>, numbered: bool) -> &'a AstNode<'a> {
+    let item_node = arena.alloc(Node::new(RefCell::new(Ast::new(
+        NodeValue::Item(NodeList {
+            list_type: if numbered {
+                comrak::nodes::ListType::Ordered
+            } else {
+                comrak::nodes::ListType::Bullet
+            },
+            start: 0,
+            tight: true,
+            ..Default::default()
+        }),
+        LineColumn { line: 0, column: 0 },
+    ))));
+
+    item_node
+}
+
+fn create_list_node<'a>(arena: &'a Arena<AstNode<'a>>, numbered: bool) -> &'a AstNode<'a> {
+    let node = arena.alloc(Node::new(RefCell::new(Ast::new(
+        NodeValue::List(NodeList {
+            list_type: if numbered {
+                comrak::nodes::ListType::Ordered
+            } else {
+                comrak::nodes::ListType::Bullet
+            },
+            start: 1,
+            tight: true,
+            bullet_char: b'-',
+            marker_offset: 0,
+            delimiter: comrak::nodes::ListDelimType::Period,
+            ..Default::default()
+        }), // Empty list item
+        LineColumn { line: 0, column: 0 },
+    ))));
+
+    node
+}
+
+fn text_to_paragraph(element: Element) -> Element {
+    if let Element::Text { text, .. } = element {
+        Element::Paragraph {
+            elements: vec![Element::Text {
+                text: text.to_string(),
+                size: 14,
+            }],
+        }
+    } else {
+        element
+    }
+}
+
 fn element_to_ast_node<'a, F>(
     arena: &'a Arena<AstNode<'a>>,
     element: &Element,
     image_num: &RefCell<i32>,
     image_saver: &ImageSaver<F>,
 ) -> anyhow::Result<&'a AstNode<'a>>
-    where
-        F: Fn(&Bytes, &str) -> anyhow::Result<()>,
+where
+    F: Fn(&Bytes, &str) -> anyhow::Result<()>,
 {
     match element {
         Element::Text { text, .. } => {
@@ -418,56 +524,53 @@ fn element_to_ast_node<'a, F>(
                 LineColumn { line: 0, column: 0 },
             ))));
             for child_element in elements {
-                let child_node =
-                    element_to_ast_node(arena, child_element, image_num, image_saver)?;
+                let child_node = element_to_ast_node(arena, child_element, image_num, image_saver)?;
                 paragraph.append(child_node);
             }
             Ok(paragraph)
         }
 
         Element::List { elements, numbered } => {
-            use comrak::nodes::{ListDelimType, ListType};
-            let list_type = if *numbered {
-                ListType::Ordered
-            } else {
-                ListType::Bullet
-            };
-            let list_node = arena.alloc(Node::new(RefCell::new(Ast::new(
-                NodeValue::List(NodeList {
-                    list_type,
-                    start: if *numbered { 1 } else { 0 },
-                    delimiter: ListDelimType::Period,
-                    bullet_char: b'-',
-                    tight: true,
-                    marker_offset: 0,
-                    padding: 2,
-                }),
-                LineColumn { line: 0, column: 0 },
-            ))));
+            let list_node = create_list_node(arena, *numbered);
             for list_item in elements {
-                let item_node = arena.alloc(Node::new(RefCell::new(Ast::new(
-                    NodeValue::Item(NodeList {
-                        tight: true,
-                        ..Default::default()
-                    }),
-                    LineColumn { line: 0, column: 0 },
-                ))));
-                let child_node = element_to_ast_node(arena, &list_item.element, image_num, image_saver)?;
-                if matches!(&child_node.data.borrow().value, NodeValue::List(_)) {
-                    item_node.append(child_node);
-                } else {
-                    if !matches!(&child_node.data.borrow().value, NodeValue::Paragraph) {
-                        let paragraph_node = arena.alloc(Node::new(RefCell::new(Ast::new(
-                            NodeValue::Paragraph,
-                            LineColumn { line: 0, column: 0 },
-                        ))));
-                        paragraph_node.append(child_node);
-                        item_node.append(paragraph_node);
-                    } else {
-                        item_node.append(child_node);
+                let item_node = create_item_node(arena, *numbered);
+
+                if is_parent_list(list_item) {
+                    if let Element::List { elements, .. } = &list_item.element {
+                        let first = elements.first();
+                        let second = elements.get(1);
+
+                        if let (Some(parent), Some(children)) = (first, second) {
+                            let children_node = element_to_ast_node(
+                                arena,
+                                &children.element,
+                                image_num,
+                                image_saver,
+                            )?;
+
+                            let parent_element = text_to_paragraph(parent.element.clone());
+
+                            let list_item_content = element_to_ast_node(
+                                arena,
+                                &parent_element,
+                                image_num,
+                                image_saver,
+                            )?;
+
+                            item_node.append(list_item_content);
+                            item_node.append(children_node);
+
+                            list_node.append(item_node);
+                        }
                     }
+                } else {
+                    let list_item_element = text_to_paragraph(list_item.element.clone());
+
+                    let list_item_content =
+                        element_to_ast_node(arena, &list_item_element, image_num, image_saver)?;
+                    item_node.append(list_item_content);
+                    list_node.append(item_node);
                 }
-                list_node.append(item_node);
             }
             Ok(list_node)
         }
@@ -495,7 +598,6 @@ fn element_to_ast_node<'a, F>(
 
             Ok(paragraph_node)
         }
-
 
         Element::Hyperlink {
             title, url, alt, ..
@@ -582,10 +684,10 @@ fn element_to_ast_node<'a, F>(
 
 #[cfg(test)]
 mod tests {
+    use serde_xml_rs::to_string;
+
     use crate::core::*;
     use crate::markdown::*;
-    use crate::pdf;
-    use crate::text;
 
     #[test]
     fn test() -> anyhow::Result<()> {
@@ -626,32 +728,24 @@ blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla
 
 Paragraph2  bla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla
 blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
-        // println!("{:?}", document);
-        let parsed = Transformer::parse_with_loader(&document.as_bytes().into(), disk_image_loader("test/data"));
+        let parsed = Transformer::parse_with_loader(
+            &document.as_bytes().into(),
+            disk_image_loader("test/data"),
+        );
         let document_string = std::str::from_utf8(document.as_bytes())?;
         println!("{}", document_string);
         assert!(parsed.is_ok());
         let parsed_document = parsed.unwrap();
+
         println!("==========================");
         println!("{:#?}", parsed_document);
         println!("==========================");
-        let generated_result = Transformer::generate_with_saver(&parsed_document, disk_image_saver("test/data"));
+        let generated_result =
+            Transformer::generate_with_saver(&parsed_document, disk_image_saver("test/data"));
         assert!(generated_result.is_ok());
-        // println!("{:?}", generated_result.unwrap());
         let generated_bytes = generated_result?;
         let generated_text = std::str::from_utf8(&generated_bytes)?;
         println!("{}", generated_text);
-        // println!("==========================");
-        // let generated_result = text::Transformer::generate(&parsed_document);
-        // assert!(generated_result.is_ok());
-        // // println!("{:?}", generated_result.unwrap());
-        // let generated_bytes = generated_result?;
-        // let generated_text = std::str::from_utf8(&generated_bytes)?;
-        // println!("{}", generated_text);
-        //
-        // let generated_result = pdf::Transformer::generate(&parsed_document)?;
-        // std::fs::write("test/data/generated.pdf", generated_result)?;
-
         Ok(())
     }
 
@@ -685,7 +779,6 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
 
         assert_eq!(parsed, result_doc)
     }
-
 
     #[test]
     fn test_parse_table() {
@@ -749,7 +842,11 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         }];
 
         let result_doc = Document::new(elements);
-        let parsed = Transformer::parse_with_loader(&document.as_bytes().into(), disk_image_loader("test/data")).unwrap();
+        let parsed = Transformer::parse_with_loader(
+            &document.as_bytes().into(),
+            disk_image_loader("test/data"),
+        )
+        .unwrap();
 
         assert_eq!(parsed, result_doc)
     }
