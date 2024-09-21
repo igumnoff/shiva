@@ -403,10 +403,8 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
         }
 
         let mut md = vec![];
-        let options = Options::default();
-        // options.render.hardbreaks = true;
 
-        format_commonmark(root, &options, &mut md)?;
+        format_commonmark(root, &Options::default(), &mut md)?;
 
         Ok(Bytes::from(md))
     }
@@ -592,13 +590,7 @@ where
                 LineColumn { line: 0, column: 0 },
             ))));
 
-            let paragraph_node = arena.alloc(Node::new(RefCell::new(Ast::new(
-                NodeValue::Paragraph,
-                LineColumn { line: 0, column: 0 },
-            ))));
-            paragraph_node.append(image_node);
-
-            Ok(paragraph_node)
+            Ok(image_node)
         }
 
         Element::Hyperlink {
@@ -859,7 +851,7 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
     }
 
     #[test]
-    fn test_html_to_markdown() -> anyhow::Result<()> {
+    fn test_html_to_markdown_to_cdm() -> anyhow::Result<()> {
         let input = r#"
             <html>
               <head>
@@ -884,6 +876,12 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
                   reason meow all night. Plop down in the middle where everybody walks favor
                   packaging over toy. Sit on the laptop kitty pounce, trip, faceplant.
                 </p>
+
+                <ul>
+                  <li>Line item 1</li>
+                  <li>Line item 2</li>
+                  <li>Line item 3</li>
+                </ul>
               </body>
             </html>
         "#;
@@ -892,12 +890,13 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         println!("{:#?}", doc_from_html);
         let parsed_html_bytes =
             Transformer::generate_with_saver(&doc_from_html, disk_image_saver("data"))?;
-        println!("{:#?}", std::str::from_utf8(&parsed_html_bytes)?);
-        // let result = Transformer::parse_with_loader(&parsed_html_bytes, disk_image_loader("data"));
-        // println!("{:#?}", result );
 
+        let doc_from_markdown = Transformer::parse_with_loader(&parsed_html_bytes, disk_image_loader("data"));
+        println!("{:#?}", doc_from_markdown);
+        println!("{}", std::str::from_utf8(&parsed_html_bytes)?);
         assert!(true);
 
         Ok(())
     }
+
 }

@@ -442,17 +442,39 @@ mod tests {
     fn test_parse_html() -> anyhow::Result<()> {
         let document_html = r#"
 
-<!DOCTYPE html>
-<html>
-<body>
-<h1>Image test</h1>
-<p>
-<img src="small.png" alt="Picture alt2" title="Picture title2" />
-</p>
-</body>
-</html>
+            <html>
+              <head>
+                <title>Chew dad's slippers - this is a title element</title>
+              </head>
+              <body>
+                <h1>
+                  Instead of drinking water from the cat bowl, make sure to steal water from
+                  the toilet
+                </h1>
+                <h2>Chase the red dot</h2>
+                <p>
+                  Munch, munch, chomp, chomp hate dogs. Spill litter box, scratch at owner,
+                  destroy all furniture, especially couch get scared by sudden appearance of
+                  cucumber cat is love, cat is life fat baby cat best buddy little guy for
+                  catch eat throw up catch eat throw up bad birds jump on fridge. Purr like
+                  a car engine oh yes, there is my human woman she does best pats ever that
+                  all i like about her hiss meow .
+                </p>
+                <p>
+                  Dead stare with ears cocked when owners are asleep, cry for no apparent
+                  reason meow all night. Plop down in the middle where everybody walks favor
+                  packaging over toy. Sit on the laptop kitty pounce, trip, faceplant.
+                </p>
+
+                <p>
+                    <img src="small.png" alt="Picture alt2" title="Picture title2" />
+                </p>
+
+              </body>
+            </html>
         "#;
         let document = Transformer::parse_with_loader(&Bytes::from(document_html), disk_image_loader("test/data"))?;
+        // println!("{:#?}", document);
         let markdown = markdown::Transformer::generate(&document)?;
         println!("{}", String::from_utf8(markdown.to_vec())?);
         Ok(())
