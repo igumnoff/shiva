@@ -3,9 +3,7 @@ use crate::core::*;
 use bytes::Bytes;
 use comrak::arena_tree::Node;
 use comrak::Arena;
-use docx_rs::ElementReader;
 use pulldown_cmark::{Event, HeadingLevel, Options, Parser, Tag, TagEnd, TextMergeStream};
-use std::borrow::Cow;
 use std::cell::RefCell;
 
 pub struct Transformer;
@@ -405,8 +403,10 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
         }
 
         let mut md = vec![];
+        let options = Options::default();
+        // options.render.hardbreaks = true;
 
-        format_commonmark(root, &Options::default(), &mut md)?;
+        format_commonmark(root, &options, &mut md)?;
 
         Ok(Bytes::from(md))
     }
@@ -496,9 +496,10 @@ where
     match element {
         Element::Text { text, .. } => {
             let node = arena.alloc(Node::new(RefCell::new(Ast::new(
-                NodeValue::Text(text.clone()),
+                NodeValue::Text(text.to_string()),
                 LineColumn { line: 0, column: 0 },
             ))));
+
             Ok(node)
         }
 
@@ -523,6 +524,7 @@ where
                 NodeValue::Paragraph,
                 LineColumn { line: 0, column: 0 },
             ))));
+
             for child_element in elements {
                 let child_node = element_to_ast_node(arena, child_element, image_num, image_saver)?;
                 paragraph.append(child_node);
@@ -684,9 +686,12 @@ where
 
 #[cfg(test)]
 mod tests {
+    use core::str;
+
     use serde_xml_rs::to_string;
 
     use crate::core::*;
+    use crate::html;
     use crate::markdown::*;
 
     #[test]
@@ -725,6 +730,8 @@ blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla
 | ----------- | ----------- |
 | Header      | Title       |
 | Paragraph   | Text        |
+
+bla
 
 Paragraph2  bla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla
 blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
@@ -849,5 +856,48 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         .unwrap();
 
         assert_eq!(parsed, result_doc)
+    }
+
+    #[test]
+    fn test_html_to_markdown() -> anyhow::Result<()> {
+        let input = r#"
+            <html>
+              <head>
+                <title>Chew dad's slippers</title>
+              </head>
+              <body>
+                <h1>
+                  Instead of drinking water from the cat bowl, make sure to steal water from
+                  the toilet
+                </h1>
+                <h2>Chase the red dot</h2>
+                <p>
+                  Munch, munch, chomp, chomp hate dogs. Spill litter box, scratch at owner,
+                  destroy all furniture, especially couch get scared by sudden appearance of
+                  cucumber cat is love, cat is life fat baby cat best buddy little guy for
+                  catch eat throw up catch eat throw up bad birds jump on fridge. Purr like
+                  a car engine oh yes, there is my human woman she does best pats ever that
+                  all i like about her hiss meow .
+                </p>
+                <p>
+                  Dead stare with ears cocked when owners are asleep, cry for no apparent
+                  reason meow all night. Plop down in the middle where everybody walks favor
+                  packaging over toy. Sit on the laptop kitty pounce, trip, faceplant.
+                </p>
+              </body>
+            </html>
+        "#;
+        let input = &input.as_bytes().into();
+        let doc_from_html = html::Transformer::parse_with_loader(input, disk_image_loader("data"))?;
+        println!("{:#?}", doc_from_html);
+        let parsed_html_bytes =
+            Transformer::generate_with_saver(&doc_from_html, disk_image_saver("data"))?;
+        println!("{:#?}", std::str::from_utf8(&parsed_html_bytes)?);
+        // let result = Transformer::parse_with_loader(&parsed_html_bytes, disk_image_loader("data"));
+        // println!("{:#?}", result );
+
+        assert!(true);
+
+        Ok(())
     }
 }

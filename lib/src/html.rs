@@ -45,7 +45,7 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
             _ => {}
         });
         let mut footer_text = String::new();
-        
+
         document.get_page_footer().iter().for_each(|el| match el {
             Text { text, size: _ } => {
                 footer_text.push_str(text);
@@ -145,6 +145,7 @@ fn parse_html<F>(children: Children<Node>, elements: &mut Vec<Element>, image_lo
 where F: Fn(&str) -> anyhow::Result<Bytes>
 {
     for child in children {
+        // println!("{:#?}", child);
         match child.value() {
             Node::Element(ref element) => match element.name() {
                 "table" => {
@@ -213,7 +214,7 @@ where F: Fn(&str) -> anyhow::Result<Bytes>
                         elements.push(Table { headers, rows });
                     }
                 }
-                "p" => {
+                "p" | "title" => {
                     let mut paragraph_elements: Vec<Element> = Vec::new();
                     parse_html(child.children(), &mut paragraph_elements, image_loader)?;
                     elements.push(Paragraph {
@@ -223,10 +224,19 @@ where F: Fn(&str) -> anyhow::Result<Bytes>
                 "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => {
                     let level = element.name().as_bytes()[1] - b'0';
                     // Retrieve the deepest text within any nested structure of the same header tag
-                    let text = retrieve_deep_text(child, element.name()).trim().to_string();
+                    let mut text = retrieve_deep_text(child, element.name()).trim().to_string();
 
                     if text.is_empty() {
                         continue;
+                    }
+
+                    if text.contains("\n") {
+                        text = text
+                            .lines()
+                            .map(str::trim)
+                            .filter(|line| !line.is_empty()) // handles multiple consecutive newlines (\n\n)
+                            .collect::<Vec<_>>()
+                            .join(" "); // Join with a space
                     }
 
                     elements.push(Header { text, level });
@@ -294,10 +304,10 @@ where F: Fn(&str) -> anyhow::Result<Bytes>
                 }
             },
             Node::Text(ref text) => {
-                let text_str = text.to_string();
-                if !text_str.trim().is_empty() {
+                let txt_strings = text.lines().map(str::trim).filter(|p| !p.is_empty());
+                for text_str in txt_strings {
                     elements.push(Text {
-                        text: text_str,
+                        text: text_str.to_owned(),
                         size: 8,
                     });
                 }
@@ -431,7 +441,7 @@ mod tests {
     #[test]
     fn test_parse_html() -> anyhow::Result<()> {
         let document_html = r#"
-        
+
 <!DOCTYPE html>
 <html>
 <body>
