@@ -45,7 +45,7 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
             _ => {}
         });
         let mut footer_text = String::new();
-        
+
         document.get_page_footer().iter().for_each(|el| match el {
             Text { text, size: _ } => {
                 footer_text.push_str(text);
@@ -213,7 +213,7 @@ where F: Fn(&str) -> anyhow::Result<Bytes>
                         elements.push(Table { headers, rows });
                     }
                 }
-                "p" => {
+                "p" | "title" => {
                     let mut paragraph_elements: Vec<Element> = Vec::new();
                     parse_html(child.children(), &mut paragraph_elements, image_loader)?;
                     elements.push(Paragraph {
@@ -223,10 +223,19 @@ where F: Fn(&str) -> anyhow::Result<Bytes>
                 "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => {
                     let level = element.name().as_bytes()[1] - b'0';
                     // Retrieve the deepest text within any nested structure of the same header tag
-                    let text = retrieve_deep_text(child, element.name()).trim().to_string();
+                    let mut text = retrieve_deep_text(child, element.name()).trim().to_string();
 
                     if text.is_empty() {
                         continue;
+                    }
+
+                    if text.contains("\n") {
+                        text = text
+                            .lines()
+                            .map(str::trim)
+                            .filter(|line| !line.is_empty()) // handles multiple consecutive newlines (\n\n)
+                            .collect::<Vec<_>>()
+                            .join(" ");
                     }
 
                     elements.push(Header { text, level });
@@ -294,10 +303,10 @@ where F: Fn(&str) -> anyhow::Result<Bytes>
                 }
             },
             Node::Text(ref text) => {
-                let text_str = text.to_string();
-                if !text_str.trim().is_empty() {
+                let txt_strings = text.lines().map(str::trim).filter(|p| !p.is_empty());
+                for text_str in txt_strings {
                     elements.push(Text {
-                        text: text_str,
+                        text: text_str.to_owned(),
                         size: 8,
                     });
                 }
@@ -431,19 +440,41 @@ mod tests {
     #[test]
     fn test_parse_html() -> anyhow::Result<()> {
         let document_html = r#"
-        
-<!DOCTYPE html>
-<html>
-<body>
-<h1>Image test</h1>
-<p>
-<img src="small.png" alt="Picture alt2" title="Picture title2" />
-</p>
-</body>
-</html>
+
+            <html>
+              <head>
+                <title>Chew dad's slippers - this is a title element</title>
+              </head>
+              <body>
+                <h1>
+                  Instead of drinking water from the cat bowl, make sure to steal water from
+                  the toilet
+                </h1>
+                <h2>Chase the red dot</h2>
+                <p>
+                  Munch, munch, chomp, chomp hate dogs. Spill litter box, scratch at owner,
+                  destroy all furniture, especially couch get scared by sudden appearance of
+                  cucumber cat is love, cat is life fat baby cat best buddy little guy for
+                  catch eat throw up catch eat throw up bad birds jump on fridge. Purr like
+                  a car engine oh yes, there is my human woman she does best pats ever that
+                  all i like about her hiss meow .
+                </p>
+                <p>
+                  Dead stare with ears cocked when owners are asleep, cry for no apparent
+                  reason meow all night. Plop down in the middle where everybody walks favor
+                  packaging over toy. Sit on the laptop kitty pounce, trip, faceplant.
+                </p>
+
+                <p>
+                    <img src="small.png" alt="Picture alt2" title="Picture title2" />
+                </p>
+
+              </body>
+            </html>
         "#;
         let document = Transformer::parse_with_loader(&Bytes::from(document_html), disk_image_loader("test/data"))?;
-        let markdown = markdown::Transformer::generate(&document)?;
+        println!("{:#?}", document);
+        let markdown = markdown::Transformer::generate_with_saver(&document, disk_image_saver("test/data"))?;
         println!("{}", String::from_utf8(markdown.to_vec())?);
         Ok(())
     }
