@@ -145,7 +145,6 @@ fn parse_html<F>(children: Children<Node>, elements: &mut Vec<Element>, image_lo
 where F: Fn(&str) -> anyhow::Result<Bytes>
 {
     for child in children {
-        // println!("{:#?}", child);
         match child.value() {
             Node::Element(ref element) => match element.name() {
                 "table" => {
@@ -236,7 +235,7 @@ where F: Fn(&str) -> anyhow::Result<Bytes>
                             .map(str::trim)
                             .filter(|line| !line.is_empty()) // handles multiple consecutive newlines (\n\n)
                             .collect::<Vec<_>>()
-                            .join(" "); // Join with a space
+                            .join(" ");
                     }
 
                     elements.push(Header { text, level });
@@ -474,8 +473,8 @@ mod tests {
             </html>
         "#;
         let document = Transformer::parse_with_loader(&Bytes::from(document_html), disk_image_loader("test/data"))?;
-        // println!("{:#?}", document);
-        let markdown = markdown::Transformer::generate(&document)?;
+        println!("{:#?}", document);
+        let markdown = markdown::Transformer::generate_with_saver(&document, disk_image_saver("test/data"))?;
         println!("{}", String::from_utf8(markdown.to_vec())?);
         Ok(())
     }
