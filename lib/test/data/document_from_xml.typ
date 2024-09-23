@@ -1,7 +1,9 @@
 #set page(
-        header: "Page Headerheader end",
-        footer: "Page Footerfooter end",
+        header: "",
+        footer: "",
     )
+Page Header
+header end
 = 123
 Hello, world!
 
@@ -20,4 +22,5 @@ Hello, world!
 [Marry Doe],[1000$],
 
         )
-        
+        Page Footer
+footer end

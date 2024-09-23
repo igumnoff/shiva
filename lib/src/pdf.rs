@@ -284,7 +284,7 @@ fn parse_object(
 #[cfg(test)]
 mod tests {
     use crate::core::*;
-    use crate::markdown;
+    use crate::{markdown, pdf};
     use crate::pdf::Transformer;
     use bytes::Bytes;
     use std::collections::HashMap;
@@ -397,5 +397,21 @@ mod tests {
         )?;
 
         Ok(())
+    }
+
+    #[test]
+    fn simple_test() {
+        let content = std::fs::read("test/data/test.txt").unwrap();
+        let md_content = String::from_utf8(content).unwrap();
+        let input_bytes = Bytes::from(md_content);
+        let document = markdown::Transformer::parse(&input_bytes).unwrap();
+        let output_bytes = pdf::Transformer::generate(&document)
+            .unwrap()
+            .to_vec();
+
+        std::fs::write(
+            "test/data/test.pdf",
+            output_bytes,
+        ).unwrap();
     }
 }
