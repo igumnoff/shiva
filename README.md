@@ -115,12 +115,10 @@ cd ./target/release/
 
 ## Contributing
 I would love to see contributions from the community. If you experience bugs, feel free to open an issue. If you would like to implement a new feature or bug fix, please follow the steps:
-1. Read "[Contributor License Agreement (CLA)](https://github.com/igumnoff/shiva/blob/main/CLA)"
-2. Contact with me via telegram @ievkz or discord @igumnovnsk
-3. Confirm e-mail invitation in repository
-4. Do "git clone" (You don't need to fork!)
-5. Create branch with your assigned issue
-6. Create pull request to main branch
+1. Read "[Contributor License Agreement (CLA)](CLA)"
+2. Do fork 
+3. Add comment to the [issue](https://github.com/igumnoff/shiva/issues) that you are going to work on it
+4. Create pull request
 
 ## For contributors
 
