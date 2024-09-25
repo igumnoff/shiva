@@ -115,12 +115,11 @@ cd ./target/release/
 
 ## Contributing
 I would love to see contributions from the community. If you experience bugs, feel free to open an issue. If you would like to implement a new feature or bug fix, please follow the steps:
-1. Read "[Contributor License Agreement (CLA)](CLA)"
-2. Do fork 
-3. Add comment to the [issue](https://github.com/igumnoff/shiva/issues) that you are going to work on it
-4. Create pull request
 
-## For contributors
+1. Do fork 
+2. Add comment to the [issue](https://github.com/igumnoff/shiva/issues) that you are going to work on it
+3. Create pull request
+
 
 If you would like add new document type, you need to implement the following traits:
 
@@ -145,3 +144,18 @@ pub trait TransformerWithImageLoaderSaverTrait {
 }
 ```
 
+
+#### License
+
+<sup>
+Licensed under either of <a href="LICENSE-APACHE">Apache License, Version
+2.0</a> or <a href="LICENSE-MIT">MIT license</a> at your option.
+</sup>
+
+<br>
+
+<sub>
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in Shiva by you, as defined in the Apache-2.0 license, shall be
+dual licensed as above, without any additional terms or conditions.
+</sub>
