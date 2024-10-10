@@ -239,7 +239,7 @@ impl TransformerTrait for Transformer {
                                 _ => {}
                             },
                             _ => {
-                                unimplemented!("Should implement");
+                                // TODO: Implement other styles
                             }
                         }
                     }
@@ -282,7 +282,7 @@ impl TransformerTrait for Transformer {
                             _ => {}
                         },
                         _ => {
-                            unimplemented!("Should implement");
+                            // TODO: Implement other styles
                         }
                     }
                 }
