@@ -18,23 +18,33 @@ impl TransformerTrait for Transformer {
 }
 impl TransformerWithImageLoaderSaverTrait for Transformer {
     fn parse_with_loader<F>(document: &Bytes, image_loader: F) -> anyhow::Result<Document>
-        where F: Fn(&str) -> anyhow::Result<Bytes>
+    where
+        F: Fn(&str) -> anyhow::Result<Bytes>,
     {
         let html = String::from_utf8(document.to_vec())?;
         let document = Html::parse_document(&html);
         let mut elements: Vec<Element> = Vec::new();
 
-        let image_loader = ImageLoader { function: image_loader };
-        parse_html(document.root_element().children(), &mut elements, &image_loader)?;
+        let image_loader = ImageLoader {
+            function: image_loader,
+        };
+        parse_html(
+            document.root_element().children(),
+            &mut elements,
+            &image_loader,
+        )?;
         Ok(Document::new(elements))
     }
 
-    fn generate_with_saver<F>(document: &Document,  image_saver: F) -> anyhow::Result<Bytes>
-        where F: Fn(&Bytes, &str) -> anyhow::Result<()>
+    fn generate_with_saver<F>(document: &Document, image_saver: F) -> anyhow::Result<Bytes>
+    where
+        F: Fn(&Bytes, &str) -> anyhow::Result<()>,
     {
         let mut html = String::new();
         let mut image_num: i32 = 0;
-        let image_saver = ImageSaver { function: image_saver };
+        let image_saver = ImageSaver {
+            function: image_saver,
+        };
 
         //TODO: Is this needed? Commented out for now! header_text and footer_text are not read anywhere
         let mut header_text = String::new();
@@ -133,16 +143,27 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
     }
 }
 
-struct ImageLoader<F> where F: Fn(&str) -> anyhow::Result<Bytes> {
+struct ImageLoader<F>
+where
+    F: Fn(&str) -> anyhow::Result<Bytes>,
+{
     pub function: F,
 }
 
-struct ImageSaver<F> where F: Fn(&Bytes, &str) -> anyhow::Result<()> {
+struct ImageSaver<F>
+where
+    F: Fn(&Bytes, &str) -> anyhow::Result<()>,
+{
     pub function: F,
 }
 
-fn parse_html<F>(children: Children<Node>, elements: &mut Vec<Element>, image_loader: &ImageLoader<F>) -> anyhow::Result<()>
-where F: Fn(&str) -> anyhow::Result<Bytes>
+fn parse_html<F>(
+    children: Children<Node>,
+    elements: &mut Vec<Element>,
+    image_loader: &ImageLoader<F>,
+) -> anyhow::Result<()>
+where
+    F: Fn(&str) -> anyhow::Result<Bytes>,
 {
     for child in children {
         match child.value() {
@@ -254,7 +275,7 @@ where F: Fn(&str) -> anyhow::Result<Bytes>
                         alt.to_string(),
                         src.to_string(),
                         align.to_string(),
-                        ImageDimension {width,height}
+                        ImageDimension { width, height },
                     )));
                 }
                 "ul" | "ol" => {
@@ -264,7 +285,11 @@ where F: Fn(&str) -> anyhow::Result<Bytes>
                         if let Node::Element(ref li_element) = list_child.value() {
                             if li_element.name() == "li" {
                                 let mut item_elements: Vec<Element> = Vec::new();
-                                parse_html(list_child.children(), &mut item_elements, image_loader)?;
+                                parse_html(
+                                    list_child.children(),
+                                    &mut item_elements,
+                                    image_loader,
+                                )?;
                                 list_items.extend(
                                     item_elements
                                         .into_iter()
@@ -377,7 +402,12 @@ fn generate_html_for_element(
             };
             Ok(format!(
                 "<img src=\"{}\" alt=\"{}\" title=\"{}\"{}{}{} />",
-                image_path, image.alt(), image.title(), align_str, width_str, height_str
+                image_path,
+                image.alt(),
+                image.title(),
+                align_str,
+                width_str,
+                height_str
             ))
         }
         Hyperlink {
@@ -412,7 +442,6 @@ fn retrieve_deep_text(node: NodeRef<Node>, tag_name: &str) -> String {
     text
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::core::*;
@@ -430,7 +459,10 @@ mod tests {
         </body>
         </html>
         "#;
-        let document = Transformer::parse_with_loader(&Bytes::from(document_html), disk_image_loader("test/data"))?;
+        let document = Transformer::parse_with_loader(
+            &Bytes::from(document_html),
+            disk_image_loader("test/data"),
+        )?;
         println!("{:#?}", document);
         let result = Transformer::generate_with_saver(&document, disk_image_saver("test/data"))?;
         println!("{}", String::from_utf8(result.to_vec())?);
@@ -472,9 +504,13 @@ mod tests {
               </body>
             </html>
         "#;
-        let document = Transformer::parse_with_loader(&Bytes::from(document_html), disk_image_loader("test/data"))?;
+        let document = Transformer::parse_with_loader(
+            &Bytes::from(document_html),
+            disk_image_loader("test/data"),
+        )?;
         println!("{:#?}", document);
-        let markdown = markdown::Transformer::generate_with_saver(&document, disk_image_saver("test/data"))?;
+        let markdown =
+            markdown::Transformer::generate_with_saver(&document, disk_image_saver("test/data"))?;
         println!("{}", String::from_utf8(markdown.to_vec())?);
         Ok(())
     }

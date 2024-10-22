@@ -1,17 +1,12 @@
 use crate::core::Element::{List, Paragraph, Text};
-use crate::core::{
-    Document, Element, ListItem, ParserError, TransformerTrait,
-};
+use crate::core::{Document, Element, ListItem, ParserError, TransformerTrait};
 
 use anyhow;
 use bytes::Bytes;
 use lopdf::content::Content;
 use lopdf::{Document as PdfDocument, Object, ObjectId};
 use std::collections::BTreeMap;
-use typst::{
-    eval::Tracer,
-    foundations::Smart,
-};
+use typst::{eval::Tracer, foundations::Smart};
 
 pub struct Transformer;
 impl TransformerTrait for Transformer {
@@ -29,19 +24,20 @@ impl TransformerTrait for Transformer {
     }
     fn generate(document: &Document) -> anyhow::Result<Bytes> {
         let (text, img_map) = crate::typst::generate_document(document)?;
-        
+
         let world = crate::typst::ShivaWorld::new(text, img_map);
         let mut tracer = Tracer::default();
 
         let document = typst::compile(&world, &mut tracer).unwrap();
         let warnings = tracer.warnings();
 
-        if !warnings.is_empty() {// Trowing any warnings if necessary
+        if !warnings.is_empty() {
+            // Trowing any warnings if necessary
             for warn in warnings {
                 println!("Warning - {}", warn.message);
             }
         }
-        
+
         // Converting to pdf then to bytes
         let pdf = typst_pdf::pdf(&document, Smart::Auto, None);
 
@@ -284,8 +280,8 @@ fn parse_object(
 #[cfg(test)]
 mod tests {
     use crate::core::*;
-    use crate::{markdown, pdf};
     use crate::pdf::Transformer;
+    use crate::{markdown, pdf};
     use bytes::Bytes;
     use std::collections::HashMap;
 
@@ -308,7 +304,10 @@ mod tests {
     fn test_md() -> anyhow::Result<()> {
         let document = std::fs::read("test/data/document.md")?;
         let documents_bytes = Bytes::from(document);
-        let parsed_document = markdown::Transformer::parse_with_loader(&documents_bytes,disk_image_loader("test/data"))?;
+        let parsed_document = markdown::Transformer::parse_with_loader(
+            &documents_bytes,
+            disk_image_loader("test/data"),
+        )?;
         println!("==========================");
         println!("{:?}", parsed_document);
         println!("==========================");
@@ -316,7 +315,6 @@ mod tests {
         std::fs::write("test/data/generated.pdf", generated_result)?;
         Ok(())
     }
-
 
     #[test]
     fn test_list() -> anyhow::Result<()> {
@@ -326,7 +324,10 @@ mod tests {
         let image_bytes = std::fs::read("test/data/picture.png")?;
         let image_bytes = Bytes::from(image_bytes);
         images.insert("image0.png".to_string(), image_bytes);
-        let parsed = markdown::Transformer::parse_with_loader(&documents_bytes, disk_image_loader("test/data"));
+        let parsed = markdown::Transformer::parse_with_loader(
+            &documents_bytes,
+            disk_image_loader("test/data"),
+        );
         assert!(parsed.is_ok());
         let mut parsed_document = parsed.unwrap();
         println!("==========================");
@@ -405,13 +406,8 @@ mod tests {
         let md_content = String::from_utf8(content).unwrap();
         let input_bytes = Bytes::from(md_content);
         let document = markdown::Transformer::parse(&input_bytes).unwrap();
-        let output_bytes = pdf::Transformer::generate(&document)
-            .unwrap()
-            .to_vec();
+        let output_bytes = pdf::Transformer::generate(&document).unwrap().to_vec();
 
-        std::fs::write(
-            "test/data/test.pdf",
-            output_bytes,
-        ).unwrap();
+        std::fs::write("test/data/test.pdf", output_bytes).unwrap();
     }
 }

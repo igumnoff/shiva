@@ -886,17 +886,18 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
             </html>
         "#;
         let input = &input.as_bytes().into();
-        let doc_from_html = html::Transformer::parse_with_loader(input, disk_image_loader("test/data"))?;
+        let doc_from_html =
+            html::Transformer::parse_with_loader(input, disk_image_loader("test/data"))?;
         println!("{:#?}", doc_from_html);
         let parsed_html_bytes =
             Transformer::generate_with_saver(&doc_from_html, disk_image_saver("test/data"))?;
 
-        let doc_from_markdown = Transformer::parse_with_loader(&parsed_html_bytes, disk_image_loader("test/data"));
+        let doc_from_markdown =
+            Transformer::parse_with_loader(&parsed_html_bytes, disk_image_loader("test/data"));
         println!("{:#?}", doc_from_markdown);
         println!("{}", std::str::from_utf8(&parsed_html_bytes)?);
         assert!(true);
 
         Ok(())
     }
-
 }

@@ -2,7 +2,6 @@ use crate::core::{
     Document, Element, ImageDimension, ListItem, TableCell, TableRow, TransformerTrait,
 };
 
-
 use bytes::Bytes;
 use docx_rs::{
     read_docx, AbstractNumbering, Docx, Hyperlink, HyperlinkType, IndentLevel, Level, LevelJc,
@@ -87,11 +86,13 @@ fn detect_element_in_list(doc: &mut Docx, element: &Element, numbered: bool, dep
                 Paragraph::new().add_run(Run::new().add_text(title).size(*size as usize * 2));
 
             if numbered {
-                hyperlink_paragraph = hyperlink_paragraph.numbering(NumberingId::new(2), IndentLevel::new(depth));
+                hyperlink_paragraph =
+                    hyperlink_paragraph.numbering(NumberingId::new(2), IndentLevel::new(depth));
             } else {
                 let indent = " ".repeat(depth * 4);
                 let modified_title = format!("{}- {}", indent, title);
-                hyperlink_paragraph = Paragraph::new().add_run(Run::new().add_text(modified_title).size(*size as usize * 2));
+                hyperlink_paragraph = Paragraph::new()
+                    .add_run(Run::new().add_text(modified_title).size(*size as usize * 2));
             }
 
             let hyperlink = Hyperlink::new(url, HyperlinkType::External)
@@ -548,19 +549,19 @@ mod tests {
 
         println!("Parsed - {:#?}", parsed);
         let elements = vec![
-                Element::Text {
-                    text: "Warszawa, dnia {{DATA}} r. ".to_string(),
-                    size: 16,
-                },
-                Element::Header {
-                    level: 1,
-                    text: "Header 1.".to_string(),
-                },
-                Element::Text {
-                    text: "".to_string(),
-                    size: 16,
-                },
-            ];
+            Element::Text {
+                text: "Warszawa, dnia {{DATA}} r. ".to_string(),
+                size: 16,
+            },
+            Element::Header {
+                level: 1,
+                text: "Header 1.".to_string(),
+            },
+            Element::Text {
+                text: "".to_string(),
+                size: 16,
+            },
+        ];
         let expected_result = Document::new(elements);
         assert_eq!(expected_result, parsed);
         Ok(())

@@ -1,20 +1,20 @@
-use crate::core::Element::{ Table, Text};
+use crate::core::Element::{Table, Text};
 use crate::core::*;
 use bytes::Bytes;
-use calamine::{ open_workbook_from_rs, Reader, Xls};
+use calamine::{open_workbook_from_rs, Reader, Xls};
 use std::io::Cursor;
 
 pub struct Transformer;
 
 impl TransformerTrait for Transformer {
     fn parse(document: &Bytes) -> anyhow::Result<Document>
-        where Self: Sized
+    where
+        Self: Sized,
     {
         let cursor = Cursor::new(document.clone());
 
-        let mut workbook: Xls<Cursor<Bytes>> = open_workbook_from_rs(cursor).expect(
-            "Cannot open xls file from bytes"
-        );
+        let mut workbook: Xls<Cursor<Bytes>> =
+            open_workbook_from_rs(cursor).expect("Cannot open xls file from bytes");
 
         let mut data: Vec<Element> = Vec::new();
 
@@ -66,7 +66,8 @@ impl TransformerTrait for Transformer {
     }
 
     fn generate(_document: &Document) -> anyhow::Result<Bytes>
-        where Self: Sized
+    where
+        Self: Sized,
     {
         todo!()
     }
@@ -74,12 +75,12 @@ impl TransformerTrait for Transformer {
 
 #[cfg(test)]
 mod tests {
-    use std::fs::File;
-    use std::io::Read;
-    use anyhow::Ok;
-    use bytes::Bytes;
     use crate::text;
     use crate::xls::*;
+    use anyhow::Ok;
+    use bytes::Bytes;
+    use std::fs::File;
+    use std::io::Read;
 
     #[test]
     fn test_parse() -> anyhow::Result<()> {
@@ -99,8 +100,6 @@ mod tests {
         let generated_text = std::str::from_utf8(&generated_bytes)?;
         println!("{}", generated_text);
 
-
         Ok(())
     }
-
 }

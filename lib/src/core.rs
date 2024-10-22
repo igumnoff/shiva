@@ -1,11 +1,11 @@
 use bytes::Bytes;
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
-use wasm_bindgen::prelude::wasm_bindgen;
 use std::fmt::Debug;
 use std::str::FromStr;
+use strum::{Display, EnumCount, EnumString, IntoStaticStr, VariantArray};
 use thiserror::Error;
-use strum::{VariantArray, EnumString, Display, IntoStaticStr, EnumCount};
+use wasm_bindgen::prelude::wasm_bindgen;
 
 #[cfg(feature = "csv")]
 use crate::csv;
@@ -106,15 +106,15 @@ pub enum PageOrientation {
 }
 
 /// Band is a section of a document(Title, PageHeader, ColumnHeader, Detail, ColumnFooter, PageFooter, Summary).
-/// 
+///
 /// Each band contains a list of elements (Text, Table, List, Image, Hyperlink...).
-/// 
+///
 /// Bands are used to organize the content of a document.
-/// 
+///
 /// Documents in general have a predefined set of bands, but custom bands can be created.
-/// 
+///
 /// PageHeader, Detail, PageFooter are the most common bands and is used to display the header, main content, and footer of documents of any type(XML, CSV, JSON...).
-/// 
+///
 /// The logic to handle custom bands is up to the user/file format
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
@@ -188,9 +188,18 @@ impl Document {
         }
     }
 
-    pub fn new_with_dimensions(page_header: Vec<Element>, elements: Vec<Element>, page_footer: Vec<Element>, page_format: PageFormat) -> Document {
+    pub fn new_with_dimensions(
+        page_header: Vec<Element>,
+        elements: Vec<Element>,
+        page_footer: Vec<Element>,
+        page_format: PageFormat,
+    ) -> Document {
         Document {
-            bands: vec![Band::PageHeader(page_header), Band::Detail(elements), Band::PageFooter(page_footer)],
+            bands: vec![
+                Band::PageHeader(page_header),
+                Band::Detail(elements),
+                Band::PageFooter(page_footer),
+            ],
             page_format,
             orientation: PageOrientation::default(),
         }
@@ -315,7 +324,7 @@ impl Document {
             elements.extend(band.elements());
         }
         elements
-    }    
+    }
 
     /// Returns all elements from a specific band
     pub fn get_elements_by_band(&self, band: &Band) -> Vec<&Element> {
@@ -418,7 +427,9 @@ impl Document {
     /// The detail band is the most common band and is used to display the main content of the document of any type
     pub fn add_detail(&mut self, element: Element) {
         for band in &mut self.bands {
-            if let Band::Detail(e) = band { e.push(element.clone()) }
+            if let Band::Detail(e) = band {
+                e.push(element.clone())
+            }
         }
     }
 
@@ -430,31 +441,41 @@ impl Document {
 
     pub fn add_page_header(&mut self, element: Element) {
         for band in &mut self.bands {
-            if let Band::PageHeader(e) = band { e.push(element.clone()) }
+            if let Band::PageHeader(e) = band {
+                e.push(element.clone())
+            }
         }
     }
 
     pub fn add_column_header(&mut self, element: Element) {
         for band in &mut self.bands {
-            if let Band::ColumnHeader(e) = band { e.push(element.clone()) }
+            if let Band::ColumnHeader(e) = band {
+                e.push(element.clone())
+            }
         }
     }
 
     pub fn add_column_footer(&mut self, element: Element) {
         for band in &mut self.bands {
-            if let Band::ColumnFooter(e) = band { e.push(element.clone()) }
+            if let Band::ColumnFooter(e) = band {
+                e.push(element.clone())
+            }
         }
     }
 
     pub fn add_page_footer(&mut self, element: Element) {
         for band in &mut self.bands {
-            if let Band::PageFooter(e) = band { e.push(element.clone()) }
+            if let Band::PageFooter(e) = band {
+                e.push(element.clone())
+            }
         }
     }
 
     pub fn add_summary(&mut self, element: Element) {
         for band in &mut self.bands {
-            if let Band::Summary(e) = band { e.push(element.clone()) }
+            if let Band::Summary(e) = band {
+                e.push(element.clone())
+            }
         }
     }
 
@@ -482,12 +503,13 @@ pub trait TransformerTrait {
     fn generate(document: &Document) -> anyhow::Result<Bytes>;
 }
 
-
 pub trait TransformerWithImageLoaderSaverTrait {
-    fn parse_with_loader<F>(document: &Bytes,  image_loader: F) -> anyhow::Result<Document>
-        where F: Fn(&str) -> anyhow::Result<Bytes>;
-    fn generate_with_saver<F>(document: &Document,  image_saver: F) -> anyhow::Result<Bytes>
-        where F: Fn(&Bytes, &str) -> anyhow::Result<()>;
+    fn parse_with_loader<F>(document: &Bytes, image_loader: F) -> anyhow::Result<Document>
+    where
+        F: Fn(&str) -> anyhow::Result<Bytes>;
+    fn generate_with_saver<F>(document: &Document, image_saver: F) -> anyhow::Result<Bytes>
+    where
+        F: Fn(&Bytes, &str) -> anyhow::Result<()>;
 }
 #[derive(Error, Debug)]
 pub enum ParserError {
@@ -727,7 +749,9 @@ pub fn disk_image_saver(path: &str) -> impl Fn(&Bytes, &str) -> anyhow::Result<(
 
 #[wasm_bindgen]
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumString, Display, VariantArray, IntoStaticStr, EnumCount)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, EnumString, Display, VariantArray, IntoStaticStr, EnumCount,
+)]
 #[cfg_attr(feature = "json", derive(Serialize))]
 #[strum(serialize_all = "lowercase")]
 pub enum DocumentType {
@@ -755,7 +779,6 @@ impl DocumentType {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
 
@@ -763,10 +786,19 @@ mod tests {
     use std::str::FromStr;
 
     const VARIANTS: &[DocumentType] = &[
-        DocumentType::HTML, DocumentType::Markdown, DocumentType::Text,
-        DocumentType::PDF, DocumentType::Json, DocumentType::CSV,
-        DocumentType::RTF, DocumentType::DOCX, DocumentType::XML,
-        DocumentType::XLS, DocumentType::XLSX, DocumentType::ODS];
+        DocumentType::HTML,
+        DocumentType::Markdown,
+        DocumentType::Text,
+        DocumentType::PDF,
+        DocumentType::Json,
+        DocumentType::CSV,
+        DocumentType::RTF,
+        DocumentType::DOCX,
+        DocumentType::XML,
+        DocumentType::XLS,
+        DocumentType::XLSX,
+        DocumentType::ODS,
+    ];
 
     #[test]
     fn test_document_type_count() {
@@ -811,7 +843,17 @@ mod tests {
     #[test]
     fn test_image_new() {
         let bytes = Bytes::from("image".as_bytes());
-        let image = ImageData::new(bytes.clone(), "title".to_string(), "alt".to_string(), "/name/image.png".to_string(), "center".to_string(), ImageDimension { width: Some("50%".to_string()), height: Some("200".to_string())});
+        let image = ImageData::new(
+            bytes.clone(),
+            "title".to_string(),
+            "alt".to_string(),
+            "/name/image.png".to_string(),
+            "center".to_string(),
+            ImageDimension {
+                width: Some("50%".to_string()),
+                height: Some("200".to_string()),
+            },
+        );
         assert_eq!(image.bytes(), &bytes);
         assert_eq!(image.title(), "title");
         assert_eq!(image.alt(), "alt");
@@ -837,11 +879,17 @@ mod tests {
 
     #[test]
     fn test_image_alignment() {
-        assert_eq!(ImageAlignment::Left, ImageAlignment::from_str("left").unwrap());
-        assert_eq!(ImageAlignment::Center, ImageAlignment::from_str("center").unwrap());
-        assert_eq!(ImageAlignment::Right, ImageAlignment::from_str("right").unwrap());
+        assert_eq!(
+            ImageAlignment::Left,
+            ImageAlignment::from_str("left").unwrap()
+        );
+        assert_eq!(
+            ImageAlignment::Center,
+            ImageAlignment::from_str("center").unwrap()
+        );
+        assert_eq!(
+            ImageAlignment::Right,
+            ImageAlignment::from_str("right").unwrap()
+        );
     }
-
-
-
 }

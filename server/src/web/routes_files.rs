@@ -110,10 +110,18 @@ async fn convert_file_zip(
 
     let document = match file_extension.as_str() {
         "md" => Document::from(
-            shiva::markdown::Transformer::parse_with_loader(&input_file_data_bytes, memory_image_loader(images)).unwrap(),
+            shiva::markdown::Transformer::parse_with_loader(
+                &input_file_data_bytes,
+                memory_image_loader(images),
+            )
+            .unwrap(),
         ),
         "html" | "htm" => Document::from(
-            shiva::html::Transformer::parse_with_loader(&input_file_data_bytes, memory_image_loader(images)).unwrap(),
+            shiva::html::Transformer::parse_with_loader(
+                &input_file_data_bytes,
+                memory_image_loader(images),
+            )
+            .unwrap(),
         ),
         _ => return Err(Error::FailParseDocument),
     };
@@ -135,16 +143,16 @@ async fn convert_file_zip(
     })
 }
 
-fn memory_image_loader(images: HashMap<String, Bytes>) -> impl Fn(&str) -> anyhow::Result<Bytes>  {
+fn memory_image_loader(images: HashMap<String, Bytes>) -> impl Fn(&str) -> anyhow::Result<Bytes> {
     let image_loader = move |image: &str| -> anyhow::Result<Bytes> {
-        let bytes= images.get(image).cloned().ok_or_else(|| anyhow::anyhow!("No image: {}", image))?;
+        let bytes = images
+            .get(image)
+            .cloned()
+            .ok_or_else(|| anyhow::anyhow!("No image: {}", image))?;
         Ok(Bytes::from(bytes))
-
     };
     image_loader
 }
-
-
 
 //checking the supported formats in the archive
 fn supported_extensions_in_archive(file_extension: &str) -> bool {
@@ -322,21 +330,15 @@ async fn convert_file(
     //println!("download file format: {}", output_format);
 
     let document = match file_extension.as_str() {
-        "md" => Document::from(
-            shiva::markdown::Transformer::parse(&input_file_data_bytes).unwrap(),
-        ),
-        "html" | "htm" => Document::from(
-            shiva::html::Transformer::parse(&input_file_data_bytes).unwrap(),
-        ),
-        "txt" => Document::from(
-            shiva::text::Transformer::parse(&input_file_data_bytes).unwrap(),
-        ),
-        "pdf" => Document::from(
-            shiva::pdf::Transformer::parse(&input_file_data_bytes).unwrap(),
-        ),
-        "json" => Document::from(
-            shiva::json::Transformer::parse(&input_file_data_bytes).unwrap(),
-        ),
+        "md" => {
+            Document::from(shiva::markdown::Transformer::parse(&input_file_data_bytes).unwrap())
+        }
+        "html" | "htm" => {
+            Document::from(shiva::html::Transformer::parse(&input_file_data_bytes).unwrap())
+        }
+        "txt" => Document::from(shiva::text::Transformer::parse(&input_file_data_bytes).unwrap()),
+        "pdf" => Document::from(shiva::pdf::Transformer::parse(&input_file_data_bytes).unwrap()),
+        "json" => Document::from(shiva::json::Transformer::parse(&input_file_data_bytes).unwrap()),
         _ => return Err(Error::FailParseDocument),
     };
 

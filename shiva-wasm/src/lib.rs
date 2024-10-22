@@ -2,7 +2,7 @@ mod utils;
 
 use wasm_bindgen::prelude::*;
 
-use shiva::{core::DocumentType as FileFormat, core::Document};
+use shiva::{core::Document, core::DocumentType as FileFormat};
 
 use crate::utils::set_panic_hook;
 
@@ -21,7 +21,7 @@ pub fn convert(
 ) -> Result<Vec<u8>, JsValue> {
     set_panic_hook();
 
-    let parsed_file = match Document::parse(&file.into(),input_format) {
+    let parsed_file = match Document::parse(&file.into(), input_format) {
         Ok(parse_result) => parse_result,
         Err(e) => {
             return Err(e.to_string().into());
@@ -31,7 +31,7 @@ pub fn convert(
     let generated = match parsed_file.generate(output_format) {
         Ok(res) => res,
         Err(err) => {
-            log!(" FileFormat::{} err {:#?}",output_format, err);
+            log!(" FileFormat::{} err {:#?}", output_format, err);
             return Err(err.to_string().into());
         }
     };

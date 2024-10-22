@@ -3,7 +3,8 @@ mod tests {
     use bytes::Bytes;
     use shiva::core::Element::{Header, Hyperlink, Image, List, Paragraph, Table, Text};
     use shiva::core::{
-        Document, Element, ImageAlignment, ImageData, ImageDimension, ImageType, ListItem, TableCell, TableHeader, TableRow, TransformerTrait
+        Document, Element, ImageAlignment, ImageData, ImageDimension, ImageType, ListItem,
+        TableCell, TableHeader, TableRow, TransformerTrait,
     };
     use shiva::html::Transformer;
 
@@ -239,34 +240,34 @@ mod tests {
 </body>
 </html>"#;
         let elements = [
-                List {
-                    elements: vec![{
-                        ListItem {
-                            element: {
-                                Text {
-                                    size: 8,
-                                    text: "List item 1".to_string(),
-                                }
-                            },
-                        }
-                    }],
-                    numbered: true,
-                },
-                List {
-                    elements: vec![{
-                        ListItem {
-                            element: {
-                                Text {
-                                    size: 8,
-                                    text: "List item one".to_string(),
-                                }
-                            },
-                        }
-                    }],
-                    numbered: false,
-                },
-            ]
-            .to_vec();
+            List {
+                elements: vec![{
+                    ListItem {
+                        element: {
+                            Text {
+                                size: 8,
+                                text: "List item 1".to_string(),
+                            }
+                        },
+                    }
+                }],
+                numbered: true,
+            },
+            List {
+                elements: vec![{
+                    ListItem {
+                        element: {
+                            Text {
+                                size: 8,
+                                text: "List item one".to_string(),
+                            }
+                        },
+                    }
+                }],
+                numbered: false,
+            },
+        ]
+        .to_vec();
         let html_document: Document = Document::new(elements);
         let generated_result = Transformer::generate(&html_document);
         assert!(generated_result.is_ok());

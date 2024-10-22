@@ -144,7 +144,12 @@ impl TransformerTrait for Transformer {
                 }
                 Image(image) => {
                     let image_path = format!("image{}.png", image_num);
-                    markdown.push_str(&format!("![{}]({} \"{}\")", image.alt(), image_path, image.title()));
+                    markdown.push_str(&format!(
+                        "![{}]({} \"{}\")",
+                        image.alt(),
+                        image_path,
+                        image.title()
+                    ));
                     images.insert(image_path.to_string(), image.bytes().clone());
                     *image_num += 1;
                 }

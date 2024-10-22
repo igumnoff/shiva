@@ -4,7 +4,6 @@
 
 pub mod core;
 
-
 #[cfg(feature = "text")]
 pub mod text;
 

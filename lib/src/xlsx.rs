@@ -1,20 +1,20 @@
-use crate::core::Element::{ Table, Text};
+use crate::core::Element::{Table, Text};
 use crate::core::*;
 use bytes::Bytes;
-use calamine::{ open_workbook_from_rs, Reader, Xlsx };
-use std::io::Cursor;
+use calamine::{open_workbook_from_rs, Reader, Xlsx};
 use rust_xlsxwriter::*;
+use std::io::Cursor;
 pub struct Transformer;
 
 impl TransformerTrait for Transformer {
     fn parse(document: &Bytes) -> anyhow::Result<Document>
-        where Self: Sized
+    where
+        Self: Sized,
     {
         let cursor = Cursor::new(document.clone());
 
-        let mut workbook: Xlsx<Cursor<Bytes>> = open_workbook_from_rs(cursor).expect(
-            "Cannot open xlsx file from bytes"
-        );
+        let mut workbook: Xlsx<Cursor<Bytes>> =
+            open_workbook_from_rs(cursor).expect("Cannot open xlsx file from bytes");
 
         let mut data: Vec<Element> = Vec::new();
 
@@ -66,7 +66,8 @@ impl TransformerTrait for Transformer {
     }
 
     fn generate(document: &Document) -> anyhow::Result<Bytes>
-        where Self: Sized
+    where
+        Self: Sized,
     {
         let mut workbook = Workbook::new();
         fn generate_element(element: &Element, workbook: &mut Workbook) -> anyhow::Result<()> {
@@ -104,11 +105,11 @@ impl TransformerTrait for Transformer {
 
 #[cfg(test)]
 mod tests {
-    use std::fs::File;
-    use std::io::{ Read };
+    use crate::xlsx::*;
     use anyhow::Ok;
     use bytes::Bytes;
-    use crate::xlsx::*;
+    use std::fs::File;
+    use std::io::Read;
 
     #[test]
     fn test_parse() -> anyhow::Result<()> {

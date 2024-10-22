@@ -1,23 +1,23 @@
-use crate::core::Element::{ Table, Text};
+use crate::core::Element::{Table, Text};
 use crate::core::*;
 use bytes::Bytes;
-use calamine::{ open_workbook_from_rs, Reader, Ods };
+use calamine::{open_workbook_from_rs, Ods, Reader};
+use icu_locid::locale;
+use spreadsheet_ods::{write_ods_buf, Sheet, WorkBook};
 use std::io::Cursor;
 use std::vec;
-use spreadsheet_ods::{Sheet, WorkBook, write_ods_buf};
-use icu_locid::locale;
 
 pub struct Transformer;
 
 impl TransformerTrait for Transformer {
     fn parse(document: &Bytes) -> anyhow::Result<Document>
-        where Self: Sized
+    where
+        Self: Sized,
     {
         let cursor = Cursor::new(document.clone());
 
-        let mut workbook: Ods<Cursor<Bytes>> = open_workbook_from_rs(cursor).expect(
-            "Cannot open ods file from bytes"
-        );
+        let mut workbook: Ods<Cursor<Bytes>> =
+            open_workbook_from_rs(cursor).expect("Cannot open ods file from bytes");
 
         let mut data: Vec<Element> = Vec::new();
 
@@ -69,10 +69,15 @@ impl TransformerTrait for Transformer {
     }
 
     fn generate(document: &Document) -> anyhow::Result<Bytes>
-        where Self: Sized
+    where
+        Self: Sized,
     {
         let mut workbook = WorkBook::new(locale!("en_US"));
-        fn generate_element(element: &Element, workbook: &mut WorkBook, sheet_index: i32) -> anyhow::Result<()> {
+        fn generate_element(
+            element: &Element,
+            workbook: &mut WorkBook,
+            sheet_index: i32,
+        ) -> anyhow::Result<()> {
             match element {
                 Table { headers, rows } => {
                     let mut worksheet = Sheet::new("Sheet".to_string() + &sheet_index.to_string());
@@ -107,7 +112,7 @@ impl TransformerTrait for Transformer {
             sheet_index += 1;
         }
 
-        let mut ods_data =  vec![];
+        let mut ods_data = vec![];
         ods_data = write_ods_buf(&mut workbook, ods_data)?;
         Ok(Bytes::from(ods_data))
     }
@@ -115,11 +120,11 @@ impl TransformerTrait for Transformer {
 
 #[cfg(test)]
 mod tests {
-    use std::fs::File;
-    use std::io::{ Read };
+    use crate::ods::*;
     use anyhow::Ok;
     use bytes::Bytes;
-    use crate::ods::*;
+    use std::fs::File;
+    use std::io::Read;
 
     #[test]
     fn test_parse() -> anyhow::Result<()> {
@@ -147,10 +152,7 @@ mod tests {
         let bytes = Bytes::from(buffer);
         let parsed = Transformer::parse(&bytes)?;
 
-        let generated_data: Result<
-            bytes::Bytes,
-            anyhow::Error
-        > = Transformer::generate(&parsed);
+        let generated_data: Result<bytes::Bytes, anyhow::Error> = Transformer::generate(&parsed);
 
         let bytes_to_write = generated_data?;
         std::fs::write("test/data/test_document.ods", bytes_to_write)?;
@@ -159,5 +161,4 @@ mod tests {
 
         Ok(())
     }
-
 }

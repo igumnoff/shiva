@@ -49,10 +49,12 @@ fn main() -> anyhow::Result<()> {
                 supported_formats.join(", ")
             )
         })?,
-        None => return Err(anyhow::anyhow!(
-            "The input file has no extension. Supported formats are: {}",
-            supported_formats.join(", ")
-        )),
+        None => {
+            return Err(anyhow::anyhow!(
+                "The input file has no extension. Supported formats are: {}",
+                supported_formats.join(", ")
+            ))
+        }
     };
 
     let output_format = match output_path.extension() {
@@ -62,10 +64,12 @@ fn main() -> anyhow::Result<()> {
                 supported_formats.join(", ")
             )
         })?,
-        None => return Err(anyhow::anyhow!(
-            "The output file has no extension. Supported formats are: {}",
-            supported_formats.join(", ")
-        )),
+        None => {
+            return Err(anyhow::anyhow!(
+                "The output file has no extension. Supported formats are: {}",
+                supported_formats.join(", ")
+            ))
+        }
     };
 
     let input_doc_type = DocumentType::from_str(input_format).map_err(|_| {
