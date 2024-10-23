@@ -1,8 +1,8 @@
 use bytes::Bytes;
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fmt::Debug};
 use std::str::FromStr;
+use std::{collections::HashMap, fmt::Debug};
 use strum::{Display, EnumCount, EnumString, IntoStaticStr, VariantArray};
 use thiserror::Error;
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -803,8 +803,6 @@ impl DocumentType {
     pub fn supported_extensions() -> Vec<&'static str> {
         Self::extension_map().keys().cloned().collect()
     }
-
-    
 }
 
 #[cfg(test)]

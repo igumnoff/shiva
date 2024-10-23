@@ -2,7 +2,6 @@ use bytes::Bytes;
 use clap::{Parser, ValueHint};
 use shiva::core::{Document, DocumentType};
 use std::path::Path;
-use std::str::FromStr;
 
 #[derive(Parser, Debug)]
 #[command(
@@ -17,7 +16,7 @@ struct Args {
         value_name = "INPUT_FILE",
         help = &format!(
             "Input file (possible formats: {})",
-            DocumentType::variants_as_str().join(", ")
+            DocumentType::supported_extensions().join(", ")
         ),
         value_hint = ValueHint::FilePath
     )]
@@ -27,7 +26,7 @@ struct Args {
         value_name = "OUTPUT_FILE",
         help = &format!(
             "Output file (possible formats: {})",
-            DocumentType::variants_as_str().join(", ")
+            DocumentType::supported_extensions().join(", ")
         ),
         value_hint = ValueHint::FilePath
     )]
