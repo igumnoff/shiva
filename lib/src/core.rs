@@ -1,7 +1,7 @@
 use bytes::Bytes;
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
-use std::fmt::Debug;
+use std::{collections::HashMap, fmt::Debug};
 use std::str::FromStr;
 use strum::{Display, EnumCount, EnumString, IntoStaticStr, VariantArray};
 use thiserror::Error;
@@ -777,6 +777,34 @@ impl DocumentType {
     pub fn variants_as_str() -> Vec<&'static str> {
         DocumentType::VARIANTS.iter().map(|v| v.into()).collect()
     }
+
+    fn extension_map() -> HashMap<&'static str, DocumentType> {
+        let mut map = HashMap::new();
+        map.insert("html", DocumentType::HTML);
+        map.insert("md", DocumentType::Markdown);
+        map.insert("markdown", DocumentType::Markdown);
+        map.insert("txt", DocumentType::Text);
+        map.insert("pdf", DocumentType::PDF);
+        map.insert("json", DocumentType::Json);
+        map.insert("csv", DocumentType::CSV);
+        map.insert("rtf", DocumentType::RTF);
+        map.insert("docx", DocumentType::DOCX);
+        map.insert("xml", DocumentType::XML);
+        map.insert("xls", DocumentType::XLS);
+        map.insert("xlsx", DocumentType::XLSX);
+        map.insert("ods", DocumentType::ODS);
+        map
+    }
+
+    pub fn from_extension(extension: &str) -> Option<DocumentType> {
+        Self::extension_map().get(extension).cloned()
+    }
+
+    pub fn supported_extensions() -> Vec<&'static str> {
+        Self::extension_map().keys().cloned().collect()
+    }
+
+    
 }
 
 #[cfg(test)]
