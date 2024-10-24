@@ -2,7 +2,6 @@ use bytes::Bytes;
 use clap::{Parser, ValueHint};
 use shiva::core::{Document, DocumentType};
 use std::path::Path;
-use std::str::FromStr;
 
 #[derive(Parser, Debug)]
 #[command(
@@ -17,7 +16,7 @@ struct Args {
         value_name = "INPUT_FILE",
         help = &format!(
             "Input file (possible formats: {})",
-            DocumentType::variants_as_str().join(", ")
+            DocumentType::supported_extensions().join(", ")
         ),
         value_hint = ValueHint::FilePath
     )]
@@ -27,7 +26,7 @@ struct Args {
         value_name = "OUTPUT_FILE",
         help = &format!(
             "Output file (possible formats: {})",
-            DocumentType::variants_as_str().join(", ")
+            DocumentType::supported_extensions().join(", ")
         ),
         value_hint = ValueHint::FilePath
     )]
@@ -40,7 +39,7 @@ fn main() -> anyhow::Result<()> {
     let input_path = Path::new(&args.input_file);
     let output_path = Path::new(&args.output_file);
 
-    let supported_formats = DocumentType::variants_as_str();
+    let supported_formats = DocumentType::supported_extensions();
 
     let input_format = match input_path.extension() {
         Some(ext) => ext.to_str().ok_or_else(|| {
@@ -72,7 +71,7 @@ fn main() -> anyhow::Result<()> {
         }
     };
 
-    let input_doc_type = DocumentType::from_str(input_format).map_err(|_| {
+    let input_doc_type = DocumentType::from_extension(input_format).ok_or_else(|| {
         anyhow::anyhow!(
             "Unsupported input file format '{}'. Supported formats are: {}",
             input_format,
@@ -80,7 +79,7 @@ fn main() -> anyhow::Result<()> {
         )
     })?;
 
-    let output_doc_type = DocumentType::from_str(output_format).map_err(|_| {
+    let output_doc_type = DocumentType::from_extension(output_format).ok_or_else(|| {
         anyhow::anyhow!(
             "Unsupported output file format '{}'. Supported formats are: {}",
             output_format,

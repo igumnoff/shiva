@@ -1,8 +1,8 @@
 use bytes::Bytes;
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
-use std::fmt::Debug;
 use std::str::FromStr;
+use std::{collections::HashMap, fmt::Debug};
 use strum::{Display, EnumCount, EnumString, IntoStaticStr, VariantArray};
 use thiserror::Error;
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -774,8 +774,30 @@ impl DocumentType {
         DocumentType::VARIANTS
     }
 
-    pub fn variants_as_str() -> Vec<&'static str> {
-        DocumentType::VARIANTS.iter().map(|v| v.into()).collect()
+    fn extension_map() -> HashMap<&'static str, DocumentType> {
+        let mut map = HashMap::new();
+        map.insert("html", DocumentType::HTML);
+        map.insert("md", DocumentType::Markdown);
+        map.insert("markdown", DocumentType::Markdown);
+        map.insert("txt", DocumentType::Text);
+        map.insert("pdf", DocumentType::PDF);
+        map.insert("json", DocumentType::Json);
+        map.insert("csv", DocumentType::CSV);
+        map.insert("rtf", DocumentType::RTF);
+        map.insert("docx", DocumentType::DOCX);
+        map.insert("xml", DocumentType::XML);
+        map.insert("xls", DocumentType::XLS);
+        map.insert("xlsx", DocumentType::XLSX);
+        map.insert("ods", DocumentType::ODS);
+        map
+    }
+
+    pub fn from_extension(extension: &str) -> Option<DocumentType> {
+        Self::extension_map().get(extension).cloned()
+    }
+
+    pub fn supported_extensions() -> Vec<&'static str> {
+        Self::extension_map().keys().cloned().collect()
     }
 }
 
@@ -820,11 +842,28 @@ mod tests {
     }
 
     #[test]
-    fn test_variants_as_str() {
-        let variants = DocumentType::variants_as_str();
-        assert_eq!(variants.len(), DocumentType::COUNT);
+    fn test_from_extension() {
+        assert_eq!(
+            DocumentType::Markdown,
+            DocumentType::from_extension("md").unwrap()
+        );
+        assert_eq!(
+            DocumentType::Markdown,
+            DocumentType::from_extension("markdown").unwrap()
+        );
+        assert_eq!(
+            DocumentType::Text,
+            DocumentType::from_extension("txt").unwrap()
+        );
+    }
+
+    #[test]
+    fn test_supported_extensions() {
+        let variants = DocumentType::supported_extensions();
         assert!(variants.contains(&"html"));
         assert!(variants.contains(&"docx"));
+        assert!(variants.contains(&"markdown"));
+        assert!(variants.contains(&"md"));
     }
 
     #[test]
