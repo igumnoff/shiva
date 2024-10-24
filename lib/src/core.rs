@@ -774,10 +774,6 @@ impl DocumentType {
         DocumentType::VARIANTS
     }
 
-    pub fn variants_as_str() -> Vec<&'static str> {
-        DocumentType::VARIANTS.iter().map(|v| v.into()).collect()
-    }
-
     fn extension_map() -> HashMap<&'static str, DocumentType> {
         let mut map = HashMap::new();
         map.insert("html", DocumentType::HTML);
@@ -846,11 +842,28 @@ mod tests {
     }
 
     #[test]
-    fn test_variants_as_str() {
-        let variants = DocumentType::variants_as_str();
-        assert_eq!(variants.len(), DocumentType::COUNT);
+    fn test_from_extension() {
+        assert_eq!(
+            DocumentType::Markdown,
+            DocumentType::from_extension("md").unwrap()
+        );
+        assert_eq!(
+            DocumentType::Markdown,
+            DocumentType::from_extension("markdown").unwrap()
+        );
+        assert_eq!(
+            DocumentType::Text,
+            DocumentType::from_extension("txt").unwrap()
+        );
+    }
+
+    #[test]
+    fn test_supported_extensions() {
+        let variants = DocumentType::supported_extensions();
         assert!(variants.contains(&"html"));
         assert!(variants.contains(&"docx"));
+        assert!(variants.contains(&"markdown"));
+        assert!(variants.contains(&"md"));
     }
 
     #[test]
