@@ -74,7 +74,7 @@
 Cargo.toml
 ```toml
 [dependencies]
-shiva = {  version = "1.4.6", features = ["html", "markdown", "text", "pdf", "json", 
+shiva = {  version = "1.4.7", features = ["html", "markdown", "text", "pdf", "json", 
     "csv", "rtf", "docx", "xml", "xls", "xlsx", "ods", "typst"] }
 ```
 
@@ -100,7 +100,7 @@ cargo build --release
 ### Run executable Shiva CLI
 ```bash
 cd ./target/release/
-./shiva README.markdown README.html
+./shiva README.md README.html
 ```
 
 ### Run Shiva Server
