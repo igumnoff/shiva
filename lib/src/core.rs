@@ -932,3 +932,5 @@ mod tests {
         );
     }
 }
+
+pub use bytes;
