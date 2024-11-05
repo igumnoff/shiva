@@ -1,5 +1,6 @@
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
+use log::info;
 use serde::Serialize;
 use strum_macros::AsRefStr;
 
@@ -19,7 +20,7 @@ pub enum Error {
 
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
-        println!("-->> {:<12} - {self:?}", "INTO_RES");
+        info!("-->> {:<12} - {self:?}", "INTO_RES");
 
         let mut response = StatusCode::INTERNAL_SERVER_ERROR.into_response();
 

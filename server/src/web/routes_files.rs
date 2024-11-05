@@ -4,6 +4,7 @@ use axum::extract::multipart::Field;
 use axum::extract::{Multipart, Path};
 use axum::response::{IntoResponse, Response};
 use futures_util::StreamExt;
+use log::{error, info};
 use serde::Serialize;
 use shiva::core::{Document, TransformerTrait, TransformerWithImageLoaderSaverTrait};
 use std::collections::HashMap;
@@ -58,7 +59,7 @@ pub async fn handler_convert_file(
         Ok(data_upload_file) => match data_upload_file {
             StructUploadFile::UploadFile(upload_file_info) => {
                 let input_extension = upload_file_info.upload_file_extension.clone();
-                println!("-->> {:<12} - handler_convert_file input_extension_{input_extension}- output_extension_{output_format}", "HANDLER");
+                info!("-->> {:<12} - handler_convert_file input_extension_{input_extension}- output_extension_{output_format}", "HANDLER");
 
                 let build_response_file = convert_file(
                     upload_file_info.upload_file_name,
@@ -72,7 +73,7 @@ pub async fn handler_convert_file(
                 Ok(build_response_file)
             }
             StructUploadFile::UploadZip(upload_file_zip) => {
-                println!("-->> {:<12} - handler_convert_file input ZIP archive - output_extension_{output_format}", "HANDLER");
+                info!("-->> {:<12} - handler_convert_file input ZIP archive - output_extension_{output_format}", "HANDLER");
 
                 let build_response_file = convert_file_zip(
                     upload_file_zip.file_name,
@@ -99,12 +100,12 @@ async fn convert_file_zip(
     output_format: String,
 ) -> Result<DownloadFile> {
     /*
-    println!("upload file name: {}", file_name);
-    println!("upload file format: {}", file_extension);
-    println!("download file format: {}", output_format);
-    println!("Image files from the archive");
+    info!("upload file name: {}", file_name);
+    info!("upload file format: {}", file_extension);
+    info!("download file format: {}", output_format);
+    info!("Image files from the archive");
     for image_name in images.keys() {
-        println!("- {:#?}", image_name);
+        info!("- {:#?}", image_name);
     }
      */
 
@@ -180,7 +181,7 @@ async fn unpacking(mut field: Field<'_>) -> Result<StructUploadFile> {
                 file_content.extend_from_slice(&data);
             }
             Err(e) => {
-                println!("Error reading chunk: {:?}", e);
+                error!("Error reading chunk: {:?}", e);
                 return Err(Error::FailBytes);
             }
         }
@@ -212,7 +213,7 @@ async fn unpacking(mut field: Field<'_>) -> Result<StructUploadFile> {
             .filter(|ext| !ext.trim().is_empty())
             .map(String::from);
 
-        //println!("in ZIP {}.{}", file_name_in_archive.clone().unwrap(), file_extension_in_archive.clone().unwrap());
+        //info!("in ZIP {}.{}", file_name_in_archive.clone().unwrap(), file_extension_in_archive.clone().unwrap());
 
         //checking the supported format
         if let Some(ref ext) = file_extension_in_archive {
@@ -325,9 +326,9 @@ async fn convert_file(
     input_file_data_bytes: Bytes,
     output_format: String,
 ) -> Result<DownloadFile> {
-    //println!("upload file name: {}", file_name);
-    //println!("upload file format: {}", file_extension);
-    //println!("download file format: {}", output_format);
+    //info!("upload file name: {}", file_name);
+    //info!("upload file format: {}", file_extension);
+    //info!("download file format: {}", output_format);
 
     let document = match file_extension.as_str() {
         "md" => {

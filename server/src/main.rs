@@ -5,6 +5,7 @@ use axum::response::{Html, IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{middleware, Router};
 use clap::{Arg, Command};
+use log::info;
 use tokio::net::TcpListener;
 use tower_http::limit::RequestBodyLimitLayer;
 
@@ -64,7 +65,7 @@ async fn main() -> Result<()> {
         .await
         .unwrap();
 
-    println!("-->>LISTENING on {:?}", listener.local_addr().unwrap());
+    info!("-->>LISTENING on {:?}", listener.local_addr().unwrap());
 
     axum::serve(listener, routes_all).await.unwrap();
     // endregion: ---Start Server
@@ -73,15 +74,14 @@ async fn main() -> Result<()> {
 }
 
 async fn handler_answer_server() -> impl IntoResponse {
-    println!("-->> {:<12} - answer_server", "HANDLER");
+    info!("-->> {:<12} - answer_server", "HANDLER");
 
     Html("TEST DONE")
 }
 
 async fn main_response_mapper(res: Response) -> Response {
-    println!("-->> {:<12} - main_response_mapper", "RES_MAPPER");
+    info!("-->> {:<12} - main_response_mapper", "RES_MAPPER");
 
-    println!();
     res
 }
 
