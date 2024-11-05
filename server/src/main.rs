@@ -98,6 +98,7 @@ mod tests {
     use std::io::Cursor;
     use std::io::Write;
     use tokio::fs::File;
+    use log::info;
 
     #[tokio::test]
     async fn test_server() -> Result<()> {
@@ -155,7 +156,7 @@ mod tests {
                 // Creating HTTP-client
                 let client = reqwest::Client::new();
 
-                println!("sending the test_file.{}", input_format);
+                info!("sending the test_file.{}", input_format);
 
                 // Sending a POST request to the server with the multipart form
                 let mut response = client
@@ -181,7 +182,7 @@ mod tests {
                     }
                 }
 
-                println!(
+                info!(
                     "the file has been successfully converted to the format {}",
                     output_format
                 )
@@ -256,7 +257,7 @@ mod tests {
             // Creating HTTP-client
             let client = reqwest::Client::new();
 
-            println!("sending the test_file.pdf");
+            info!("sending the test_file.pdf");
 
             // Sending a POST request to the server with the multipart form
             let response = client
@@ -271,7 +272,7 @@ mod tests {
             // Checking the server response
             assert_eq!(response.status(), reqwest::StatusCode::OK);
 
-            println!(
+            info!(
                 "the file has been successfully converted to the format {}",
                 output_format
             )
@@ -331,7 +332,7 @@ mod tests {
 
             let client = reqwest::Client::new();
 
-            println!("sending the test_file.json");
+            info!("sending the test_file.json");
 
             let response = client
                 .post(&format!(
@@ -344,7 +345,7 @@ mod tests {
 
             assert_eq!(response.status(), reqwest::StatusCode::OK);
 
-            println!(
+            info!(
                 "the file has been successfully converted to the format {}",
                 output_format
             )
@@ -355,7 +356,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_upload_zip() -> Result<(), Box<dyn std::error::Error>> {
-        println!("start test_upload_zip");
+        info!("start test_upload_zip");
         /*
                 env_logger::builder()
                     .filter_level(log::LevelFilter::Trace)
