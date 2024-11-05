@@ -3,7 +3,7 @@ use crate::core::{Document, Element, ListItem, ParserError, TransformerTrait};
 
 use anyhow;
 use bytes::Bytes;
-use log::warn;
+use log::{debug, warn};
 use lopdf::content::Content;
 use lopdf::{Document as PdfDocument, Object, ObjectId};
 use std::collections::BTreeMap;
@@ -60,7 +60,7 @@ fn parse_object(
         elements: &mut Vec<Element>,
     ) -> anyhow::Result<()> {
         for operand in operands.iter() {
-            // info!("2 {:?}", operand);
+            debug!("2 {:?}", operand);
             match *operand {
                 Object::String(ref bytes, _) => {
                     let decoded_text = PdfDocument::decode_text(encoding, bytes);
@@ -165,7 +165,7 @@ fn parse_object(
     let content = Content::decode(&vec)?;
     let mut current_encoding = None;
     for operation in &content.operations {
-        // info!("1 {:?}", operation.operator);
+        debug!("1 {:?}", operation.operator);
         match operation.operator.as_ref() {
             "Tm" => {
                 let text_element = Text {
@@ -284,7 +284,7 @@ mod tests {
     use crate::pdf::Transformer;
     use crate::{markdown, pdf};
     use bytes::Bytes;
-    use log::info;
+    use log::{debug, info};
     use std::collections::HashMap;
 
     #[test]
@@ -333,7 +333,7 @@ mod tests {
         assert!(parsed.is_ok());
         let mut parsed_document = parsed.unwrap();
         info!("==========================");
-        // info!("{:?}", parsed_document);
+        debug!("{:?}", parsed_document);
         info!("==========================");
         parsed_document.set_page_header(vec![Element::Text {
             text: "header".to_string(),

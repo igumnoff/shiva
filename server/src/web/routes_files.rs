@@ -4,7 +4,7 @@ use axum::extract::multipart::Field;
 use axum::extract::{Multipart, Path};
 use axum::response::{IntoResponse, Response};
 use futures_util::StreamExt;
-use log::{error, info};
+use log::{debug, error, info};
 use serde::Serialize;
 use shiva::core::{Document, TransformerTrait, TransformerWithImageLoaderSaverTrait};
 use std::collections::HashMap;
@@ -213,7 +213,7 @@ async fn unpacking(mut field: Field<'_>) -> Result<StructUploadFile> {
             .filter(|ext| !ext.trim().is_empty())
             .map(String::from);
 
-        //info!("in ZIP {}.{}", file_name_in_archive.clone().unwrap(), file_extension_in_archive.clone().unwrap());
+        debug!("in ZIP {}.{}", file_name_in_archive.clone().unwrap(), file_extension_in_archive.clone().unwrap());
 
         //checking the supported format
         if let Some(ref ext) = file_extension_in_archive {
@@ -326,9 +326,9 @@ async fn convert_file(
     input_file_data_bytes: Bytes,
     output_format: String,
 ) -> Result<DownloadFile> {
-    //info!("upload file name: {}", file_name);
-    //info!("upload file format: {}", file_extension);
-    //info!("download file format: {}", output_format);
+    debug!("upload file name: {}", file_name);
+    debug!("upload file format: {}", file_extension);
+    debug!("download file format: {}", output_format);
 
     let document = match file_extension.as_str() {
         "md" => {

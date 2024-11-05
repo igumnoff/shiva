@@ -542,7 +542,7 @@ fn parse_list_item(value: &Value) -> anyhow::Result<ListItem> {
 
 #[cfg(test)]
 mod tests {
-    use log::info;
+    use log::{debug, info};
 
     use crate::core::{disk_image_loader, TransformerWithImageLoaderSaverTrait};
     use crate::json::TransformerTrait;
@@ -598,8 +598,8 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         info!("==========================");
         let generated_result = crate::json::Transformer::generate(&parsed);
         assert!(generated_result.is_ok());
-        // info!("{:?}", generated_result.unwrap());
         let generated_bytes = generated_result?;
+        debug!("{:?}", generated_bytes);
         let generated_text = std::str::from_utf8(&generated_bytes)?;
         info!("{}", generated_text);
         info!("==========================");
