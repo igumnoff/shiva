@@ -65,7 +65,7 @@ impl TransformerTrait for Transformer {
                 } else {
                     "- ".to_string()
                 };
-                // println!("list depth: {}", list_depth);
+                // info!("list depth: {}", list_depth);
                 markdown.push_str(&"  ".repeat(list_depth - 1));
                 if let Element::Text { .. } = element.element {
                     markdown.push_str(&prefix);
@@ -255,7 +255,7 @@ Second header
 | Row 1, Column 1 | Row 1, Column 2 |
 | Row 2, Column 1 | Row 2, Column 2 |
 +-----------------+-----------------+"#;
-        // println!("{:?}", document);
+        // info!("{:?}", document);
         let parsed = Transformer::parse(&document.as_bytes().into());
         let document_string = std::str::from_utf8(document.as_bytes())?;
         info!("{}", document_string);
@@ -280,7 +280,7 @@ Second header
         parsed_document.set_page_header(header_elements);
         let generated_result = Transformer::generate(&parsed_document);
         assert!(generated_result.is_ok());
-        // println!("{:?}", generated_result.unwrap());
+        // info!("{:?}", generated_result.unwrap());
         let generated_bytes = generated_result?;
         let generated_text = std::str::from_utf8(&generated_bytes)?;
         info!("{}", generated_text);

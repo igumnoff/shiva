@@ -60,7 +60,7 @@ fn parse_object(
         elements: &mut Vec<Element>,
     ) -> anyhow::Result<()> {
         for operand in operands.iter() {
-            // println!("2 {:?}", operand);
+            // info!("2 {:?}", operand);
             match *operand {
                 Object::String(ref bytes, _) => {
                     let decoded_text = PdfDocument::decode_text(encoding, bytes);
@@ -165,7 +165,7 @@ fn parse_object(
     let content = Content::decode(&vec)?;
     let mut current_encoding = None;
     for operation in &content.operations {
-        // println!("1 {:?}", operation.operator);
+        // info!("1 {:?}", operation.operator);
         match operation.operator.as_ref() {
             "Tm" => {
                 let text_element = Text {
@@ -333,7 +333,7 @@ mod tests {
         assert!(parsed.is_ok());
         let mut parsed_document = parsed.unwrap();
         info!("==========================");
-        // println!("{:?}", parsed_document);
+        // info!("{:?}", parsed_document);
         info!("==========================");
         parsed_document.set_page_header(vec![Element::Text {
             text: "header".to_string(),

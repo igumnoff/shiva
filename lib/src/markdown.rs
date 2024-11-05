@@ -222,7 +222,7 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                         }
 
                         _rest => {
-                            // println!("The tag parsing is not implemented {:#?}", rest);
+                            // warn!("The tag parsing is not implemented {:#?}", rest);
                         }
                     }
                 }

@@ -388,7 +388,7 @@ pub fn generate_document(
                 source.push('\n');
                 Ok(())
             } // _ => {
-              //     eprintln!("Should implement element - {:?}", element);
+              //     warn!("Should implement element - {:?}", element);
               //     Ok(())
               // }
         }
