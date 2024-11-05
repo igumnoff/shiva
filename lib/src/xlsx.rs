@@ -108,6 +108,7 @@ mod tests {
     use crate::xlsx::*;
     use anyhow::Ok;
     use bytes::Bytes;
+    use log::info;
     use std::fs::File;
     use std::io::Read;
 
@@ -121,7 +122,7 @@ mod tests {
         let bytes = Bytes::from(buffer);
         let parsed = Transformer::parse(&bytes)?;
 
-        println!("Parsed document: {:?}", parsed);
+        info!("Parsed document: {:?}", parsed);
 
         Ok(())
     }
@@ -141,7 +142,7 @@ mod tests {
         let bytes_to_write = generated_data?;
         std::fs::write("test/data/test_document.xlsx", bytes_to_write)?;
 
-        println!("Excel file created successfully!");
+        info!("Excel file created successfully!");
 
         Ok(())
     }

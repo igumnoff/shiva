@@ -77,6 +77,7 @@ web-sys ={ version = "0.3.4", features = [
 
 [dev-dependencies]
 env_logger = "0.10.0"
+log = "0.4.20"
 
 [features]
 default = ["all"]

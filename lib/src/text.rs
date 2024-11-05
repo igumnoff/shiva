@@ -230,6 +230,8 @@ impl TransformerTrait for Transformer {
 
 #[cfg(test)]
 mod tests {
+    use log::info;
+
     use crate::core::Element::Header;
     use crate::core::*;
     use crate::text::*;
@@ -256,12 +258,12 @@ Second header
         // println!("{:?}", document);
         let parsed = Transformer::parse(&document.as_bytes().into());
         let document_string = std::str::from_utf8(document.as_bytes())?;
-        println!("{}", document_string);
+        info!("{}", document_string);
         assert!(parsed.is_ok());
         let mut parsed_document = parsed.unwrap();
-        println!("==========================");
-        println!("{:?}", parsed_document);
-        println!("==========================");
+        info!("==========================");
+        info!("{:?}", parsed_document);
+        info!("==========================");
         let mut footer_elements = Vec::new();
         let mut header_elements = Vec::new();
         let header = Header {
@@ -281,7 +283,7 @@ Second header
         // println!("{:?}", generated_result.unwrap());
         let generated_bytes = generated_result?;
         let generated_text = std::str::from_utf8(&generated_bytes)?;
-        println!("{}", generated_text);
+        info!("{}", generated_text);
         Ok(())
     }
 }

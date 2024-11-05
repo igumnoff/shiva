@@ -444,6 +444,8 @@ fn retrieve_deep_text(node: NodeRef<Node>, tag_name: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    use log::info;
+
     use crate::core::*;
     use crate::html::*;
     use crate::json;
@@ -463,9 +465,9 @@ mod tests {
             &Bytes::from(document_html),
             disk_image_loader("test/data"),
         )?;
-        println!("{:#?}", document);
+        info!("{:#?}", document);
         let result = Transformer::generate_with_saver(&document, disk_image_saver("test/data"))?;
-        println!("{}", String::from_utf8(result.to_vec())?);
+        info!("{}", String::from_utf8(result.to_vec())?);
         Ok(())
     }
 
@@ -508,10 +510,10 @@ mod tests {
             &Bytes::from(document_html),
             disk_image_loader("test/data"),
         )?;
-        println!("{:#?}", document);
+        info!("{:#?}", document);
         let markdown =
             markdown::Transformer::generate_with_saver(&document, disk_image_saver("test/data"))?;
-        println!("{}", String::from_utf8(markdown.to_vec())?);
+        info!("{}", String::from_utf8(markdown.to_vec())?);
         Ok(())
     }
 }

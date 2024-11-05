@@ -521,6 +521,7 @@ mod tests {
     use crate::core::{disk_image_loader, TransformerWithImageLoaderSaverTrait};
     use crate::{docx, markdown};
     use bytes::Bytes;
+    use log::info;
 
     #[test]
     fn test() -> anyhow::Result<()> {
@@ -534,7 +535,7 @@ mod tests {
 
         let generated_result = docx::Transformer::generate(&parsed)?;
         //write to file
-        println!("--->>>{:<12} - start writing document_from_md.docx", "TEST");
+        info!("--->>>{:<12} - start writing document_from_md.docx", "TEST");
         std::fs::write("test/data/document_from_md.docx", generated_result)?;
 
         Ok(())
@@ -547,7 +548,7 @@ mod tests {
         let documents_bytes = Bytes::from(document);
         let parsed = docx::Transformer::parse(&documents_bytes)?;
 
-        println!("Parsed - {:#?}", parsed);
+        info!("Parsed - {:#?}", parsed);
         let elements = vec![
             Element::Text {
                 text: "Warszawa, dnia {{DATA}} r. ".to_string(),

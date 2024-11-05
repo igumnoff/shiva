@@ -79,6 +79,7 @@ mod tests {
     use crate::xls::*;
     use anyhow::Ok;
     use bytes::Bytes;
+    use log::info;
     use std::fs::File;
     use std::io::Read;
 
@@ -93,12 +94,12 @@ mod tests {
 
         let parsed = Transformer::parse(&bytes)?;
 
-        println!("Parsed document: {:#?}", parsed);
+        info!("Parsed document: {:#?}", parsed);
 
         let generated_result = text::Transformer::generate(&parsed);
         let generated_bytes = generated_result?;
         let generated_text = std::str::from_utf8(&generated_bytes)?;
-        println!("{}", generated_text);
+        info!("{}", generated_text);
 
         Ok(())
     }

@@ -123,6 +123,7 @@ mod tests {
     use crate::ods::*;
     use anyhow::Ok;
     use bytes::Bytes;
+    use log::info;
     use std::fs::File;
     use std::io::Read;
 
@@ -137,7 +138,7 @@ mod tests {
 
         let parsed = Transformer::parse(&bytes)?;
 
-        println!("Parsed document: {:?}", parsed);
+        info!("Parsed document: {:?}", parsed);
 
         Ok(())
     }
@@ -157,7 +158,7 @@ mod tests {
         let bytes_to_write = generated_data?;
         std::fs::write("test/data/test_document.ods", bytes_to_write)?;
 
-        println!("Excel file created successfully!");
+        info!("Excel file created successfully!");
 
         Ok(())
     }

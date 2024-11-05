@@ -1006,6 +1006,7 @@ mod tests {
     use crate::markdown;
     use crate::xml::*;
     use bytes::Bytes;
+    use log::info;
     use std::fs::File;
     use std::io::{Read, Write};
 
@@ -1018,7 +1019,7 @@ mod tests {
         file.read_to_end(&mut buffer)?;
         let bytes = Bytes::from(buffer);
         let parsed = Transformer::parse(&bytes)?;
-        println!("{:#?}", parsed);
+        info!("{:#?}", parsed);
         let generated = markdown::Transformer::generate(&parsed)?;
         let mut file = File::create("test/data/generated.md")?;
         file.write_all(&generated)?;
@@ -1035,7 +1036,7 @@ mod tests {
         let bytes = Bytes::from(buffer);
         let parsed = Transformer::parse(&bytes)?;
         let generated = Transformer::generate(&parsed)?;
-        println!("{:#?}", generated);
+        info!("{:#?}", generated);
         // write to file
         let mut file = File::create("test/data/generated.xml")?;
         file.write_all(&generated)?;
