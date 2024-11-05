@@ -3,6 +3,7 @@ use crate::core::{
     Element::{Table, Text},
     TableCell, TableHeader, TableRow, TransformerTrait,
 };
+use log::info;
 use bytes::Bytes;
 pub struct Transformer;
 
@@ -147,6 +148,8 @@ fn deserialize_csv(data: &Vec<Vec<String>>) -> anyhow::Result<Bytes> {
 
 #[cfg(test)]
 mod tests {
+    use log::info;
+
     use crate::core::TransformerTrait;
     use crate::csv::{self, deserialize_csv, serialize_csv};
     use crate::markdown;
@@ -166,7 +169,7 @@ mod tests {
         {
             let generated = markdown::Transformer::generate(&parsed)?;
             let generated_string = std::str::from_utf8(&generated)?;
-            println!("{}", generated_string);
+            info!("{}", generated_string);
         }
 
         let generated = csv::Transformer::generate(&parsed)?;

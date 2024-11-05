@@ -2,6 +2,7 @@ use crate::core::Element::{Table, Text};
 use crate::core::*;
 use bytes::Bytes;
 use calamine::{open_workbook_from_rs, Reader, Xls};
+use log::error;
 use std::io::Cursor;
 
 pub struct Transformer;
@@ -57,7 +58,7 @@ impl TransformerTrait for Transformer {
                     });
                 }
                 Err(err) => {
-                    println!("Error reading sheet {}: {}", sheet_name, err);
+                    error!("Error reading sheet {}: {}", sheet_name, err);
                 }
             }
         }
@@ -79,6 +80,7 @@ mod tests {
     use crate::xls::*;
     use anyhow::Ok;
     use bytes::Bytes;
+    use log::info;
     use std::fs::File;
     use std::io::Read;
 
@@ -93,12 +95,12 @@ mod tests {
 
         let parsed = Transformer::parse(&bytes)?;
 
-        println!("Parsed document: {:#?}", parsed);
+        info!("Parsed document: {:#?}", parsed);
 
         let generated_result = text::Transformer::generate(&parsed);
         let generated_bytes = generated_result?;
         let generated_text = std::str::from_utf8(&generated_bytes)?;
-        println!("{}", generated_text);
+        info!("{}", generated_text);
 
         Ok(())
     }

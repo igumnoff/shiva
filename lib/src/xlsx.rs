@@ -2,6 +2,7 @@ use crate::core::Element::{Table, Text};
 use crate::core::*;
 use bytes::Bytes;
 use calamine::{open_workbook_from_rs, Reader, Xlsx};
+use log::error;
 use rust_xlsxwriter::*;
 use std::io::Cursor;
 pub struct Transformer;
@@ -57,7 +58,7 @@ impl TransformerTrait for Transformer {
                     });
                 }
                 Err(err) => {
-                    println!("Error reading sheet {}: {}", sheet_name, err);
+                    error!("Error reading sheet {}: {}", sheet_name, err);
                 }
             }
         }
@@ -108,6 +109,7 @@ mod tests {
     use crate::xlsx::*;
     use anyhow::Ok;
     use bytes::Bytes;
+    use log::info;
     use std::fs::File;
     use std::io::Read;
 
@@ -121,7 +123,7 @@ mod tests {
         let bytes = Bytes::from(buffer);
         let parsed = Transformer::parse(&bytes)?;
 
-        println!("Parsed document: {:?}", parsed);
+        info!("Parsed document: {:?}", parsed);
 
         Ok(())
     }
@@ -141,7 +143,7 @@ mod tests {
         let bytes_to_write = generated_data?;
         std::fs::write("test/data/test_document.xlsx", bytes_to_write)?;
 
-        println!("Excel file created successfully!");
+        info!("Excel file created successfully!");
 
         Ok(())
     }

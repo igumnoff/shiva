@@ -542,6 +542,8 @@ fn parse_list_item(value: &Value) -> anyhow::Result<ListItem> {
 
 #[cfg(test)]
 mod tests {
+    use log::info;
+
     use crate::core::{disk_image_loader, TransformerWithImageLoaderSaverTrait};
     use crate::json::TransformerTrait;
 
@@ -584,23 +586,23 @@ blabla bla bla blabla bla bla blabla bla bla blabla bla bla bla
 
 Paragraph2  bla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla blabla bla bla
 blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
-        println!("{}", document);
-        println!("==========================");
+        info!("{}", document);
+        info!("==========================");
         let parsed_r = crate::markdown::Transformer::parse_with_loader(
             &document.as_bytes().into(),
             disk_image_loader("test/data"),
         );
         let parsed = parsed_r?;
-        println!("==========================");
-        println!("{:#?}", parsed);
-        println!("==========================");
+        info!("==========================");
+        info!("{:#?}", parsed);
+        info!("==========================");
         let generated_result = crate::json::Transformer::generate(&parsed);
         assert!(generated_result.is_ok());
         // println!("{:?}", generated_result.unwrap());
         let generated_bytes = generated_result?;
         let generated_text = std::str::from_utf8(&generated_bytes)?;
-        println!("{}", generated_text);
-        println!("==========================");
+        info!("{}", generated_text);
+        info!("==========================");
         let parsed_r2 = crate::json::Transformer::parse(&generated_bytes);
         let parsed2 = parsed_r2?;
         // generate markdown
@@ -608,7 +610,7 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         assert!(generated_result2.is_ok());
         let generated_bytes2 = generated_result2?;
         let generated_text2 = std::str::from_utf8(&generated_bytes2)?;
-        println!("{}", generated_text2);
+        info!("{}", generated_text2);
         Ok(())
     }
 }

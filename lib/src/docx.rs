@@ -9,6 +9,7 @@ use docx_rs::{
     SpecialIndentType, Start, TableRowChild,
 };
 use std::io::Cursor;
+use log::{error, info, warn};
 
 pub struct Transformer;
 
@@ -110,7 +111,7 @@ fn detect_element_in_list(doc: &mut Docx, element: &Element, numbered: bool, dep
         }
 
         _ => {
-            println!("unknown element");
+            warn!("unknown element");
         }
     }
 }
@@ -413,7 +414,7 @@ impl TransformerTrait for Transformer {
                                     ));
                             }
                             _ => {
-                                eprintln!("Unknown paragraph element");
+                                error!("Unknown paragraph element");
                             }
                         }
                     }
@@ -534,7 +535,7 @@ mod tests {
 
         let generated_result = docx::Transformer::generate(&parsed)?;
         //write to file
-        println!("--->>>{:<12} - start writing document_from_md.docx", "TEST");
+        info!("--->>>{:<12} - start writing document_from_md.docx", "TEST");
         std::fs::write("test/data/document_from_md.docx", generated_result)?;
 
         Ok(())
@@ -547,7 +548,7 @@ mod tests {
         let documents_bytes = Bytes::from(document);
         let parsed = docx::Transformer::parse(&documents_bytes)?;
 
-        println!("Parsed - {:#?}", parsed);
+        info!("Parsed - {:#?}", parsed);
         let elements = vec![
             Element::Text {
                 text: "Warszawa, dnia {{DATA}} r. ".to_string(),

@@ -4,6 +4,7 @@ use crate::core::{Document, Element, ListItem, TableHeader, TableRow, Transforme
 use anyhow;
 use bytes::Bytes;
 use comemo::Prehashed;
+use log::warn;
 use std::path::Path;
 use std::{collections::HashMap, io::Cursor};
 use time::{OffsetDateTime, UtcOffset};
@@ -99,9 +100,11 @@ impl ShivaWorld {
 
 #[cfg(target_arch = "wasm32")]
 fn download_font(url: &str, folder: &str, filename: &str) {
+    use log::info;
+
     let font_path = Path::new(folder).join(filename);
 
-    println!("Downloading font file {}...", font_path.display());
+    info!("Downloading font file {}...", font_path.display());
 
     let request = ehttp::Request::get(url);
     ehttp::fetch(request, move |result: ehttp::Result<ehttp::Response>| {
@@ -111,15 +114,17 @@ fn download_font(url: &str, folder: &str, filename: &str) {
 
         let _bytes_io_count = std::io::copy(&mut reader, &mut writer).unwrap();
 
-        println!("Font file {} downloaded successfully!", font_path.display());
+        info!("Font file {} downloaded successfully!", font_path.display());
     });
 }
 
 #[cfg(not(target_arch = "wasm32"))]
 fn download_font(url: &str, folder: &str, filename: &str) {
+    use log::info;
+
     let font_path = Path::new(folder).join(filename);
 
-    println!("Downloading font file {}...", font_path.display());
+    info!("Downloading font file {}...", font_path.display());
 
     let request = ehttp::Request::get(url);
     let response = ehttp::fetch_blocking(&request);
@@ -129,7 +134,7 @@ fn download_font(url: &str, folder: &str, filename: &str) {
 
     let _bytes_io_count = std::io::copy(&mut reader, &mut writer).unwrap();
 
-    println!("Font file {} downloaded successfully!", font_path.display());
+    info!("Font file {} downloaded successfully!", font_path.display());
 }
 
 impl World for ShivaWorld {
@@ -241,7 +246,7 @@ pub fn generate_document(
                     headers_text.push(',');
                 }
                 _ => {
-                    eprintln!(
+                    warn!(
                         "Should implement element for processing in inside table header - {:?}",
                         header.element
                     );
@@ -261,7 +266,7 @@ pub fn generate_document(
                         cells_text.push(',');
                     }
                     _ => {
-                        eprintln!(
+                        warn!(
                             "Should implement element for processing in inside cell - {:?}",
                             cell.element
                         );

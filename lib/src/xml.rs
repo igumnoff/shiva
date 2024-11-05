@@ -1,5 +1,6 @@
 use anyhow::Result;
 use bytes::Bytes;
+use log::error;
 use quick_xml::{
     events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event},
     Reader, Writer,
@@ -140,7 +141,7 @@ impl TransformerTrait for Transformer {
                                     if let Some(value) = &child.text {
                                         numbered = value == "true";
                                     } else {
-                                        println!("Error: No value");
+                                        error!("Error: No value");
                                     }
                                 }
                                 _ => {}
@@ -163,14 +164,14 @@ impl TransformerTrait for Transformer {
                                     if let Some(value) = &child.text {
                                         size = value.parse()?;
                                     } else {
-                                        println!("Error: No value");
+                                        error!("Error: No value");
                                     }
                                 }
                                 "text" => {
                                     if let Some(value) = &child.text {
                                         text = value;
                                     } else {
-                                        println!("Error: No value");
+                                        error!("Error: No value");
                                     }
                                 }
                                 _ => {}
@@ -195,49 +196,49 @@ impl TransformerTrait for Transformer {
                                     if let Some(value) = &child.text {
                                         image_type = value.to_string();
                                     } else {
-                                        println!("Error: No value");
+                                        error!("Error: No value");
                                     }
                                 }
                                 "bytes" => {
                                     if let Some(value) = &child.text {
                                         image_bytes = Bytes::from(value.to_string());
                                     } else {
-                                        println!("Error: No value");
+                                        error!("Error: No value");
                                     }
                                 }
                                 "alt" => {
                                     if let Some(value) = &child.text {
                                         alt = value;
                                     } else {
-                                        println!("Error: No value");
+                                        error!("Error: No value");
                                     }
                                 }
                                 "title" => {
                                     if let Some(value) = &child.text {
                                         title = value;
                                     } else {
-                                        println!("Error: No value");
+                                        error!("Error: No value");
                                     }
                                 }
                                 "align" => {
                                     if let Some(value) = &child.text {
                                         align = value.to_string();
                                     } else {
-                                        println!("Error: No value");
+                                        error!("Error: No value");
                                     }
                                 }
                                 "width" => {
                                     if let Some(value) = &child.text {
                                         width = Some(value.parse()?);
                                     } else {
-                                        println!("Error: No value");
+                                        error!("Error: No value");
                                     }
                                 }
                                 "height" => {
                                     if let Some(value) = &child.text {
                                         height = Some(value.parse()?);
                                     } else {
-                                        println!("Error: No value");
+                                        error!("Error: No value");
                                     }
                                 }
                                 _ => {}
@@ -263,28 +264,28 @@ impl TransformerTrait for Transformer {
                                     if let Some(value) = &child.text {
                                         size = value.parse()?;
                                     } else {
-                                        println!("Error: No value");
+                                        error!("Error: No value");
                                     }
                                 }
                                 "url" => {
                                     if let Some(value) = &child.text {
                                         url = value;
                                     } else {
-                                        println!("Error: No value");
+                                        error!("Error: No value");
                                     }
                                 }
                                 "alt" => {
                                     if let Some(value) = &child.text {
                                         alt = value;
                                     } else {
-                                        println!("Error: No value");
+                                        error!("Error: No value");
                                     }
                                 }
                                 "title" => {
                                     if let Some(value) = &child.text {
                                         title = value;
                                     } else {
-                                        println!("Error: No value");
+                                        error!("Error: No value");
                                     }
                                 }
                                 _ => {}
@@ -306,14 +307,14 @@ impl TransformerTrait for Transformer {
                                     if let Some(value) = &child.text {
                                         level = value.parse()?;
                                     } else {
-                                        println!("Error: No value");
+                                        error!("Error: No value");
                                     }
                                 }
                                 "text" => {
                                     if let Some(value) = &child.text {
                                         text = value;
                                     } else {
-                                        println!("Error: No value");
+                                        error!("Error: No value");
                                     }
                                 }
                                 _ => {}
@@ -370,7 +371,7 @@ impl TransformerTrait for Transformer {
                                                                                 size =
                                                                                     value.parse()?;
                                                                             } else {
-                                                                                println!(
+                                                                                error!(
                                                                                     "Error: No value"
                                                                                 );
                                                                             }
@@ -382,7 +383,7 @@ impl TransformerTrait for Transformer {
                                                                             {
                                                                                 text = value;
                                                                             } else {
-                                                                                println!(
+                                                                                error!(
                                                                                     "Error: No value"
                                                                                 );
                                                                             }
@@ -397,7 +398,7 @@ impl TransformerTrait for Transformer {
                                                                 {
                                                                     width = value.parse()?;
                                                                 } else {
-                                                                    println!("Error: No value");
+                                                                    error!("Error: No value");
                                                                 }
                                                             }
                                                             _ => {}
@@ -462,7 +463,7 @@ impl TransformerTrait for Transformer {
                                                                                         size =
                                                                                             value.parse()?;
                                                                                     } else {
-                                                                                        println!(
+                                                                                        error!(
                                                                                             "Error: No value"
                                                                                         );
                                                                                     }
@@ -477,7 +478,7 @@ impl TransformerTrait for Transformer {
                                                                                         text =
                                                                                             value;
                                                                                     } else {
-                                                                                        println!(
+                                                                                        error!(
                                                                                             "Error: No value"
                                                                                         );
                                                                                     }
@@ -547,14 +548,14 @@ impl TransformerTrait for Transformer {
                                                             if let Some(value) = &child.text {
                                                                 size = value.parse()?;
                                                             } else {
-                                                                println!("Error: No value");
+                                                                error!("Error: No value");
                                                             }
                                                         }
                                                         "text" => {
                                                             if let Some(value) = &child.text {
                                                                 text = value;
                                                             } else {
-                                                                println!("Error: No value");
+                                                                error!("Error: No value");
                                                             }
                                                         }
                                                         _ => {}
@@ -584,7 +585,7 @@ impl TransformerTrait for Transformer {
                                                 if let Some(value) = &sub_child.text {
                                                     numbered = value == "true";
                                                 } else {
-                                                    println!("Error: No value");
+                                                    error!("Error: No value");
                                                 }
                                             }
                                             _ => {}
@@ -661,14 +662,14 @@ impl TransformerTrait for Transformer {
                                     if let Some(value) = &sub_child.text {
                                         size = value.parse()?;
                                     } else {
-                                        println!("Error: No value");
+                                        error!("Error: No value");
                                     }
                                 }
                                 "text" => {
                                     if let Some(value) = &sub_child.text {
                                         text = value;
                                     } else {
-                                        println!("Error: No value");
+                                        error!("Error: No value");
                                     }
                                 }
                                 _ => {}
@@ -690,14 +691,14 @@ impl TransformerTrait for Transformer {
                                     if let Some(value) = &sub_child.text {
                                         size = value.parse()?;
                                     } else {
-                                        println!("Error: No value");
+                                        error!("Error: No value");
                                     }
                                 }
                                 "text" => {
                                     if let Some(value) = &sub_child.text {
                                         text = value;
                                     } else {
-                                        println!("Error: No value");
+                                        error!("Error: No value");
                                     }
                                 }
                                 _ => {}
@@ -1006,6 +1007,7 @@ mod tests {
     use crate::markdown;
     use crate::xml::*;
     use bytes::Bytes;
+    use log::info;
     use std::fs::File;
     use std::io::{Read, Write};
 
@@ -1018,7 +1020,7 @@ mod tests {
         file.read_to_end(&mut buffer)?;
         let bytes = Bytes::from(buffer);
         let parsed = Transformer::parse(&bytes)?;
-        println!("{:#?}", parsed);
+        info!("{:#?}", parsed);
         let generated = markdown::Transformer::generate(&parsed)?;
         let mut file = File::create("test/data/generated.md")?;
         file.write_all(&generated)?;
@@ -1035,7 +1037,7 @@ mod tests {
         let bytes = Bytes::from(buffer);
         let parsed = Transformer::parse(&bytes)?;
         let generated = Transformer::generate(&parsed)?;
-        println!("{:#?}", generated);
+        info!("{:#?}", generated);
         // write to file
         let mut file = File::create("test/data/generated.xml")?;
         file.write_all(&generated)?;

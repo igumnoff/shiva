@@ -680,6 +680,7 @@ where
 mod tests {
     use core::str;
 
+    use log::info;
     use serde_xml_rs::to_string;
 
     use crate::core::*;
@@ -732,19 +733,19 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
             disk_image_loader("test/data"),
         );
         let document_string = std::str::from_utf8(document.as_bytes())?;
-        println!("{}", document_string);
+        info!("{}", document_string);
         assert!(parsed.is_ok());
         let parsed_document = parsed.unwrap();
 
-        println!("==========================");
-        println!("{:#?}", parsed_document);
-        println!("==========================");
+        info!("==========================");
+        info!("{:#?}", parsed_document);
+        info!("==========================");
         let generated_result =
             Transformer::generate_with_saver(&parsed_document, disk_image_saver("test/data"));
         assert!(generated_result.is_ok());
         let generated_bytes = generated_result?;
         let generated_text = std::str::from_utf8(&generated_bytes)?;
-        println!("{}", generated_text);
+        info!("{}", generated_text);
         Ok(())
     }
 
@@ -888,14 +889,14 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         let input = &input.as_bytes().into();
         let doc_from_html =
             html::Transformer::parse_with_loader(input, disk_image_loader("test/data"))?;
-        println!("{:#?}", doc_from_html);
+        info!("{:#?}", doc_from_html);
         let parsed_html_bytes =
             Transformer::generate_with_saver(&doc_from_html, disk_image_saver("test/data"))?;
 
         let doc_from_markdown =
             Transformer::parse_with_loader(&parsed_html_bytes, disk_image_loader("test/data"));
-        println!("{:#?}", doc_from_markdown);
-        println!("{}", std::str::from_utf8(&parsed_html_bytes)?);
+        info!("{:#?}", doc_from_markdown);
+        info!("{}", std::str::from_utf8(&parsed_html_bytes)?);
         assert!(true);
 
         Ok(())
