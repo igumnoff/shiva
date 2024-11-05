@@ -20,7 +20,6 @@ log = "0.4.21"
 zip = "0.6"
 tower-http = { version = "0.5.2", features = ["limit", "tracing"] }
 anyhow = "1.0.82"
-log = "0.4.20"
 
 [dev-dependencies]
 httpc-test = "0.1.9"
