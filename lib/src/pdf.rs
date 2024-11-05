@@ -3,6 +3,7 @@ use crate::core::{Document, Element, ListItem, ParserError, TransformerTrait};
 
 use anyhow;
 use bytes::Bytes;
+use log::warn;
 use lopdf::content::Content;
 use lopdf::{Document as PdfDocument, Object, ObjectId};
 use std::collections::BTreeMap;
@@ -34,7 +35,7 @@ impl TransformerTrait for Transformer {
         if !warnings.is_empty() {
             // Trowing any warnings if necessary
             for warn in warnings {
-                println!("Warning - {}", warn.message);
+                warn!("Warning - {}", warn.message);
             }
         }
 

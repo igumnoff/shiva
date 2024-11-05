@@ -9,6 +9,7 @@ use docx_rs::{
     SpecialIndentType, Start, TableRowChild,
 };
 use std::io::Cursor;
+use log::{error, info, warn};
 
 pub struct Transformer;
 
@@ -110,7 +111,7 @@ fn detect_element_in_list(doc: &mut Docx, element: &Element, numbered: bool, dep
         }
 
         _ => {
-            println!("unknown element");
+            warn!("unknown element");
         }
     }
 }
@@ -413,7 +414,7 @@ impl TransformerTrait for Transformer {
                                     ));
                             }
                             _ => {
-                                eprintln!("Unknown paragraph element");
+                                error!("Unknown paragraph element");
                             }
                         }
                     }

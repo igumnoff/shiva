@@ -412,10 +412,11 @@ fn generate_html_for_element(
         }
         Hyperlink {
             title, url, alt, ..
-        } => Ok(format!(
+        } => {
+            Ok(format!(
             "<a href=\"{}\" title=\"{}\">{}</a>",
             url, alt, title
-        )),
+        ))},
         _ => Ok("".to_string()),
     }
 }

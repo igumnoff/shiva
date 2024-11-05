@@ -3,6 +3,7 @@ use crate::core::*;
 use bytes::Bytes;
 use calamine::{open_workbook_from_rs, Ods, Reader};
 use icu_locid::locale;
+use log::error;
 use spreadsheet_ods::{write_ods_buf, Sheet, WorkBook};
 use std::io::Cursor;
 use std::vec;
@@ -60,7 +61,7 @@ impl TransformerTrait for Transformer {
                     });
                 }
                 Err(err) => {
-                    println!("Error reading sheet {}: {}", sheet_name, err);
+                    error!("Error reading sheet {}: {}", sheet_name, err);
                 }
             }
         }

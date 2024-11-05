@@ -3,6 +3,7 @@ use crate::core::{
     Element::{Table, Text},
     TableCell, TableHeader, TableRow, TransformerTrait,
 };
+use log::info;
 use bytes::Bytes;
 pub struct Transformer;
 

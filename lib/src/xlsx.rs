@@ -2,6 +2,7 @@ use crate::core::Element::{Table, Text};
 use crate::core::*;
 use bytes::Bytes;
 use calamine::{open_workbook_from_rs, Reader, Xlsx};
+use log::error;
 use rust_xlsxwriter::*;
 use std::io::Cursor;
 pub struct Transformer;
@@ -57,7 +58,7 @@ impl TransformerTrait for Transformer {
                     });
                 }
                 Err(err) => {
-                    println!("Error reading sheet {}: {}", sheet_name, err);
+                    error!("Error reading sheet {}: {}", sheet_name, err);
                 }
             }
         }
