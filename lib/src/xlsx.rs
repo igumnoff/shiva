@@ -112,9 +112,11 @@ mod tests {
     use log::info;
     use std::fs::File;
     use std::io::Read;
+    use crate::core::tests::init_logger;
 
     #[test]
     fn test_parse() -> anyhow::Result<()> {
+        init_logger();
         let path = "test/data/document.xlsx";
         let mut file = File::open(path).expect("Cannot open xlsx file");
         let mut buffer = Vec::new();
@@ -130,6 +132,7 @@ mod tests {
 
     #[test]
     fn test_generate() -> anyhow::Result<()> {
+        init_logger();
         let path = "test/data/document.xlsx";
         let mut file = File::open(path).expect("Cannot open xlsx file");
         let mut buffer = Vec::new();

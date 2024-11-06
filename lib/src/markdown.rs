@@ -686,9 +686,11 @@ mod tests {
     use crate::core::*;
     use crate::html;
     use crate::markdown::*;
+    use crate::core::tests::init_logger;
 
     #[test]
     fn test() -> anyhow::Result<()> {
+        init_logger();
         let document = r#"
 # First header
 
@@ -853,6 +855,7 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
 
     #[test]
     fn test_html_to_markdown_to_cdm() -> anyhow::Result<()> {
+        init_logger();
         let input = r#"
             <html>
               <head>

@@ -803,10 +803,24 @@ impl DocumentType {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
 
     use super::*;
     use std::str::FromStr;
+    use std::sync::Once;
+    use log::LevelFilter;
+
+    static INIT: Once = Once::new();
+
+    pub fn init_logger() {
+        INIT.call_once(|| {
+            env_logger::Builder::from_default_env()
+                .filter_level(LevelFilter::Debug)
+                .format_timestamp(None)
+                .init();
+        });
+    }
+
 
     const VARIANTS: &[DocumentType] = &[
         DocumentType::HTML,

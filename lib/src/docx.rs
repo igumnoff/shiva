@@ -523,9 +523,11 @@ mod tests {
     use crate::{docx, markdown};
     use bytes::Bytes;
     use log::info;
+    use crate::core::tests::init_logger;
 
     #[test]
     fn test() -> anyhow::Result<()> {
+        init_logger();
         //read from document.docx file from disk
         let document = std::fs::read("test/data/document.md")?;
         let documents_bytes = Bytes::from(document);
@@ -544,6 +546,7 @@ mod tests {
 
     #[test]
     fn test_parse() -> anyhow::Result<()> {
+        init_logger();
         //read from document.docx file from disk
         let document = std::fs::read("test/data/document.docx")?;
         let documents_bytes = Bytes::from(document);

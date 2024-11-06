@@ -236,9 +236,11 @@ mod tests {
     use crate::core::Element::Header;
     use crate::core::*;
     use crate::text::*;
+    use crate::core::tests::init_logger;
 
     #[test]
     fn test() -> anyhow::Result<()> {
+        init_logger();
         let document = r#"First header
 
 1. List item 1

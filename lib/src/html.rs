@@ -446,15 +446,14 @@ fn retrieve_deep_text(node: NodeRef<Node>, tag_name: &str) -> String {
 #[cfg(test)]
 mod tests {
     use log::info;
-
     use crate::core::*;
     use crate::html::*;
-    use crate::json;
     use crate::markdown;
-    use crate::text;
-
+    use crate::core::tests::init_logger;
+    
     #[test]
     fn test_image_loader_saver() -> anyhow::Result<()> {
+        init_logger();
         let document_html = r#"
         <html>
         <body>
@@ -474,6 +473,7 @@ mod tests {
 
     #[test]
     fn test_parse_html() -> anyhow::Result<()> {
+        init_logger();
         let document_html = r#"
 
             <html>

@@ -546,9 +546,11 @@ mod tests {
 
     use crate::core::{disk_image_loader, TransformerWithImageLoaderSaverTrait};
     use crate::json::TransformerTrait;
+    use crate::core::tests::init_logger;
 
     #[test]
     fn test() -> anyhow::Result<()> {
+        init_logger();
         let document = r#"
 # First header
 

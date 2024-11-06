@@ -150,12 +150,13 @@ fn deserialize_csv(data: &Vec<Vec<String>>) -> anyhow::Result<Bytes> {
 mod tests {
     use log::info;
 
-    use crate::core::TransformerTrait;
+    use crate::core::{tests::init_logger, TransformerTrait};
     use crate::csv::{self, deserialize_csv, serialize_csv};
     use crate::markdown;
 
     #[test]
     fn test() -> anyhow::Result<()> {
+        init_logger();
         let document = r#"StudentID,Name,Math,Science,English
 1,"John,Doe",88,92,85
 2,"Jane Smith",94,95,91
