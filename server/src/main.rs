@@ -16,12 +16,11 @@ mod web;
 // multy thread
 #[tokio::main]
 async fn main() -> Result<()> {
-    /*
-      //Logging Settings
-      env_logger::builder()
-          .filter_level(log::LevelFilter::Trace)
-          .init();
-    */
+    
+    env_logger::Builder::from_default_env()
+    .filter_level(log::LevelFilter::Debug)
+    .format_timestamp(None)
+    .init();
 
     // Defining command line arguments
     let matches = Command::new("Server")
