@@ -124,7 +124,7 @@ mod tests {
     use crate::ods::*;
     use anyhow::Ok;
     use bytes::Bytes;
-    use log::info;
+    use log::{debug, info};
     use std::fs::File;
     use std::io::Read;
     use crate::core::tests::init_logger;
@@ -141,7 +141,7 @@ mod tests {
 
         let parsed = Transformer::parse(&bytes)?;
 
-        info!("Parsed document: {:?}", parsed);
+        debug!("Parsed document: {:?}", parsed);
 
         Ok(())
     }

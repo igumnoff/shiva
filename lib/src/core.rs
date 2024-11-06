@@ -804,18 +804,18 @@ impl DocumentType {
 
 #[cfg(test)]
 pub mod tests {
-
     use super::*;
     use std::str::FromStr;
     use std::sync::Once;
-    use log::LevelFilter;
+    use env_logger::Env;
 
     static INIT: Once = Once::new();
 
     pub fn init_logger() {
         INIT.call_once(|| {
-            env_logger::Builder::from_default_env()
-                .filter_level(LevelFilter::Debug)
+            env_logger::Builder::from_env(
+                Env::default()
+                .default_filter_or("info"))
                 .format_timestamp(None)
                 .init();
         });

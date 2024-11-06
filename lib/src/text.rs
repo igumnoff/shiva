@@ -264,9 +264,9 @@ Second header
         info!("{}", document_string);
         assert!(parsed.is_ok());
         let mut parsed_document = parsed.unwrap();
-        info!("==========================");
-        info!("{:?}", parsed_document);
-        info!("==========================");
+        debug!("==========================");
+        debug!("{:?}", parsed_document);
+        debug!("==========================");
         let mut footer_elements = Vec::new();
         let mut header_elements = Vec::new();
         let header = Header {

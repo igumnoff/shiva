@@ -680,6 +680,7 @@ where
 mod tests {
     use core::str;
 
+    use log::debug;
     use log::info;
     use serde_xml_rs::to_string;
 
@@ -739,9 +740,9 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         assert!(parsed.is_ok());
         let parsed_document = parsed.unwrap();
 
-        info!("==========================");
-        info!("{:#?}", parsed_document);
-        info!("==========================");
+        debug!("==========================");
+        debug!("{:#?}", parsed_document);
+        debug!("==========================");
         let generated_result =
             Transformer::generate_with_saver(&parsed_document, disk_image_saver("test/data"));
         assert!(generated_result.is_ok());

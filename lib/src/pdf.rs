@@ -310,9 +310,9 @@ mod tests {
             &documents_bytes,
             disk_image_loader("test/data"),
         )?;
-        info!("==========================");
-        info!("{:?}", parsed_document);
-        info!("==========================");
+        debug!("==========================");
+        debug!("{:?}", parsed_document);
+        debug!("==========================");
         let generated_result = Transformer::generate(&parsed_document)?;
         std::fs::write("test/data/generated.pdf", generated_result)?;
         Ok(())
@@ -332,9 +332,9 @@ mod tests {
         );
         assert!(parsed.is_ok());
         let mut parsed_document = parsed.unwrap();
-        info!("==========================");
+        debug!("==========================");
         debug!("{:?}", parsed_document);
-        info!("==========================");
+        debug!("==========================");
         parsed_document.set_page_header(vec![Element::Text {
             text: "header".to_string(),
             size: 10,
@@ -386,9 +386,9 @@ mod tests {
         ];
         let document = Document::new(elements);
 
-        info!("==========================");
-        info!("{:?}", document);
-        info!("==========================");
+        debug!("==========================");
+        debug!("{:?}", document);
+        debug!("==========================");
 
         let generated_result = Transformer::generate(&document);
 

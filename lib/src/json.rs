@@ -595,9 +595,9 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
             disk_image_loader("test/data"),
         );
         let parsed = parsed_r?;
-        info!("==========================");
-        info!("{:#?}", parsed);
-        info!("==========================");
+        debug!("==========================");
+        debug!("{:#?}", parsed);
+        debug!("==========================");
         let generated_result = crate::json::Transformer::generate(&parsed);
         assert!(generated_result.is_ok());
         let generated_bytes = generated_result?;

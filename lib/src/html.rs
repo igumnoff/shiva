@@ -445,6 +445,7 @@ fn retrieve_deep_text(node: NodeRef<Node>, tag_name: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    use log::debug;
     use log::info;
     use crate::core::*;
     use crate::html::*;
@@ -511,7 +512,7 @@ mod tests {
             &Bytes::from(document_html),
             disk_image_loader("test/data"),
         )?;
-        info!("{:#?}", document);
+        debug!("{:#?}", document);
         let markdown =
             markdown::Transformer::generate_with_saver(&document, disk_image_saver("test/data"))?;
         info!("{}", String::from_utf8(markdown.to_vec())?);

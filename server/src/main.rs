@@ -5,6 +5,7 @@ use axum::response::{Html, IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{middleware, Router};
 use clap::{Arg, Command};
+use env_logger::Env;
 use log::info;
 use tokio::net::TcpListener;
 use tower_http::limit::RequestBodyLimitLayer;
@@ -17,8 +18,7 @@ mod web;
 #[tokio::main]
 async fn main() -> Result<()> {
     
-    env_logger::Builder::from_default_env()
-    .filter_level(log::LevelFilter::Debug)
+    env_logger::Builder::from_env(Env::default().default_filter_or("info"))
     .format_timestamp(None)
     .init();
 
