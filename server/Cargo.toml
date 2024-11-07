@@ -24,3 +24,4 @@ anyhow = "1.0.82"
 [dev-dependencies]
 httpc-test = "0.1.9"
 printpdf = "0.7.0"
+log = "0.4.20"

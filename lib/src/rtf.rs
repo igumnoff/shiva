@@ -2,6 +2,7 @@ use crate::core::{Document, Element, TableHeader, TableRow, TransformerTrait};
 use bytes::Bytes;
 use image::io::Reader as ImageReader;
 use image::GenericImageView;
+use log::warn;
 use std::io::Cursor;
 
 use rtf_parser::lexer::Lexer;
@@ -168,7 +169,7 @@ fn detect_element_in_list(
         }
 
         _ => {
-            eprintln!("Unknown element in list: {:?}", element);
+            warn!("Unknown element in list: {:?}", element);
         }
     }
 }
@@ -329,7 +330,7 @@ impl TransformerTrait for Transformer {
                 }
 
                 _other_element => {
-                    eprintln!("Unknown element in list: {:?}", element);
+                    warn!("Unknown element in list: {:?}", element);
                 }
             }
         }

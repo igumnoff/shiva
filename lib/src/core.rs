@@ -6,6 +6,7 @@ use std::{collections::HashMap, fmt::Debug};
 use strum::{Display, EnumCount, EnumString, IntoStaticStr, VariantArray};
 use thiserror::Error;
 use wasm_bindgen::prelude::wasm_bindgen;
+use log::info;
 
 #[cfg(feature = "csv")]
 use crate::csv;
@@ -727,7 +728,7 @@ pub fn disk_image_loader(path: &str) -> impl Fn(&str) -> anyhow::Result<Bytes> {
     let path = path.to_string();
     let image_loader = move |image: &str| -> anyhow::Result<Bytes> {
         let image_path = format!("{}/{}", path, image);
-        println!("Loading image: {}", image_path);
+        info!("Loading image: {}", image_path);
         let bytes = std::fs::read(image_path)?;
         Ok(Bytes::from(bytes))
     };
@@ -802,10 +803,24 @@ impl DocumentType {
 }
 
 #[cfg(test)]
-mod tests {
-
+pub mod tests {
     use super::*;
     use std::str::FromStr;
+    use std::sync::Once;
+    use env_logger::Env;
+
+    static INIT: Once = Once::new();
+
+    pub fn init_logger() {
+        INIT.call_once(|| {
+            env_logger::Builder::from_env(
+                Env::default()
+                .default_filter_or("info"))
+                .format_timestamp(None)
+                .init();
+        });
+    }
+
 
     const VARIANTS: &[DocumentType] = &[
         DocumentType::HTML,

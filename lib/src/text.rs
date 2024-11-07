@@ -1,6 +1,7 @@
 use crate::core::Element::{Image, Paragraph, Table};
 use crate::core::*;
 use bytes::Bytes;
+use log::debug;
 use std::collections::HashMap;
 
 pub struct Transformer;
@@ -65,7 +66,7 @@ impl TransformerTrait for Transformer {
                 } else {
                     "- ".to_string()
                 };
-                // println!("list depth: {}", list_depth);
+                debug!("list depth: {}", list_depth);
                 markdown.push_str(&"  ".repeat(list_depth - 1));
                 if let Element::Text { .. } = element.element {
                     markdown.push_str(&prefix);
@@ -230,12 +231,16 @@ impl TransformerTrait for Transformer {
 
 #[cfg(test)]
 mod tests {
+    use log::{debug, info};
+
     use crate::core::Element::Header;
     use crate::core::*;
     use crate::text::*;
+    use crate::core::tests::init_logger;
 
     #[test]
     fn test() -> anyhow::Result<()> {
+        init_logger();
         let document = r#"First header
 
 1. List item 1
@@ -253,15 +258,15 @@ Second header
 | Row 1, Column 1 | Row 1, Column 2 |
 | Row 2, Column 1 | Row 2, Column 2 |
 +-----------------+-----------------+"#;
-        // println!("{:?}", document);
+        debug!("{:?}", document);
         let parsed = Transformer::parse(&document.as_bytes().into());
         let document_string = std::str::from_utf8(document.as_bytes())?;
-        println!("{}", document_string);
+        info!("{}", document_string);
         assert!(parsed.is_ok());
         let mut parsed_document = parsed.unwrap();
-        println!("==========================");
-        println!("{:?}", parsed_document);
-        println!("==========================");
+        debug!("==========================");
+        debug!("{:?}", parsed_document);
+        debug!("==========================");
         let mut footer_elements = Vec::new();
         let mut header_elements = Vec::new();
         let header = Header {
@@ -278,10 +283,10 @@ Second header
         parsed_document.set_page_header(header_elements);
         let generated_result = Transformer::generate(&parsed_document);
         assert!(generated_result.is_ok());
-        // println!("{:?}", generated_result.unwrap());
         let generated_bytes = generated_result?;
+        debug!("{:?}", generated_bytes);
         let generated_text = std::str::from_utf8(&generated_bytes)?;
-        println!("{}", generated_text);
+        info!("{}", generated_text);
         Ok(())
     }
 }

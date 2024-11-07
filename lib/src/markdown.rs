@@ -222,7 +222,7 @@ impl TransformerWithImageLoaderSaverTrait for Transformer {
                         }
 
                         _rest => {
-                            // println!("The tag parsing is not implemented {:#?}", rest);
+                            // warn!("The tag parsing is not implemented {:#?}", rest);
                         }
                     }
                 }
@@ -680,14 +680,18 @@ where
 mod tests {
     use core::str;
 
+    use log::debug;
+    use log::info;
     use serde_xml_rs::to_string;
 
     use crate::core::*;
     use crate::html;
     use crate::markdown::*;
+    use crate::core::tests::init_logger;
 
     #[test]
     fn test() -> anyhow::Result<()> {
+        init_logger();
         let document = r#"
 # First header
 
@@ -732,19 +736,19 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
             disk_image_loader("test/data"),
         );
         let document_string = std::str::from_utf8(document.as_bytes())?;
-        println!("{}", document_string);
+        info!("{}", document_string);
         assert!(parsed.is_ok());
         let parsed_document = parsed.unwrap();
 
-        println!("==========================");
-        println!("{:#?}", parsed_document);
-        println!("==========================");
+        debug!("==========================");
+        debug!("{:#?}", parsed_document);
+        debug!("==========================");
         let generated_result =
             Transformer::generate_with_saver(&parsed_document, disk_image_saver("test/data"));
         assert!(generated_result.is_ok());
         let generated_bytes = generated_result?;
         let generated_text = std::str::from_utf8(&generated_bytes)?;
-        println!("{}", generated_text);
+        info!("{}", generated_text);
         Ok(())
     }
 
@@ -852,6 +856,7 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
 
     #[test]
     fn test_html_to_markdown_to_cdm() -> anyhow::Result<()> {
+        init_logger();
         let input = r#"
             <html>
               <head>
@@ -888,14 +893,14 @@ blabla2 bla bla blabla bla bla blabla bla bla blabla bla bla bla"#;
         let input = &input.as_bytes().into();
         let doc_from_html =
             html::Transformer::parse_with_loader(input, disk_image_loader("test/data"))?;
-        println!("{:#?}", doc_from_html);
+        info!("{:#?}", doc_from_html);
         let parsed_html_bytes =
             Transformer::generate_with_saver(&doc_from_html, disk_image_saver("test/data"))?;
 
         let doc_from_markdown =
             Transformer::parse_with_loader(&parsed_html_bytes, disk_image_loader("test/data"));
-        println!("{:#?}", doc_from_markdown);
-        println!("{}", std::str::from_utf8(&parsed_html_bytes)?);
+        info!("{:#?}", doc_from_markdown);
+        info!("{}", std::str::from_utf8(&parsed_html_bytes)?);
         assert!(true);
 
         Ok(())

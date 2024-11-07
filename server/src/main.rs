@@ -5,6 +5,8 @@ use axum::response::{Html, IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{middleware, Router};
 use clap::{Arg, Command};
+use env_logger::Env;
+use log::info;
 use tokio::net::TcpListener;
 use tower_http::limit::RequestBodyLimitLayer;
 
@@ -15,12 +17,10 @@ mod web;
 // multy thread
 #[tokio::main]
 async fn main() -> Result<()> {
-    /*
-      //Logging Settings
-      env_logger::builder()
-          .filter_level(log::LevelFilter::Trace)
-          .init();
-    */
+    
+    env_logger::Builder::from_env(Env::default().default_filter_or("info"))
+    .format_timestamp(None)
+    .init();
 
     // Defining command line arguments
     let matches = Command::new("Server")
@@ -64,7 +64,7 @@ async fn main() -> Result<()> {
         .await
         .unwrap();
 
-    println!("-->>LISTENING on {:?}", listener.local_addr().unwrap());
+    info!("-->>LISTENING on {:?}", listener.local_addr().unwrap());
 
     axum::serve(listener, routes_all).await.unwrap();
     // endregion: ---Start Server
@@ -73,15 +73,14 @@ async fn main() -> Result<()> {
 }
 
 async fn handler_answer_server() -> impl IntoResponse {
-    println!("-->> {:<12} - answer_server", "HANDLER");
+    info!("-->> {:<12} - answer_server", "HANDLER");
 
     Html("TEST DONE")
 }
 
 async fn main_response_mapper(res: Response) -> Response {
-    println!("-->> {:<12} - main_response_mapper", "RES_MAPPER");
+    info!("-->> {:<12} - main_response_mapper", "RES_MAPPER");
 
-    println!();
     res
 }
 
@@ -98,6 +97,7 @@ mod tests {
     use std::io::Cursor;
     use std::io::Write;
     use tokio::fs::File;
+    use log::info;
 
     #[tokio::test]
     async fn test_server() -> Result<()> {
@@ -155,7 +155,7 @@ mod tests {
                 // Creating HTTP-client
                 let client = reqwest::Client::new();
 
-                println!("sending the test_file.{}", input_format);
+                info!("sending the test_file.{}", input_format);
 
                 // Sending a POST request to the server with the multipart form
                 let mut response = client
@@ -181,7 +181,7 @@ mod tests {
                     }
                 }
 
-                println!(
+                info!(
                     "the file has been successfully converted to the format {}",
                     output_format
                 )
@@ -256,7 +256,7 @@ mod tests {
             // Creating HTTP-client
             let client = reqwest::Client::new();
 
-            println!("sending the test_file.pdf");
+            info!("sending the test_file.pdf");
 
             // Sending a POST request to the server with the multipart form
             let response = client
@@ -271,7 +271,7 @@ mod tests {
             // Checking the server response
             assert_eq!(response.status(), reqwest::StatusCode::OK);
 
-            println!(
+            info!(
                 "the file has been successfully converted to the format {}",
                 output_format
             )
@@ -331,7 +331,7 @@ mod tests {
 
             let client = reqwest::Client::new();
 
-            println!("sending the test_file.json");
+            info!("sending the test_file.json");
 
             let response = client
                 .post(&format!(
@@ -344,7 +344,7 @@ mod tests {
 
             assert_eq!(response.status(), reqwest::StatusCode::OK);
 
-            println!(
+            info!(
                 "the file has been successfully converted to the format {}",
                 output_format
             )
@@ -355,7 +355,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_upload_zip() -> Result<(), Box<dyn std::error::Error>> {
-        println!("start test_upload_zip");
+        info!("start test_upload_zip");
         /*
                 env_logger::builder()
                     .filter_level(log::LevelFilter::Trace)

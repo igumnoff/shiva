@@ -3,6 +3,7 @@ use crate::core::{Document, Element, ListItem, ParserError, TransformerTrait};
 
 use anyhow;
 use bytes::Bytes;
+use log::{debug, warn};
 use lopdf::content::Content;
 use lopdf::{Document as PdfDocument, Object, ObjectId};
 use std::collections::BTreeMap;
@@ -34,7 +35,7 @@ impl TransformerTrait for Transformer {
         if !warnings.is_empty() {
             // Trowing any warnings if necessary
             for warn in warnings {
-                println!("Warning - {}", warn.message);
+                warn!("Warning - {}", warn.message);
             }
         }
 
@@ -59,7 +60,7 @@ fn parse_object(
         elements: &mut Vec<Element>,
     ) -> anyhow::Result<()> {
         for operand in operands.iter() {
-            // println!("2 {:?}", operand);
+            debug!("2 {:?}", operand);
             match *operand {
                 Object::String(ref bytes, _) => {
                     let decoded_text = PdfDocument::decode_text(encoding, bytes);
@@ -164,7 +165,7 @@ fn parse_object(
     let content = Content::decode(&vec)?;
     let mut current_encoding = None;
     for operation in &content.operations {
-        // println!("1 {:?}", operation.operator);
+        debug!("1 {:?}", operation.operator);
         match operation.operator.as_ref() {
             "Tm" => {
                 let text_element = Text {
@@ -283,6 +284,7 @@ mod tests {
     use crate::pdf::Transformer;
     use crate::{markdown, pdf};
     use bytes::Bytes;
+    use log::{debug, info};
     use std::collections::HashMap;
 
     #[test]
@@ -292,9 +294,9 @@ mod tests {
         let parsed = Transformer::parse(&pdf_bytes);
         assert!(parsed.is_ok());
         let parsed_document = parsed.unwrap();
-        println!("==========================");
-        println!("{:?}", parsed_document);
-        println!("==========================");
+        info!("==========================");
+        info!("{:?}", parsed_document);
+        info!("==========================");
         let generated_result = Transformer::generate(&parsed_document)?;
         std::fs::write("test/data/generated.pdf", generated_result)?;
         Ok(())
@@ -308,9 +310,9 @@ mod tests {
             &documents_bytes,
             disk_image_loader("test/data"),
         )?;
-        println!("==========================");
-        println!("{:?}", parsed_document);
-        println!("==========================");
+        debug!("==========================");
+        debug!("{:?}", parsed_document);
+        debug!("==========================");
         let generated_result = Transformer::generate(&parsed_document)?;
         std::fs::write("test/data/generated.pdf", generated_result)?;
         Ok(())
@@ -330,9 +332,9 @@ mod tests {
         );
         assert!(parsed.is_ok());
         let mut parsed_document = parsed.unwrap();
-        println!("==========================");
-        // println!("{:?}", parsed_document);
-        println!("==========================");
+        debug!("==========================");
+        debug!("{:?}", parsed_document);
+        debug!("==========================");
         parsed_document.set_page_header(vec![Element::Text {
             text: "header".to_string(),
             size: 10,
@@ -384,9 +386,9 @@ mod tests {
         ];
         let document = Document::new(elements);
 
-        println!("==========================");
-        println!("{:?}", document);
-        println!("==========================");
+        debug!("==========================");
+        debug!("{:?}", document);
+        debug!("==========================");
 
         let generated_result = Transformer::generate(&document);
 
