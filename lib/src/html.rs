@@ -412,11 +412,10 @@ fn generate_html_for_element(
         }
         Hyperlink {
             title, url, alt, ..
-        } => {
-            Ok(format!(
+        } => Ok(format!(
             "<a href=\"{}\" title=\"{}\">{}</a>",
             url, alt, title
-        ))},
+        )),
         _ => Ok("".to_string()),
     }
 }
@@ -445,13 +444,13 @@ fn retrieve_deep_text(node: NodeRef<Node>, tag_name: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use log::debug;
-    use log::info;
+    use crate::core::tests::init_logger;
     use crate::core::*;
     use crate::html::*;
     use crate::markdown;
-    use crate::core::tests::init_logger;
-    
+    use log::debug;
+    use log::info;
+
     #[test]
     fn test_image_loader_saver() -> anyhow::Result<()> {
         init_logger();

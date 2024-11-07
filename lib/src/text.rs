@@ -233,10 +233,10 @@ impl TransformerTrait for Transformer {
 mod tests {
     use log::{debug, info};
 
+    use crate::core::tests::init_logger;
     use crate::core::Element::Header;
     use crate::core::*;
     use crate::text::*;
-    use crate::core::tests::init_logger;
 
     #[test]
     fn test() -> anyhow::Result<()> {

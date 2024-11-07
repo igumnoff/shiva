@@ -76,6 +76,7 @@ impl TransformerTrait for Transformer {
 
 #[cfg(test)]
 mod tests {
+    use crate::core::tests::init_logger;
     use crate::text;
     use crate::xls::*;
     use anyhow::Ok;
@@ -84,7 +85,6 @@ mod tests {
     use log::info;
     use std::fs::File;
     use std::io::Read;
-    use crate::core::tests::init_logger;
 
     #[test]
     fn test_parse() -> anyhow::Result<()> {

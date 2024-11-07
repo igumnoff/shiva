@@ -213,7 +213,11 @@ async fn unpacking(mut field: Field<'_>) -> Result<StructUploadFile> {
             .filter(|ext| !ext.trim().is_empty())
             .map(String::from);
 
-        debug!("in ZIP {}.{}", file_name_in_archive.clone().unwrap(), file_extension_in_archive.clone().unwrap());
+        debug!(
+            "in ZIP {}.{}",
+            file_name_in_archive.clone().unwrap(),
+            file_extension_in_archive.clone().unwrap()
+        );
 
         //checking the supported format
         if let Some(ref ext) = file_extension_in_archive {

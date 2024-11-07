@@ -17,10 +17,9 @@ mod web;
 // multy thread
 #[tokio::main]
 async fn main() -> Result<()> {
-    
     env_logger::Builder::from_env(Env::default().default_filter_or("info"))
-    .format_timestamp(None)
-    .init();
+        .format_timestamp(None)
+        .init();
 
     // Defining command line arguments
     let matches = Command::new("Server")
@@ -91,13 +90,13 @@ mod tests {
     use anyhow::anyhow;
     use anyhow::Error;
     use anyhow::Result;
+    use log::info;
     use reqwest::multipart;
     use reqwest::Body;
     use std::fs;
     use std::io::Cursor;
     use std::io::Write;
     use tokio::fs::File;
-    use log::info;
 
     #[tokio::test]
     async fn test_server() -> Result<()> {

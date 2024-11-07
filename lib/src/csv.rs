@@ -3,8 +3,8 @@ use crate::core::{
     Element::{Table, Text},
     TableCell, TableHeader, TableRow, TransformerTrait,
 };
-use log::info;
 use bytes::Bytes;
+use log::info;
 pub struct Transformer;
 
 #[allow(unused)]

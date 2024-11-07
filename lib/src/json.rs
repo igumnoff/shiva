@@ -544,9 +544,9 @@ fn parse_list_item(value: &Value) -> anyhow::Result<ListItem> {
 mod tests {
     use log::{debug, info};
 
+    use crate::core::tests::init_logger;
     use crate::core::{disk_image_loader, TransformerWithImageLoaderSaverTrait};
     use crate::json::TransformerTrait;
-    use crate::core::tests::init_logger;
 
     #[test]
     fn test() -> anyhow::Result<()> {

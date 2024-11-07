@@ -684,10 +684,10 @@ mod tests {
     use log::info;
     use serde_xml_rs::to_string;
 
+    use crate::core::tests::init_logger;
     use crate::core::*;
     use crate::html;
     use crate::markdown::*;
-    use crate::core::tests::init_logger;
 
     #[test]
     fn test() -> anyhow::Result<()> {

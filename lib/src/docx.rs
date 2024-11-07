@@ -8,8 +8,8 @@ use docx_rs::{
     LevelText, NumberFormat, Numbering, NumberingId, Paragraph, ParagraphStyle, Pic, Run, RunChild,
     SpecialIndentType, Start, TableRowChild,
 };
-use std::io::Cursor;
 use log::{error, info, warn};
+use std::io::Cursor;
 
 pub struct Transformer;
 
@@ -519,11 +519,11 @@ impl TransformerTrait for Transformer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::tests::init_logger;
     use crate::core::{disk_image_loader, TransformerWithImageLoaderSaverTrait};
     use crate::{docx, markdown};
     use bytes::Bytes;
     use log::info;
-    use crate::core::tests::init_logger;
 
     #[test]
     fn test() -> anyhow::Result<()> {
